@@ -10,7 +10,7 @@
 #include "sha2.h"
 
 int main(int argc, const char * argv[]) {
-	SimdSha2Context ctx;
+	ALIGN(16) SimdSha2Context ctx;
 	
 	SimdSha256Init(&ctx, argc-1);
 	SimdSha256Update(&ctx, strlen(argv[1]), &argv[1]);

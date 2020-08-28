@@ -16,6 +16,14 @@
 #define SIMD_COUNT 8
 #define BUFFER_SIZE_DWORDS (64/4)
 
+#ifdef _MSC_VER
+  // MSVC...
+  #define ALIGN(n) declspec(align(n))
+#else
+  // the civilised world...
+  #define ALIGN(n) __attribute__ ((aligned(n)))
+#endif
+
 typedef union _SimdShaValue
 {
 	uint32_t u32[256/32];
@@ -30,5 +38,10 @@ typedef struct _SimdSha2Context
 	uint64_t     BitLength;
 	size_t       Lanes;
 } SimdSha2Context;
+
+void SimdSha256Init(SimdSha2Context* Context, size_t Lanes);
+void SimdSha256Update(SimdSha2Context* Context, size_t Length, uint8_t* Buffers[]);
+int  SimdSha256TransformWithTarget(SimdSha2Context* Context, uint32_t targetHValue);
+void SimdSha256Finalize(SimdSha2Context* Context);
 
 #endif /* sha2_h */

@@ -29,6 +29,7 @@ static const uint32_t RoundConstants[] = {
 	0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
+static inline
 __m256i
 RotateLeft32(__m256i Value, uint8_t Distance)
 {
@@ -38,6 +39,7 @@ RotateLeft32(__m256i Value, uint8_t Distance)
 	return _mm256_or_si256(shl, shr);
 }
 
+static inline
 __m256i
 RotateRight32(__m256i Value, uint8_t Distance)
 {
@@ -47,6 +49,7 @@ RotateRight32(__m256i Value, uint8_t Distance)
 	return _mm256_or_si256(shl, shr);
 }
 
+static inline
 __m256i
 CalculateS1(__m256i E)
 {
@@ -57,6 +60,7 @@ CalculateS1(__m256i E)
 	return _mm256_xor_si256(ret, er25);
 }
 
+static inline
 __m256i
 CalculateS0(__m256i A)
 {
@@ -67,6 +71,7 @@ CalculateS0(__m256i A)
 	return _mm256_xor_si256(ret, ar22);
 }
 
+static inline
 __m256i
 CalculateExtendS0(__m256i W)
 {
@@ -77,6 +82,7 @@ CalculateExtendS0(__m256i W)
 	return _mm256_xor_si256(ret, wr3);
 }
 
+static inline
 __m256i
 CalculateExtendS1(__m256i W)
 {
@@ -87,6 +93,7 @@ CalculateExtendS1(__m256i W)
 	return _mm256_xor_si256(ret, wr10);
 }
 
+static inline
 __m256i
 CalculateCh(__m256i E, __m256i F, __m256i G)
 {
@@ -95,6 +102,7 @@ CalculateCh(__m256i E, __m256i F, __m256i G)
 	return _mm256_xor_si256(eAndF, notEAndG);
 }
 
+static inline
 __m256i
 CalculateMaj(__m256i A, __m256i B, __m256i C)
 {
@@ -105,19 +113,46 @@ CalculateMaj(__m256i A, __m256i B, __m256i C)
 	return _mm256_xor_si256(ret, bAndC);
 }
 
+static inline
 __m256i
-CalculateTemp2(__m256i S0, __m256i Maj)
+CalculateTemp2(__m256i A, __m256i B, __m256i C)
 {
-	return _mm256_add_epi32(S0, Maj);
+	__m256i s0 = CalculateS0(A);
+	__m256i maj = CalculateMaj(A, B, C);
+	return _mm256_add_epi32(s0, maj);
 }
 
+static inline
 __m256i
-CalculateTemp1(__m256i H, __m256i S1, __m256i Ch, __m256i K, __m256i W)
+CalculateTemp1(__m256i E, __m256i F, __m256i G, __m256i H, __m256i K, __m256i W)
 {
-	__m256i ret = _mm256_add_epi32(H, S1);
-	ret = _mm256_add_epi32(ret, Ch);
+	__m256i s1 = CalculateS1(E);
+	__m256i ch = CalculateCh(E, F, G);
+	__m256i ret = _mm256_add_epi32(H, s1);
+	ret = _mm256_add_epi32(ret, ch);
 	ret = _mm256_add_epi32(ret, K);
 	return _mm256_add_epi32(ret, W);
+}
+
+static inline
+void
+ExpandMessageSchedule(SimdSha2Context* Context, SimdShaValue* messageSchedule)
+{
+	for (size_t i = 0; i < 16; i++)
+	{
+		__m256i w = _mm256_load_si256(&Context->Buffer[i].u256);
+		_mm256_store_si256(&messageSchedule[i].u256, w);
+	}
+	
+	for (size_t i = 16; i < 64; i++)
+	{
+		__m256i s0 = CalculateExtendS0(_mm256_load_si256(&messageSchedule[i-15].u256));
+		__m256i s1 = CalculateExtendS1(_mm256_load_si256(&messageSchedule[i-2].u256));
+		__m256i res = _mm256_add_epi32(_mm256_load_si256(&messageSchedule[i-16].u256), s0);
+		res = _mm256_add_epi32(res, _mm256_load_si256(&messageSchedule[i-7].u256));
+		res = _mm256_add_epi32(res, s1);
+		_mm256_store_si256(&messageSchedule[i].u256, res);
+	}
 }
 
 void
@@ -125,7 +160,7 @@ SimdSha256Init(SimdSha2Context* Context, size_t Lanes)
 {
 	for (size_t i = 0; i < 8; i++)
 	{
-		_mm256_storeu_si256(&Context->H[i].u256, _mm256_set1_epi32(InitialValues[i]));
+		_mm256_store_si256(&Context->H[i].u256, _mm256_set1_epi32(InitialValues[i]));
 	}
 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
 	Context->Length = 0;
@@ -140,44 +175,24 @@ SimdSha256Transform(SimdSha2Context* Context)
 	//
 	// Expand the message schedule
 	//
-	SimdShaValue messageSchedule[64];
+	ALIGN(16) SimdShaValue messageSchedule[64];
+	ExpandMessageSchedule(Context, messageSchedule);
 	
-	for (size_t i = 0; i < 16; i++)
-	{
-		__m256i w = _mm256_loadu_si256(&Context->Buffer[i].u256);
-		_mm256_store_si256(&messageSchedule[i].u256, w);
-	}
-	
-	for (size_t i = 16; i < 64; i++)
-	{
-		__m256i s0 = CalculateExtendS0(_mm256_loadu_si256(&messageSchedule[i-15].u256));
-		__m256i s1 = CalculateExtendS1(_mm256_loadu_si256(&messageSchedule[i-2].u256));
-		__m256i res = _mm256_add_epi32(_mm256_loadu_si256(&messageSchedule[i-16].u256), s0);
-		res = _mm256_add_epi32(res, _mm256_loadu_si256(&messageSchedule[i-7].u256));
-		res = _mm256_add_epi32(res, s1);
-		_mm256_storeu_si256(&messageSchedule[i].u256, res);
-	}
-	
-	__m256i a = _mm256_loadu_si256(&Context->H[0].u256);
-	__m256i b = _mm256_loadu_si256(&Context->H[1].u256);
-	__m256i c = _mm256_loadu_si256(&Context->H[2].u256);
-	__m256i d = _mm256_loadu_si256(&Context->H[3].u256);
-	__m256i e = _mm256_loadu_si256(&Context->H[4].u256);
-	__m256i f = _mm256_loadu_si256(&Context->H[5].u256);
-	__m256i g = _mm256_loadu_si256(&Context->H[6].u256);
-	__m256i h = _mm256_loadu_si256(&Context->H[7].u256);
-	
+	__m256i a = _mm256_load_si256(&Context->H[0].u256), initialA = a;
+	__m256i b = _mm256_load_si256(&Context->H[1].u256), initialB = b;
+	__m256i c = _mm256_load_si256(&Context->H[2].u256), initialC = c;
+	__m256i d = _mm256_load_si256(&Context->H[3].u256), initialD = d;
+	__m256i e = _mm256_load_si256(&Context->H[4].u256), initialE = e;
+	__m256i f = _mm256_load_si256(&Context->H[5].u256), initialF = f;
+	__m256i g = _mm256_load_si256(&Context->H[6].u256), initialG = g;
+	__m256i h = _mm256_load_si256(&Context->H[7].u256), initialH = h;
+
 	for (size_t i = 0; i < 64; i++)
 	{
-		__m256i s1 = CalculateS1(e);
-		__m256i ch = CalculateCh(e, f, g);
 		__m256i k = _mm256_set1_epi32(RoundConstants[i]);
-		__m256i w = _mm256_loadu_si256(&messageSchedule[i].u256);
-		__m256i temp1 = CalculateTemp1(h, s1, ch, k, w);
-		__m256i s0 = CalculateS0(a);
-		__m256i maj = CalculateMaj(a, b, c);
-		__m256i temp2 = CalculateTemp2(s0, maj);
-		
+		__m256i w = _mm256_load_si256(&messageSchedule[i].u256);
+		__m256i temp1 = CalculateTemp1(e, f, g, h, k, w);
+		__m256i temp2 = CalculateTemp2(a, b, c);
 		h = g;
 		g = f;
 		f = e;
@@ -188,29 +203,85 @@ SimdSha256Transform(SimdSha2Context* Context)
 		a = _mm256_add_epi32(temp1, temp2);
 	}
 	
-	a = _mm256_add_epi32(_mm256_loadu_si256(&Context->H[0].u256), a);
-	b = _mm256_add_epi32(_mm256_loadu_si256(&Context->H[1].u256), b);
-	c = _mm256_add_epi32(_mm256_loadu_si256(&Context->H[2].u256), c);
-	d = _mm256_add_epi32(_mm256_loadu_si256(&Context->H[3].u256), d);
-	e = _mm256_add_epi32(_mm256_loadu_si256(&Context->H[4].u256), e);
-	f = _mm256_add_epi32(_mm256_loadu_si256(&Context->H[5].u256), f);
-	g = _mm256_add_epi32(_mm256_loadu_si256(&Context->H[6].u256), g);
-	h = _mm256_add_epi32(_mm256_loadu_si256(&Context->H[7].u256), h);
-
 	//
 	// Output to the hash state values
 	//
-	_mm256_storeu_si256(&Context->H[0].u256, a);
-	_mm256_storeu_si256(&Context->H[1].u256, b);
-	_mm256_storeu_si256(&Context->H[2].u256, c);
-	_mm256_storeu_si256(&Context->H[3].u256, d);
-	_mm256_storeu_si256(&Context->H[4].u256, e);
-	_mm256_storeu_si256(&Context->H[5].u256, f);
-	_mm256_storeu_si256(&Context->H[6].u256, g);
-	_mm256_storeu_si256(&Context->H[7].u256, h);
+	_mm256_store_si256(&Context->H[0].u256, _mm256_add_epi32(initialA, a));
+	_mm256_store_si256(&Context->H[1].u256, _mm256_add_epi32(initialB, b));
+	_mm256_store_si256(&Context->H[2].u256, _mm256_add_epi32(initialC, c));
+	_mm256_store_si256(&Context->H[3].u256, _mm256_add_epi32(initialD, d));
+	_mm256_store_si256(&Context->H[4].u256, _mm256_add_epi32(initialE, e));
+	_mm256_store_si256(&Context->H[5].u256, _mm256_add_epi32(initialF, f));
+	_mm256_store_si256(&Context->H[6].u256, _mm256_add_epi32(initialG, g));
+	_mm256_store_si256(&Context->H[7].u256, _mm256_add_epi32(initialH, h));
 }
 
-static void
+int
+SimdSha256TransformWithTarget(SimdSha2Context* Context, uint32_t targetHValue)
+/*++
+	Perform a hash transformation but bail early if the final DWORD
+	does not match the target H value. Used for computing collisions
+ --*/
+{
+	//
+	// Expand the message schedule
+	//
+	ALIGN(16) SimdShaValue messageSchedule[64];
+	ExpandMessageSchedule(Context, messageSchedule);
+	
+	__m256i a = _mm256_load_si256(&Context->H[0].u256), initialA = a;
+	__m256i b = _mm256_load_si256(&Context->H[1].u256), initialB = b;
+	__m256i c = _mm256_load_si256(&Context->H[2].u256), initialC = c;
+	__m256i d = _mm256_load_si256(&Context->H[3].u256), initialD = d;
+	__m256i e = _mm256_load_si256(&Context->H[4].u256), initialE = e;
+	__m256i f = _mm256_load_si256(&Context->H[5].u256), initialF = f;
+	__m256i g = _mm256_load_si256(&Context->H[6].u256), initialG = g;
+	__m256i h = _mm256_load_si256(&Context->H[7].u256), initialH = h;
+	
+	__m256i targetH = _mm256_sub_epi32(_mm256_set1_epi32(targetHValue), h);
+	
+	for (size_t i = 0; i < 64; i++)
+	{
+		__m256i k = _mm256_set1_epi32(RoundConstants[i]);
+		__m256i w = _mm256_load_si256(&messageSchedule[i].u256);
+		__m256i temp1 = CalculateTemp1(e, f, g, h, k, w);
+		__m256i temp2 = CalculateTemp2(a, b, c);
+		h = g;
+		g = f;
+		f = e;
+		e = _mm256_add_epi32(d, temp1);
+		
+		if (i == 60)
+		{
+			__m256i cmp = _mm256_cmpeq_epi32(targetH, e);
+			int comparison = _mm256_movemask_ps(cmp);
+			if (comparison == 0)
+				return 1;
+		}
+		
+		d = c;
+		c = b;
+		b = a;
+		a = _mm256_add_epi32(temp1, temp2);
+	}
+	
+	//
+	// Output to the hash state values
+	//
+	_mm256_store_si256(&Context->H[0].u256, _mm256_add_epi32(initialA, a));
+	_mm256_store_si256(&Context->H[1].u256, _mm256_add_epi32(initialB, b));
+	_mm256_store_si256(&Context->H[2].u256, _mm256_add_epi32(initialC, c));
+	_mm256_store_si256(&Context->H[3].u256, _mm256_add_epi32(initialD, d));
+	_mm256_store_si256(&Context->H[4].u256, _mm256_add_epi32(initialE, e));
+	_mm256_store_si256(&Context->H[5].u256, _mm256_add_epi32(initialF, f));
+	_mm256_store_si256(&Context->H[6].u256, _mm256_add_epi32(initialG, g));
+	_mm256_store_si256(&Context->H[7].u256, _mm256_add_epi32(initialH, h));
+	
+	return 0;
+}
+
+static inline
+void
 WriteNextByte(SimdSha2Context* Context, size_t Lane, uint8_t Byte)
 {
 	size_t bufferIndex = Context->Length / 4;
@@ -242,7 +313,8 @@ SimdSha256Update(SimdSha2Context* Context, size_t Length, uint8_t* Buffers[])
 	}
 }
 
-void SimdSha256Finalize(SimdSha2Context* Context)
+void
+SimdSha256Finalize(SimdSha2Context* Context)
 {
 	Context->BitLength += Context->Length * 8;
 	
@@ -272,21 +344,21 @@ void SimdSha256Finalize(SimdSha2Context* Context)
 	// Change endianness
 	//
 	__m256i shufMask = _mm256_setr_epi8(3,2,1,0,7,6,5,4,11,10,9,8, 15,14,13,12,19,18,17,16,23,22,21,20,27,26,25,24,31,30,29,28);
-	__m256i a = _mm256_shuffle_epi8(_mm256_loadu_si256(&Context->H[0].u256), shufMask);
-	__m256i b = _mm256_shuffle_epi8(_mm256_loadu_si256(&Context->H[1].u256), shufMask);
-	__m256i c = _mm256_shuffle_epi8(_mm256_loadu_si256(&Context->H[2].u256), shufMask);
-	__m256i d = _mm256_shuffle_epi8(_mm256_loadu_si256(&Context->H[3].u256), shufMask);
-	__m256i e = _mm256_shuffle_epi8(_mm256_loadu_si256(&Context->H[4].u256), shufMask);
-	__m256i f = _mm256_shuffle_epi8(_mm256_loadu_si256(&Context->H[5].u256), shufMask);
-	__m256i g = _mm256_shuffle_epi8(_mm256_loadu_si256(&Context->H[6].u256), shufMask);
-	__m256i h = _mm256_shuffle_epi8(_mm256_loadu_si256(&Context->H[7].u256), shufMask);
+	__m256i a = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[0].u256), shufMask);
+	__m256i b = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[1].u256), shufMask);
+	__m256i c = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[2].u256), shufMask);
+	__m256i d = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[3].u256), shufMask);
+	__m256i e = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[4].u256), shufMask);
+	__m256i f = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[5].u256), shufMask);
+	__m256i g = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[6].u256), shufMask);
+	__m256i h = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[7].u256), shufMask);
 	
-	_mm256_storeu_si256(&Context->H[0].u256, a);
-	_mm256_storeu_si256(&Context->H[1].u256, b);
-	_mm256_storeu_si256(&Context->H[2].u256, c);
-	_mm256_storeu_si256(&Context->H[3].u256, d);
-	_mm256_storeu_si256(&Context->H[4].u256, e);
-	_mm256_storeu_si256(&Context->H[5].u256, f);
-	_mm256_storeu_si256(&Context->H[6].u256, g);
-	_mm256_storeu_si256(&Context->H[7].u256, h);
+	_mm256_store_si256(&Context->H[0].u256, a);
+	_mm256_store_si256(&Context->H[1].u256, b);
+	_mm256_store_si256(&Context->H[2].u256, c);
+	_mm256_store_si256(&Context->H[3].u256, d);
+	_mm256_store_si256(&Context->H[4].u256, e);
+	_mm256_store_si256(&Context->H[5].u256, f);
+	_mm256_store_si256(&Context->H[6].u256, g);
+	_mm256_store_si256(&Context->H[7].u256, h);
 }
