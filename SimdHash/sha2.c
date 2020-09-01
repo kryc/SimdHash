@@ -280,33 +280,53 @@ SimdSha256TransformWithTarget(SimdSha2Context* Context, uint32_t targetHValue)
 	return 0;
 }
 
-static inline
-void
-WriteNextByte(SimdSha2Context* Context, size_t Lane, uint8_t Byte)
-{
-	size_t bufferIndex = Context->Length / 4;
-	size_t bufferOffset = Context->Length % 4;
-	uint8_t* bufferPtr = (uint8_t*)&Context->Buffer[bufferIndex].u32[Lane];
-	assert(bufferIndex < BUFFER_SIZE_DWORDS);
-	assert(bufferOffset < sizeof(uint32_t));
-	bufferPtr[sizeof(uint32_t) - 1 - bufferOffset] = Byte;
-}
-
 void
 SimdSha256Update(SimdSha2Context* Context, size_t Length, uint8_t* Buffers[])
 {
-	for (size_t byte = 0; byte < Length; byte++)
+	size_t toWrite = Length;
+	size_t bufferIndex;
+	size_t bufferOffset;
+	size_t next;
+	
+	next = 0;
+	
+	while (toWrite > 0)
 	{
-		for (size_t lane = 0; lane < Context->Lanes; lane++)
+		bufferIndex = Context->Length / 4;
+		
+		if ((Context->Length & 0x3) == 0 &&
+			toWrite >= 4)
+		// 4-byte aligned
 		{
-			WriteNextByte(Context, lane, Buffers[lane][byte]);
+			uint32_t** buffer32 = (uint32_t**) Buffers;
+			size_t nextIndex = next / 4;
+			
+			for (size_t lane = 0; lane < Context->Lanes; lane++)
+			{
+				Context->Buffer[nextIndex].u32[lane] = __builtin_bswap32(buffer32[lane][nextIndex]);
+			}
+			toWrite -= 4;
+			Context->Length += 4;
+			Context->BitLength += 32;
+			next += 4;
 		}
-		Context->Length++;
+		else
+		{
+			bufferOffset = Context->Length % 4;
+			for (size_t lane = 0; lane < Context->Lanes; lane++)
+			{
+				uint8_t* bufferPtr = (uint8_t*)&Context->Buffer[bufferIndex].u32[lane];
+				bufferPtr[sizeof(uint32_t) - 1 - bufferOffset] = Buffers[lane][next];
+			}
+			toWrite--;
+			Context->Length++;
+			Context->BitLength += 8;
+			next++;
+		}
 		
 		if (Context->Length == 64)
 		{
 			SimdSha256Transform(Context);
-			Context->BitLength += 512;
 			Context->Length = 0;
 			memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
 		}
@@ -316,12 +336,17 @@ SimdSha256Update(SimdSha2Context* Context, size_t Length, uint8_t* Buffers[])
 void
 SimdSha256Finalize(SimdSha2Context* Context)
 {
-	Context->BitLength += Context->Length * 8;
-	
+	//
+	// Write the 1 bit
+	//
 	for (size_t lane = 0; lane < Context->Lanes; lane++)
 	{
-		WriteNextByte(Context, lane, 0x80);
+		size_t bufferIndex = Context->Length / 4;
+		size_t bufferOffset = Context->Length % 4;
+		uint8_t* bufferPtr = (uint8_t*)&Context->Buffer[bufferIndex].u32[lane];
+		bufferPtr[sizeof(uint32_t) - 1 - bufferOffset] = 0x80;
 	}
+
 	Context->Length++;
 	
 	if (Context->Length >= 56)
@@ -333,17 +358,15 @@ SimdSha256Finalize(SimdSha2Context* Context)
 	//
 	// Write the length into the last 64 bits
 	//
-	for (size_t lane = 0; lane < Context->Lanes; lane++)
-	{
-		Context->Buffer[14].u32[lane] = Context->BitLength >> 32;
-		Context->Buffer[15].u32[lane] = Context->BitLength & 0xffffffff;
-	}
+	_mm256_store_si256(&Context->Buffer[14].u256, _mm256_set1_epi32(Context->BitLength >> 32));
+	_mm256_store_si256(&Context->Buffer[15].u256, _mm256_set1_epi32(Context->BitLength & 0xffffffff));
+
 	SimdSha256Transform(Context);
 	
 	//
 	// Change endianness
 	//
-	__m256i shufMask = _mm256_setr_epi8(3,2,1,0,7,6,5,4,11,10,9,8, 15,14,13,12,19,18,17,16,23,22,21,20,27,26,25,24,31,30,29,28);
+	__m256i shufMask = _mm256_setr_epi8(3,2,1,0,7,6,5,4,11,10,9,8,15,14,13,12,19,18,17,16,23,22,21,20,27,26,25,24,31,30,29,28);
 	__m256i a = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[0].u256), shufMask);
 	__m256i b = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[1].u256), shufMask);
 	__m256i c = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[2].u256), shufMask);
