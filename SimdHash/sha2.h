@@ -15,6 +15,7 @@
 
 #define SIMD_COUNT 8
 #define BUFFER_SIZE_DWORDS (64/4)
+#define SHA256_SIZE (256/8)
 
 #ifdef _MSC_VER
   // MSVC...
@@ -39,9 +40,33 @@ typedef struct _SimdSha2Context
 	size_t       Lanes;
 } SimdSha2Context;
 
-void SimdSha256Init(SimdSha2Context* Context, size_t Lanes);
-void SimdSha256Update(SimdSha2Context* Context, size_t Length, uint8_t* Buffers[]);
-int  SimdSha256TransformWithTarget(SimdSha2Context* Context, uint32_t targetHValue);
-void SimdSha256Finalize(SimdSha2Context* Context);
+typedef struct _SimdSha2SecondPreimageContext
+{
+	SimdSha2Context ShaContext;
+	uint8_t 		Target8[SHA256_SIZE];
+	uint32_t 		Target32[SHA256_SIZE/4];
+} SimdSha2SecondPreimageContext;
+
+void SimdSha256Init(
+	SimdSha2Context* Context,
+	const size_t Lanes);
+
+void SimdSha256Update(
+	SimdSha2Context* Context,
+	const size_t Length,
+	const uint8_t* Buffers[]);
+
+void SimdSha256Finalize(
+	SimdSha2Context* Context);
+
+void SimdSha256SecondPreimageInit(
+	SimdSha2SecondPreimageContext* Context,
+	const uint8_t* Target,
+	const size_t Lanes);
+
+size_t SimdSha256SecondPreimage(
+	SimdSha2SecondPreimageContext* Context,
+	const size_t Length,
+	const uint8_t* Buffers[]);
 
 #endif /* sha2_h */

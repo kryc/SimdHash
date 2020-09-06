@@ -29,9 +29,20 @@ static const uint32_t RoundConstants[] = {
 	0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
+typedef struct _SecondPreimageResult
+{
+	uint64_t LaneMap : 63;
+	uint64_t Result  : 1;
+} SecondPreimageResult;
+
+#define SECOND_PREIMAGE_CANDIDATE_FOUND     1
+#define SECOND_PREIMAGE_CANDIDATE_NOT_FOUND 0
+
 static inline
 __m256i
-RotateLeft32(__m256i Value, uint8_t Distance)
+RotateLeft32(
+	const __m256i Value,
+	const uint8_t Distance)
 {
 	assert(Distance < 32);
 	__m256i shl = _mm256_slli_epi32(Value, Distance);
@@ -41,7 +52,9 @@ RotateLeft32(__m256i Value, uint8_t Distance)
 
 static inline
 __m256i
-RotateRight32(__m256i Value, uint8_t Distance)
+RotateRight32(
+	const __m256i Value,
+	const uint8_t Distance)
 {
 	assert(Distance < 32);
 	__m256i shr = _mm256_srli_epi32(Value, Distance);
@@ -51,7 +64,8 @@ RotateRight32(__m256i Value, uint8_t Distance)
 
 static inline
 __m256i
-CalculateS1(__m256i E)
+CalculateS1(
+	const __m256i E)
 {
 	__m256i er6 = RotateRight32(E, 6);
 	__m256i er11 = RotateRight32(E, 11);
@@ -62,7 +76,8 @@ CalculateS1(__m256i E)
 
 static inline
 __m256i
-CalculateS0(__m256i A)
+CalculateS0(
+	const __m256i A)
 {
 	__m256i ar2 = RotateRight32(A, 2);
 	__m256i ar13 = RotateRight32(A, 13);
@@ -73,7 +88,8 @@ CalculateS0(__m256i A)
 
 static inline
 __m256i
-CalculateExtendS0(__m256i W)
+CalculateExtendS0(
+	const __m256i W)
 {
 	__m256i wr7 = RotateRight32(W, 7);
 	__m256i wr18 = RotateRight32(W, 18);
@@ -84,7 +100,8 @@ CalculateExtendS0(__m256i W)
 
 static inline
 __m256i
-CalculateExtendS1(__m256i W)
+CalculateExtendS1(
+	const __m256i W)
 {
 	__m256i wr17 = RotateRight32(W, 17);
 	__m256i wr19 = RotateRight32(W, 19);
@@ -95,7 +112,10 @@ CalculateExtendS1(__m256i W)
 
 static inline
 __m256i
-CalculateCh(__m256i E, __m256i F, __m256i G)
+CalculateCh(
+	const __m256i E,
+	const __m256i F,
+	const __m256i G)
 {
 	__m256i eAndF = _mm256_and_si256(E, F);
 	__m256i notEAndG = _mm256_andnot_si256(E, G);
@@ -104,7 +124,10 @@ CalculateCh(__m256i E, __m256i F, __m256i G)
 
 static inline
 __m256i
-CalculateMaj(__m256i A, __m256i B, __m256i C)
+CalculateMaj(
+	const __m256i A,
+	const __m256i B,
+	const __m256i C)
 {
 	__m256i aAndB = _mm256_and_si256(A, B);
 	__m256i aAndC = _mm256_and_si256(A, C);
@@ -115,7 +138,10 @@ CalculateMaj(__m256i A, __m256i B, __m256i C)
 
 static inline
 __m256i
-CalculateTemp2(__m256i A, __m256i B, __m256i C)
+CalculateTemp2(
+	const __m256i A,
+	const __m256i B,
+	const __m256i C)
 {
 	__m256i s0 = CalculateS0(A);
 	__m256i maj = CalculateMaj(A, B, C);
@@ -124,7 +150,13 @@ CalculateTemp2(__m256i A, __m256i B, __m256i C)
 
 static inline
 __m256i
-CalculateTemp1(__m256i E, __m256i F, __m256i G, __m256i H, __m256i K, __m256i W)
+CalculateTemp1(
+	const __m256i E,
+	const __m256i F,
+	const __m256i G,
+	const __m256i H,
+	const __m256i K,
+	const __m256i W)
 {
 	__m256i s1 = CalculateS1(E);
 	__m256i ch = CalculateCh(E, F, G);
@@ -136,7 +168,9 @@ CalculateTemp1(__m256i E, __m256i F, __m256i G, __m256i H, __m256i K, __m256i W)
 
 static inline
 void
-ExpandMessageSchedule(SimdSha2Context* Context, SimdShaValue* messageSchedule)
+ExpandMessageSchedule(
+	SimdSha2Context* Context,
+	SimdShaValue* messageSchedule)
 {
 	for (size_t i = 0; i < 16; i++)
 	{
@@ -156,7 +190,9 @@ ExpandMessageSchedule(SimdSha2Context* Context, SimdShaValue* messageSchedule)
 }
 
 void
-SimdSha256Init(SimdSha2Context* Context, size_t Lanes)
+SimdSha256Init(
+	SimdSha2Context* Context,
+	const size_t Lanes)
 {
 	for (size_t i = 0; i < 8; i++)
 	{
@@ -170,7 +206,8 @@ SimdSha256Init(SimdSha2Context* Context, size_t Lanes)
 }
 
 void
-SimdSha256Transform(SimdSha2Context* Context)
+SimdSha256Transform(
+	SimdSha2Context* Context)
 {
 	//
 	// Expand the message schedule
@@ -216,29 +253,37 @@ SimdSha256Transform(SimdSha2Context* Context)
 	_mm256_store_si256(&Context->H[7].u256, _mm256_add_epi32(initialH, h));
 }
 
-int
-SimdSha256TransformWithTarget(SimdSha2Context* Context, uint32_t targetHValue)
+SecondPreimageResult
+SimdSha256TransformSecondPreimage(
+	SimdSha2SecondPreimageContext* Context)
 /*++
-	Perform a hash transformation but bail early if the final DWORD
-	does not match the target H value. Used for computing collisions
+	Perform a hash transformation but bail as early as possible if
+	the computed DWORDs dont match the target H values.
+	Used for finding preimages
  --*/
 {
 	//
 	// Expand the message schedule
 	//
 	ALIGN(16) SimdShaValue messageSchedule[64];
-	ExpandMessageSchedule(Context, messageSchedule);
+	SecondPreimageResult result;
+	int resultMap;
 	
-	__m256i a = _mm256_load_si256(&Context->H[0].u256), initialA = a;
-	__m256i b = _mm256_load_si256(&Context->H[1].u256), initialB = b;
-	__m256i c = _mm256_load_si256(&Context->H[2].u256), initialC = c;
-	__m256i d = _mm256_load_si256(&Context->H[3].u256), initialD = d;
-	__m256i e = _mm256_load_si256(&Context->H[4].u256), initialE = e;
-	__m256i f = _mm256_load_si256(&Context->H[5].u256), initialF = f;
-	__m256i g = _mm256_load_si256(&Context->H[6].u256), initialG = g;
-	__m256i h = _mm256_load_si256(&Context->H[7].u256), initialH = h;
+	resultMap = 0;
 	
-	__m256i targetH = _mm256_sub_epi32(_mm256_set1_epi32(targetHValue), h);
+	result.LaneMap = 0;
+	result.Result = SECOND_PREIMAGE_CANDIDATE_NOT_FOUND;
+	
+	ExpandMessageSchedule(&Context->ShaContext, messageSchedule);
+	
+	__m256i a = _mm256_load_si256(&Context->ShaContext.H[0].u256), initialA = a;
+	__m256i b = _mm256_load_si256(&Context->ShaContext.H[1].u256), initialB = b;
+	__m256i c = _mm256_load_si256(&Context->ShaContext.H[2].u256), initialC = c;
+	__m256i d = _mm256_load_si256(&Context->ShaContext.H[3].u256), initialD = d;
+	__m256i e = _mm256_load_si256(&Context->ShaContext.H[4].u256), initialE = e;
+	__m256i f = _mm256_load_si256(&Context->ShaContext.H[5].u256), initialF = f;
+	__m256i g = _mm256_load_si256(&Context->ShaContext.H[6].u256), initialG = g;
+	__m256i h = _mm256_load_si256(&Context->ShaContext.H[7].u256), initialH = h;
 	
 	for (size_t i = 0; i < 64; i++)
 	{
@@ -253,10 +298,35 @@ SimdSha256TransformWithTarget(SimdSha2Context* Context, uint32_t targetHValue)
 		
 		if (i == 60)
 		{
+			__m256i targetH = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[7]), initialH);
 			__m256i cmp = _mm256_cmpeq_epi32(targetH, e);
-			int comparison = _mm256_movemask_ps(cmp);
-			if (comparison == 0)
-				return 1;
+			resultMap = _mm256_movemask_ps(cmp);
+			if (resultMap == 0)
+				goto exit;
+		}
+		else if (i == 61)
+		{
+			__m256i targetG = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[6]), initialG);
+			__m256i cmp = _mm256_cmpeq_epi32(targetG, e);
+			resultMap &= _mm256_movemask_ps(cmp);
+			if (resultMap == 0)
+				goto exit;
+		}
+		else if (i == 62)
+		{
+			__m256i targetF = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[5]), initialF);
+			__m256i cmp = _mm256_cmpeq_epi32(targetF, e);
+			resultMap &= _mm256_movemask_ps(cmp);
+			if (resultMap == 0)
+				goto exit;
+		}
+		else if (i == 63)
+		{
+			__m256i targetE = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[4]), initialE);
+			__m256i cmp = _mm256_cmpeq_epi32(targetE, e);
+			resultMap &= _mm256_movemask_ps(cmp);
+			if (resultMap == 0)
+				goto exit;
 		}
 		
 		d = c;
@@ -264,24 +334,74 @@ SimdSha256TransformWithTarget(SimdSha2Context* Context, uint32_t targetHValue)
 		b = a;
 		a = _mm256_add_epi32(temp1, temp2);
 	}
+
+	//
+	// Check the last 4 DWORDS to see if we have a
+	// valid preimage
+	//
+	__m256i targetD = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[3]), initialD);
+	__m256i cmp = _mm256_cmpeq_epi32(targetD, d);
+	resultMap &= _mm256_movemask_ps(cmp);
+	if (resultMap == 0)
+		goto exit;
+	
+	__m256i targetC = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[2]), initialC);
+	cmp = _mm256_cmpeq_epi32(targetC, c);
+	resultMap &= _mm256_movemask_ps(cmp);
+	if (resultMap == 0)
+		goto exit;
+	
+	__m256i targetB = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[1]), initialB);
+	cmp = _mm256_cmpeq_epi32(targetB, b);
+	resultMap &= _mm256_movemask_ps(cmp);
+	if (resultMap == 0)
+		goto exit;
+	
+	__m256i targetA = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[0]), initialA);
+	cmp = _mm256_cmpeq_epi32(targetA, a);
+	resultMap &= _mm256_movemask_ps(cmp);
+	if (resultMap == 0)
+		goto exit;
 	
 	//
+	// If we reach here then we have a match
 	// Output to the hash state values
 	//
-	_mm256_store_si256(&Context->H[0].u256, _mm256_add_epi32(initialA, a));
-	_mm256_store_si256(&Context->H[1].u256, _mm256_add_epi32(initialB, b));
-	_mm256_store_si256(&Context->H[2].u256, _mm256_add_epi32(initialC, c));
-	_mm256_store_si256(&Context->H[3].u256, _mm256_add_epi32(initialD, d));
-	_mm256_store_si256(&Context->H[4].u256, _mm256_add_epi32(initialE, e));
-	_mm256_store_si256(&Context->H[5].u256, _mm256_add_epi32(initialF, f));
-	_mm256_store_si256(&Context->H[6].u256, _mm256_add_epi32(initialG, g));
-	_mm256_store_si256(&Context->H[7].u256, _mm256_add_epi32(initialH, h));
+	_mm256_store_si256(&Context->ShaContext.H[0].u256, _mm256_add_epi32(initialA, a));
+	_mm256_store_si256(&Context->ShaContext.H[1].u256, _mm256_add_epi32(initialB, b));
+	_mm256_store_si256(&Context->ShaContext.H[2].u256, _mm256_add_epi32(initialC, c));
+	_mm256_store_si256(&Context->ShaContext.H[3].u256, _mm256_add_epi32(initialD, d));
+	_mm256_store_si256(&Context->ShaContext.H[4].u256, _mm256_add_epi32(initialE, e));
+	_mm256_store_si256(&Context->ShaContext.H[5].u256, _mm256_add_epi32(initialF, f));
+	_mm256_store_si256(&Context->ShaContext.H[6].u256, _mm256_add_epi32(initialG, g));
+	_mm256_store_si256(&Context->ShaContext.H[7].u256, _mm256_add_epi32(initialH, h));
+
+	result.Result  = SECOND_PREIMAGE_CANDIDATE_FOUND;
+	result.LaneMap = resultMap;
 	
-	return 0;
+exit:
+	
+	return result;
+}
+
+static inline
+void
+WriteSingleByte(
+	SimdSha2Context* Context,
+	const size_t Lane,
+	const size_t Buffer,
+	const size_t Offset,
+	const uint8_t Byte)
+{
+	uint8_t* bufferPtr = (uint8_t*)&Context->Buffer[Buffer].u32[Lane];
+	bufferPtr[sizeof(uint32_t) - 1 - Offset] = Byte;
 }
 
 void
-SimdSha256Update(SimdSha2Context* Context, size_t Length, uint8_t* Buffers[])
+SimdSha256Update(
+	SimdSha2Context* Context,
+	const size_t Length,
+	const uint8_t* Buffers[])
 {
 	size_t toWrite = Length;
 	size_t bufferIndex;
@@ -315,8 +435,7 @@ SimdSha256Update(SimdSha2Context* Context, size_t Length, uint8_t* Buffers[])
 			bufferOffset = Context->Length % 4;
 			for (size_t lane = 0; lane < Context->Lanes; lane++)
 			{
-				uint8_t* bufferPtr = (uint8_t*)&Context->Buffer[bufferIndex].u32[lane];
-				bufferPtr[sizeof(uint32_t) - 1 - bufferOffset] = Buffers[lane][next];
+				WriteSingleByte(Context, lane, bufferIndex, bufferOffset, Buffers[lane][next]);
 			}
 			toWrite--;
 			Context->Length++;
@@ -333,20 +452,25 @@ SimdSha256Update(SimdSha2Context* Context, size_t Length, uint8_t* Buffers[])
 	}
 }
 
+static inline
 void
-SimdSha256Finalize(SimdSha2Context* Context)
+SimdSha256AppendSize(
+	SimdSha2Context* Context)
+/*++
+ Appends the 1-bit and the message length to the hash buffer
+ Also performs the additional Transform step if required
+ --*/
 {
 	//
 	// Write the 1 bit
 	//
+	size_t bufferIndex = Context->Length / 4;
+	size_t bufferOffset = Context->Length % 4;
+	
 	for (size_t lane = 0; lane < Context->Lanes; lane++)
 	{
-		size_t bufferIndex = Context->Length / 4;
-		size_t bufferOffset = Context->Length % 4;
-		uint8_t* bufferPtr = (uint8_t*)&Context->Buffer[bufferIndex].u32[lane];
-		bufferPtr[sizeof(uint32_t) - 1 - bufferOffset] = 0x80;
+		WriteSingleByte(Context, lane, bufferIndex, bufferOffset, 0x80);
 	}
-
 	Context->Length++;
 	
 	if (Context->Length >= 56)
@@ -360,7 +484,20 @@ SimdSha256Finalize(SimdSha2Context* Context)
 	//
 	_mm256_store_si256(&Context->Buffer[14].u256, _mm256_set1_epi32(Context->BitLength >> 32));
 	_mm256_store_si256(&Context->Buffer[15].u256, _mm256_set1_epi32(Context->BitLength & 0xffffffff));
+}
 
+void
+SimdSha256Finalize(
+	SimdSha2Context* Context)
+{
+	//
+	// Add the message length
+	//
+	SimdSha256AppendSize(Context);
+
+	//
+	// Compute the final transformation
+	//
 	SimdSha256Transform(Context);
 	
 	//
@@ -384,4 +521,77 @@ SimdSha256Finalize(SimdSha2Context* Context)
 	_mm256_store_si256(&Context->H[5].u256, f);
 	_mm256_store_si256(&Context->H[6].u256, g);
 	_mm256_store_si256(&Context->H[7].u256, h);
+}
+
+void
+SimdSha256SecondPreimageInit(
+	SimdSha2SecondPreimageContext* Context,
+	const uint8_t* Target,
+	const size_t Lanes)
+{
+	SimdSha256Init(&Context->ShaContext, Lanes);
+	memcpy(&Context->Target8, Target, SHA256_SIZE);
+	memset(&Context->Target32[0], 0, sizeof(Context->Target32));
+	
+	uint32_t* t32 = (uint32_t*)&Context->Target8[0];
+	Context->Target32[0] = __builtin_bswap32(t32[0]);
+	Context->Target32[1] = __builtin_bswap32(t32[1]);
+	Context->Target32[2] = __builtin_bswap32(t32[2]);
+	Context->Target32[3] = __builtin_bswap32(t32[3]);
+	Context->Target32[4] = __builtin_bswap32(t32[4]);
+	Context->Target32[5] = __builtin_bswap32(t32[5]);
+	Context->Target32[6] = __builtin_bswap32(t32[6]);
+	Context->Target32[7] = __builtin_bswap32(t32[7]);
+}
+
+size_t
+SimdSha256SecondPreimage(
+	SimdSha2SecondPreimageContext* Context,
+	const size_t Length,
+	const uint8_t* Buffers[])
+{
+	SecondPreimageResult result;
+	
+	SimdSha256Update(&Context->ShaContext, Length, Buffers);
+	SimdSha256AppendSize(&Context->ShaContext);
+	result = SimdSha256TransformSecondPreimage(Context);
+	
+	if (result.Result == SECOND_PREIMAGE_CANDIDATE_FOUND)
+	{
+		//
+		// Change endianness
+		//
+		__m256i shufMask = _mm256_setr_epi8(3,2,1,0,7,6,5,4,11,10,9,8,15,14,13,12,19,18,17,16,23,22,21,20,27,26,25,24,31,30,29,28);
+		__m256i a = _mm256_shuffle_epi8(_mm256_load_si256(&Context->ShaContext.H[0].u256), shufMask);
+		__m256i b = _mm256_shuffle_epi8(_mm256_load_si256(&Context->ShaContext.H[1].u256), shufMask);
+		__m256i c = _mm256_shuffle_epi8(_mm256_load_si256(&Context->ShaContext.H[2].u256), shufMask);
+		__m256i d = _mm256_shuffle_epi8(_mm256_load_si256(&Context->ShaContext.H[3].u256), shufMask);
+		__m256i e = _mm256_shuffle_epi8(_mm256_load_si256(&Context->ShaContext.H[4].u256), shufMask);
+		__m256i f = _mm256_shuffle_epi8(_mm256_load_si256(&Context->ShaContext.H[5].u256), shufMask);
+		__m256i g = _mm256_shuffle_epi8(_mm256_load_si256(&Context->ShaContext.H[6].u256), shufMask);
+		__m256i h = _mm256_shuffle_epi8(_mm256_load_si256(&Context->ShaContext.H[7].u256), shufMask);
+		
+		_mm256_store_si256(&Context->ShaContext.H[0].u256, a);
+		_mm256_store_si256(&Context->ShaContext.H[1].u256, b);
+		_mm256_store_si256(&Context->ShaContext.H[2].u256, c);
+		_mm256_store_si256(&Context->ShaContext.H[3].u256, d);
+		_mm256_store_si256(&Context->ShaContext.H[4].u256, e);
+		_mm256_store_si256(&Context->ShaContext.H[5].u256, f);
+		_mm256_store_si256(&Context->ShaContext.H[6].u256, g);
+		_mm256_store_si256(&Context->ShaContext.H[7].u256, h);
+		
+		//
+		// Translate lane mask to lane index
+		//
+		for(size_t i = 0; i < SIMD_COUNT; i++)
+		{
+			size_t mask = 1 << i;
+			if ((result.LaneMap & mask) == mask)
+			{
+				return i;
+			}
+		}
+	}
+	
+	return (size_t)-1;
 }
