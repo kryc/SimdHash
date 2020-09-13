@@ -526,10 +526,10 @@ SimdSha256Finalize(
 void
 SimdSha256SecondPreimageInit(
 	SimdSha2SecondPreimageContext* Context,
-	const uint8_t* Target,
-	const size_t Lanes)
+	SimdSha2Context* ShaContext,
+	const uint8_t* Target)
 {
-	SimdSha256Init(&Context->ShaContext, Lanes);
+	Context->ShaContext = *ShaContext;
 	memcpy(&Context->Target8, Target, SHA256_SIZE);
 	memset(&Context->Target32[0], 0, sizeof(Context->Target32));
 	
