@@ -7,31 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		EE559FCB24F5B07A006BA9E8 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = EE559FCA24F5B07A006BA9E8 /* main.c */; };
-		EE559FE624F700BF006BA9E8 /* sha2.c in Sources */ = {isa = PBXBuildFile; fileRef = EE559FE524F700BF006BA9E8 /* sha2.c */; };
+		EE315618250FFFB200CAD3FD /* sha2.c in Sources */ = {isa = PBXBuildFile; fileRef = EE559FE524F700BF006BA9E8 /* sha2.c */; };
+		EE315619250FFFB600CAD3FD /* simdhash.h in Headers */ = {isa = PBXBuildFile; fileRef = EE559FE424F700BF006BA9E8 /* simdhash.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		EE559FC524F5B07A006BA9E8 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
-		EE559FC724F5B07A006BA9E8 /* SimdHash */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SimdHash; sourceTree = BUILT_PRODUCTS_DIR; };
-		EE559FCA24F5B07A006BA9E8 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
-		EE559FE424F700BF006BA9E8 /* sha2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sha2.h; sourceTree = "<group>"; };
+		EE315614250FFF9700CAD3FD /* libSimdHash.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libSimdHash.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE559FE424F700BF006BA9E8 /* simdhash.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = simdhash.h; sourceTree = "<group>"; };
 		EE559FE524F700BF006BA9E8 /* sha2.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = sha2.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		EE559FC424F5B07A006BA9E8 /* Frameworks */ = {
+		EE315612250FFF9700CAD3FD /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -52,7 +39,7 @@
 		EE559FC824F5B07A006BA9E8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				EE559FC724F5B07A006BA9E8 /* SimdHash */,
+				EE315614250FFF9700CAD3FD /* libSimdHash.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -60,8 +47,7 @@
 		EE559FC924F5B07A006BA9E8 /* SimdHash */ = {
 			isa = PBXGroup;
 			children = (
-				EE559FCA24F5B07A006BA9E8 /* main.c */,
-				EE559FE424F700BF006BA9E8 /* sha2.h */,
+				EE559FE424F700BF006BA9E8 /* simdhash.h */,
 				EE559FE524F700BF006BA9E8 /* sha2.c */,
 			);
 			path = SimdHash;
@@ -69,14 +55,25 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXHeadersBuildPhase section */
+		EE315610250FFF9700CAD3FD /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE315619250FFFB600CAD3FD /* simdhash.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
 /* Begin PBXNativeTarget section */
-		EE559FC624F5B07A006BA9E8 /* SimdHash */ = {
+		EE315613250FFF9700CAD3FD /* SimdHash */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EE559FCE24F5B07A006BA9E8 /* Build configuration list for PBXNativeTarget "SimdHash" */;
+			buildConfigurationList = EE315615250FFF9800CAD3FD /* Build configuration list for PBXNativeTarget "SimdHash" */;
 			buildPhases = (
-				EE559FC324F5B07A006BA9E8 /* Sources */,
-				EE559FC424F5B07A006BA9E8 /* Frameworks */,
-				EE559FC524F5B07A006BA9E8 /* CopyFiles */,
+				EE315610250FFF9700CAD3FD /* Headers */,
+				EE315611250FFF9700CAD3FD /* Sources */,
+				EE315612250FFF9700CAD3FD /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -84,8 +81,8 @@
 			);
 			name = SimdHash;
 			productName = SimdHash;
-			productReference = EE559FC724F5B07A006BA9E8 /* SimdHash */;
-			productType = "com.apple.product-type.tool";
+			productReference = EE315614250FFF9700CAD3FD /* libSimdHash.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
 		};
 /* End PBXNativeTarget section */
 
@@ -96,7 +93,7 @@
 				LastUpgradeCheck = 1160;
 				ORGANIZATIONNAME = "Gareth Evans";
 				TargetAttributes = {
-					EE559FC624F5B07A006BA9E8 = {
+					EE315613250FFF9700CAD3FD = {
 						CreatedOnToolsVersion = 11.6;
 					};
 				};
@@ -114,24 +111,57 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				EE559FC624F5B07A006BA9E8 /* SimdHash */,
+				EE315613250FFF9700CAD3FD /* SimdHash */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		EE559FC324F5B07A006BA9E8 /* Sources */ = {
+		EE315611250FFF9700CAD3FD /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EE559FCB24F5B07A006BA9E8 /* main.c in Sources */,
-				EE559FE624F700BF006BA9E8 /* sha2.c in Sources */,
+				EE315618250FFFB200CAD3FD /* sha2.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		EE315616250FFF9800CAD3FD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_X86_VECTOR_INSTRUCTIONS = avx2;
+				CODE_SIGN_STYLE = Automatic;
+				DEPLOYMENT_LOCATION = YES;
+				DSTROOT = /;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				EXECUTABLE_PREFIX = lib;
+				GCC_UNROLL_LOOPS = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+				SYMROOT = build;
+			};
+			name = Debug;
+		};
+		EE315617250FFF9800CAD3FD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_X86_VECTOR_INSTRUCTIONS = avx2;
+				CODE_SIGN_STYLE = Automatic;
+				DEPLOYMENT_LOCATION = YES;
+				DSTROOT = /;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				EXECUTABLE_PREFIX = lib;
+				GCC_UNROLL_LOOPS = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+				SYMROOT = build;
+			};
+			name = Release;
+		};
 		EE559FCC24F5B07A006BA9E8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -241,42 +271,23 @@
 			};
 			name = Release;
 		};
-		EE559FCF24F5B07A006BA9E8 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_X86_VECTOR_INSTRUCTIONS = avx2;
-				CODE_SIGN_STYLE = Automatic;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		EE559FD024F5B07A006BA9E8 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_X86_VECTOR_INSTRUCTIONS = avx2;
-				CODE_SIGN_STYLE = Automatic;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		EE315615250FFF9800CAD3FD /* Build configuration list for PBXNativeTarget "SimdHash" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE315616250FFF9800CAD3FD /* Debug */,
+				EE315617250FFF9800CAD3FD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		EE559FC224F5B07A006BA9E8 /* Build configuration list for PBXProject "SimdHash" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EE559FCC24F5B07A006BA9E8 /* Debug */,
 				EE559FCD24F5B07A006BA9E8 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		EE559FCE24F5B07A006BA9E8 /* Build configuration list for PBXNativeTarget "SimdHash" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				EE559FCF24F5B07A006BA9E8 /* Debug */,
-				EE559FD024F5B07A006BA9E8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

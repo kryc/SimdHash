@@ -25,6 +25,10 @@
   #define ALIGN(n) __attribute__ ((aligned(n)))
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef union _SimdShaValue
 {
 	uint32_t u32[256/32];
@@ -68,5 +72,9 @@ size_t SimdSha256SecondPreimage(
 	SimdSha2SecondPreimageContext* Context,
 	const size_t Length,
 	const uint8_t* Buffers[]);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* sha2_h */

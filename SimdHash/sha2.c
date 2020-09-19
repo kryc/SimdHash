@@ -11,7 +11,7 @@
 #include <assert.h>
 #include <string.h>		// memset
 #include <immintrin.h>	// AVX
-#include "sha2.h"
+#include "simdhash.h"
 
 static const uint32_t InitialValues[] = {
 	0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
@@ -189,6 +189,7 @@ ExpandMessageSchedule(
 	}
 }
 
+extern
 void
 SimdSha256Init(
 	SimdSha2Context* Context,
@@ -523,6 +524,7 @@ SimdSha256Finalize(
 	_mm256_store_si256(&Context->H[7].u256, h);
 }
 
+extern
 void
 SimdSha256SecondPreimageInit(
 	SimdSha2SecondPreimageContext* Context,
