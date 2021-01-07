@@ -9,12 +9,28 @@
 /* Begin PBXBuildFile section */
 		EE315618250FFFB200CAD3FD /* sha2.c in Sources */ = {isa = PBXBuildFile; fileRef = EE559FE524F700BF006BA9E8 /* sha2.c */; };
 		EE315619250FFFB600CAD3FD /* simdhash.h in Headers */ = {isa = PBXBuildFile; fileRef = EE559FE424F700BF006BA9E8 /* simdhash.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EEA8745325A7B12000E451FA /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = EEA8745225A7B12000E451FA /* main.c */; };
+		EEA8745D25A7B36B00E451FA /* libSimdHash.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EE315614250FFF9700CAD3FD /* libSimdHash.dylib */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		EEA8744E25A7B12000E451FA /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		EE315614250FFF9700CAD3FD /* libSimdHash.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libSimdHash.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE559FE424F700BF006BA9E8 /* simdhash.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = simdhash.h; sourceTree = "<group>"; };
 		EE559FE524F700BF006BA9E8 /* sha2.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = sha2.c; sourceTree = "<group>"; };
+		EEA8745025A7B12000E451FA /* SimdHashTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SimdHashTest; sourceTree = BUILT_PRODUCTS_DIR; };
+		EEA8745225A7B12000E451FA /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -25,6 +41,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EEA8744D25A7B12000E451FA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EEA8745D25A7B36B00E451FA /* libSimdHash.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -32,7 +56,9 @@
 			isa = PBXGroup;
 			children = (
 				EE559FC924F5B07A006BA9E8 /* SimdHash */,
+				EEA8745125A7B12000E451FA /* SimdHashTest */,
 				EE559FC824F5B07A006BA9E8 /* Products */,
+				EEA8745C25A7B36B00E451FA /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -40,6 +66,7 @@
 			isa = PBXGroup;
 			children = (
 				EE315614250FFF9700CAD3FD /* libSimdHash.dylib */,
+				EEA8745025A7B12000E451FA /* SimdHashTest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -51,6 +78,21 @@
 				EE559FE524F700BF006BA9E8 /* sha2.c */,
 			);
 			path = SimdHash;
+			sourceTree = "<group>";
+		};
+		EEA8745125A7B12000E451FA /* SimdHashTest */ = {
+			isa = PBXGroup;
+			children = (
+				EEA8745225A7B12000E451FA /* main.c */,
+			);
+			path = SimdHashTest;
+			sourceTree = "<group>";
+		};
+		EEA8745C25A7B36B00E451FA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -84,6 +126,23 @@
 			productReference = EE315614250FFF9700CAD3FD /* libSimdHash.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
+		EEA8744F25A7B12000E451FA /* SimdHashTest */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EEA8745425A7B12000E451FA /* Build configuration list for PBXNativeTarget "SimdHashTest" */;
+			buildPhases = (
+				EEA8744C25A7B12000E451FA /* Sources */,
+				EEA8744D25A7B12000E451FA /* Frameworks */,
+				EEA8744E25A7B12000E451FA /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SimdHashTest;
+			productName = SimdHashTest;
+			productReference = EEA8745025A7B12000E451FA /* SimdHashTest */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -95,6 +154,9 @@
 				TargetAttributes = {
 					EE315613250FFF9700CAD3FD = {
 						CreatedOnToolsVersion = 11.6;
+					};
+					EEA8744F25A7B12000E451FA = {
+						CreatedOnToolsVersion = 12.3;
 					};
 				};
 			};
@@ -112,6 +174,7 @@
 			projectRoot = "";
 			targets = (
 				EE315613250FFF9700CAD3FD /* SimdHash */,
+				EEA8744F25A7B12000E451FA /* SimdHashTest */,
 			);
 		};
 /* End PBXProject section */
@@ -122,6 +185,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE315618250FFFB200CAD3FD /* sha2.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EEA8744C25A7B12000E451FA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EEA8745325A7B12000E451FA /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -271,6 +342,26 @@
 			};
 			name = Release;
 		};
+		EEA8745525A7B12000E451FA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 11.1;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		EEA8745625A7B12000E451FA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 11.1;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -288,6 +379,15 @@
 			buildConfigurations = (
 				EE559FCC24F5B07A006BA9E8 /* Debug */,
 				EE559FCD24F5B07A006BA9E8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EEA8745425A7B12000E451FA /* Build configuration list for PBXNativeTarget "SimdHashTest" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EEA8745525A7B12000E451FA /* Debug */,
+				EEA8745625A7B12000E451FA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

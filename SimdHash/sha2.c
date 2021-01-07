@@ -597,3 +597,32 @@ SimdSha256SecondPreimage(
 	
 	return (size_t)-1;
 }
+
+void SimdSha256GetHash(
+	SimdSha2Context* Context,
+	uint8_t* HashBuffer,
+	const size_t Lane)
+{
+	uint32_t* nextBuffer;
+	
+	nextBuffer = (uint32_t*)HashBuffer;
+	nextBuffer[0] = Context->H[0].u32[Lane];
+	nextBuffer[1] = Context->H[1].u32[Lane];
+	nextBuffer[2] = Context->H[2].u32[Lane];
+	nextBuffer[3] = Context->H[3].u32[Lane];
+	nextBuffer[4] = Context->H[4].u32[Lane];
+	nextBuffer[5] = Context->H[5].u32[Lane];
+	nextBuffer[6] = Context->H[6].u32[Lane];
+	nextBuffer[7] = Context->H[7].u32[Lane];
+}
+
+void SimdSha256GetHashes(
+	SimdSha2Context* Context,
+	uint8_t** HashBuffers)
+{
+	for (size_t i = 0; i < Context->Lanes; i++)
+	{
+		SimdSha256GetHash(Context, HashBuffers[i], i);
+	}
+}
+

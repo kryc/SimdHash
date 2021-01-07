@@ -73,6 +73,16 @@ size_t SimdSha256SecondPreimage(
 	const size_t Length,
 	const uint8_t* Buffers[]);
 
+void SimdSha256GetHashes(
+	SimdSha2Context* Context,
+	uint8_t** HashBuffers);
+
+void SimdSha256GetHash(
+	SimdSha2Context* Context,
+	uint8_t* HashBuffer,
+	const size_t Lane);
+
+
 #ifdef __cplusplus
 }
 #endif
