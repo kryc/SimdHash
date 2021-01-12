@@ -48,7 +48,7 @@ int main(int arc, char* argv[])
 	}
 	
 	SimdSha256Init(&sha256ctx, SIMD_COUNT);
-	SimdSha256Update(&sha256ctx, strlen(g_TestData), (const uint8_t**)buffers);
+	SimdSha256Update(&sha256ctx, strlen((char*)g_TestData), (const uint8_t**)buffers);
 	SimdSha256Finalize(&sha256ctx);
 	
 	SimdSha256GetHash(&sha256ctx, hash, 0);

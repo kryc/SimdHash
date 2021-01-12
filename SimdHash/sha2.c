@@ -213,7 +213,7 @@ SimdSha256Transform(
 	//
 	// Expand the message schedule
 	//
-	ALIGN(16) SimdShaValue messageSchedule[64];
+	ALIGN(32) SimdShaValue messageSchedule[64];
 	ExpandMessageSchedule(Context, messageSchedule);
 	
 	__m256i a = _mm256_load_si256(&Context->H[0].u256), initialA = a;
@@ -301,7 +301,7 @@ SimdSha256TransformSecondPreimage(
 		{
 			__m256i targetH = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[7]), initialH);
 			__m256i cmp = _mm256_cmpeq_epi32(targetH, e);
-			resultMap = _mm256_movemask_ps(cmp);
+			resultMap = _mm256_movemask_ps((__m256)cmp);
 			if (resultMap == 0)
 				goto exit;
 		}
@@ -309,7 +309,7 @@ SimdSha256TransformSecondPreimage(
 		{
 			__m256i targetG = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[6]), initialG);
 			__m256i cmp = _mm256_cmpeq_epi32(targetG, e);
-			resultMap &= _mm256_movemask_ps(cmp);
+			resultMap &= _mm256_movemask_ps((__m256)cmp);
 			if (resultMap == 0)
 				goto exit;
 		}
@@ -317,7 +317,7 @@ SimdSha256TransformSecondPreimage(
 		{
 			__m256i targetF = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[5]), initialF);
 			__m256i cmp = _mm256_cmpeq_epi32(targetF, e);
-			resultMap &= _mm256_movemask_ps(cmp);
+			resultMap &= _mm256_movemask_ps((__m256)cmp);
 			if (resultMap == 0)
 				goto exit;
 		}
@@ -325,7 +325,7 @@ SimdSha256TransformSecondPreimage(
 		{
 			__m256i targetE = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[4]), initialE);
 			__m256i cmp = _mm256_cmpeq_epi32(targetE, e);
-			resultMap &= _mm256_movemask_ps(cmp);
+			resultMap &= _mm256_movemask_ps((__m256)cmp);
 			if (resultMap == 0)
 				goto exit;
 		}
@@ -342,25 +342,25 @@ SimdSha256TransformSecondPreimage(
 	//
 	__m256i targetD = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[3]), initialD);
 	__m256i cmp = _mm256_cmpeq_epi32(targetD, d);
-	resultMap &= _mm256_movemask_ps(cmp);
+	resultMap &= _mm256_movemask_ps((__m256)cmp);
 	if (resultMap == 0)
 		goto exit;
 	
 	__m256i targetC = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[2]), initialC);
 	cmp = _mm256_cmpeq_epi32(targetC, c);
-	resultMap &= _mm256_movemask_ps(cmp);
+	resultMap &= _mm256_movemask_ps((__m256)cmp);
 	if (resultMap == 0)
 		goto exit;
 	
 	__m256i targetB = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[1]), initialB);
 	cmp = _mm256_cmpeq_epi32(targetB, b);
-	resultMap &= _mm256_movemask_ps(cmp);
+	resultMap &= _mm256_movemask_ps((__m256)cmp);
 	if (resultMap == 0)
 		goto exit;
 	
 	__m256i targetA = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[0]), initialA);
 	cmp = _mm256_cmpeq_epi32(targetA, a);
-	resultMap &= _mm256_movemask_ps(cmp);
+	resultMap &= _mm256_movemask_ps((__m256)cmp);
 	if (resultMap == 0)
 		goto exit;
 	
