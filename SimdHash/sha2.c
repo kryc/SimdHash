@@ -266,7 +266,7 @@ SimdSha256TransformSecondPreimage(
 	//
 	// Expand the message schedule
 	//
-	ALIGN(16) SimdShaValue messageSchedule[64];
+	ALIGN(32) SimdShaValue messageSchedule[64];
 	SecondPreimageResult result;
 	int resultMap;
 	
