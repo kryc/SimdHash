@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
+#include <limits.h>
 #include "simdhash.h"
 
 static const uint8_t g_TestData[] = "AAAAAAAAAAAAAAAA";
@@ -36,12 +38,18 @@ ToHex(char* Out, size_t OutLength, uint8_t* Buffer, size_t BufferLength)
 	return true;
 }
 
-int main(int arc, char* argv[])
+static void
+FunctionalityTests(void)
+/*++
+	This function performs the basic functionality
+	tests. It uses the known digest values to ensure
+	that the algorithms are providing correct results	
+--*/
 {
 	SimdSha2Context sha256ctx;
 	uint8_t* buffers[SIMD_COUNT];
 	uint8_t hash[SHA256_SIZE];
-	
+
 	for (size_t i = 0; i < SIMD_COUNT; i++)
 	{
 		buffers[i] = (uint8_t*)g_TestData;
@@ -55,10 +63,103 @@ int main(int arc, char* argv[])
 	
 	if (memcmp(&hash[0], &g_TestExpected[0], sizeof(g_TestExpected)) == 0)
 	{
-		printf("Test passed\n");
+		printf("Functional tests passed\n");
 	}
 	else
 	{
-		printf("Test failed\n");
+		printf("Functional tests failed\n");
 	}
+}
+
+static struct timespec
+timer_start(void)
+/*++
+	Call this function to start a nanosecond-resolution timer
+	Source: https://stackoverflow.com/questions/6749621/how-to-create-a-high-resolution-timer-in-linux-to-measure-program-performance
+--*/
+{
+    struct timespec start_time;
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time);
+    return start_time;
+}
+ 
+static long
+timer_end(
+	struct timespec start_time
+)
+/*++
+	Call this function to end a timer, returning nanoseconds elapsed as a long
+	Source: https://stackoverflow.com/questions/6749621/how-to-create-a-high-resolution-timer-in-linux-to-measure-program-performance
+--*/
+{
+    struct timespec end_time;
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end_time);
+    long diffInNanos = (end_time.tv_sec - start_time.tv_sec) * (long)1e9 + (end_time.tv_nsec - start_time.tv_nsec);
+    return diffInNanos;
+}
+
+static void
+PerformanceTests(void)
+/*++
+	This function measures the performance of the
+	digests. It gives a _rough_ measure of hashes
+	per second but does not measure correctness.
+--*/
+{
+	SimdSha2Context sha256ctx;
+	uint8_t* buffers[SIMD_COUNT];
+	struct timespec begin;
+	long elapsed;
+	//double timeTaken, fastest, slowest, average;
+	size_t hashesPerSec, fastest, slowest, average;
+	static const size_t numTests = 1000000;
+
+	//
+	// Initialize the buffers
+	//
+	for (size_t i = 0; i < SIMD_COUNT; i++)
+	{
+		buffers[i] = (uint8_t*)g_TestData;
+	}
+
+	average = 0;
+	fastest = 0;
+	slowest = SIZE_MAX;
+
+	//
+	// Perform tests, capturing statistics
+	//
+	for (size_t i = 0; i < numTests; i++)
+	{
+		begin = timer_start();
+		SimdSha256Init(&sha256ctx, SIMD_COUNT);
+		SimdSha256Update(&sha256ctx, strlen((char*)g_TestData), (const uint8_t**)buffers);
+		SimdSha256Finalize(&sha256ctx);
+		elapsed = timer_end(begin);
+
+		hashesPerSec = 1e9 / elapsed;
+
+		if (hashesPerSec > fastest)
+			fastest = hashesPerSec;
+		if (hashesPerSec < slowest)
+			slowest = hashesPerSec;
+		average += hashesPerSec;
+	}
+
+	average /= numTests;
+
+	//
+	// Display captured statistics
+	//
+	printf("Performance Tests over %zu iterations\n", numTests);
+	printf("Fastest (8h/s): %zu\n", fastest);
+	printf("Slowest (8h/s): %zu\n", slowest);
+	printf("Average (8h/s): %zu\n", average);
+	printf("Hashes/core/s : %zu\n", average * 8);
+}
+
+int main(int argc, char* argv[])
+{
+	FunctionalityTests();
+	PerformanceTests();
 }
