@@ -225,6 +225,9 @@ SimdSha256Transform(
 	__m256i g = _mm256_load_si256(&Context->H[6].u256), initialG = g;
 	__m256i h = _mm256_load_si256(&Context->H[7].u256), initialH = h;
 
+	//
+	// Sha256 compression function
+	//
 	for (size_t i = 0; i < 64; i++)
 	{
 		__m256i k = _mm256_set1_epi32(RoundConstants[i]);
@@ -286,7 +289,10 @@ SimdSha256TransformSecondPreimage(
 	__m256i g = _mm256_load_si256(&Context->ShaContext.H[6].u256), initialG = g;
 	__m256i h = _mm256_load_si256(&Context->ShaContext.H[7].u256), initialH = h;
 	
-	for (size_t i = 0; i < 64; i++)
+	//
+	// Sha256 compression function
+	//
+	for (size_t i = 0; i < 60; i++)
 	{
 		__m256i k = _mm256_set1_epi32(RoundConstants[i]);
 		__m256i w = _mm256_load_si256(&messageSchedule[i].u256);
@@ -296,7 +302,28 @@ SimdSha256TransformSecondPreimage(
 		g = f;
 		f = e;
 		e = _mm256_add_epi32(d, temp1);
-		
+		d = c;
+		c = b;
+		b = a;
+		a = _mm256_add_epi32(temp1, temp2);
+	}
+
+	//
+	// Preimage attack optimisations for the final
+	// four rounds. We keep this out of the main compression
+	// function to remove conditions in the fast path
+	//
+	for (size_t i = 60; i < 64; i++)
+	{
+		__m256i k = _mm256_set1_epi32(RoundConstants[i]);
+		__m256i w = _mm256_load_si256(&messageSchedule[i].u256);
+		__m256i temp1 = CalculateTemp1(e, f, g, h, k, w);
+		__m256i temp2 = CalculateTemp2(a, b, c);
+		h = g;
+		g = f;
+		f = e;
+		e = _mm256_add_epi32(d, temp1);
+
 		if (i == 60)
 		{
 			__m256i targetH = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[7]), initialH);
