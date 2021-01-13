@@ -11,7 +11,7 @@ DEPS := $(OBJS:.o=.d)  # one dependency file for each source
 INC_DIRS := ./
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CFLAGS ?= $(INC_FLAGS) -Wall -Werror -mavx2
+CFLAGS ?= $(INC_FLAGS) -Wall -Werror -mavx2 -O3 -funroll-loops
 LDFLAGS = -mavx2
 
 .PHONY: simdhash.a

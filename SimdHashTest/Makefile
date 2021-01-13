@@ -11,7 +11,7 @@ DEPS := $(OBJS:.o=.d)  # one dependency file for each source
 INC_DIRS := ../SimdHash/
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CFLAGS ?= $(INC_FLAGS) -Wall -mavx2
+CFLAGS ?= $(INC_FLAGS) -Wall -mavx2 -O2
 LDFLAGS = 
 LIBA = ../SimdHash/simdhash.a
 
