@@ -40,7 +40,7 @@ typedef struct _SecondPreimageResult
 
 static inline
 __m256i
-RotateLeft32(
+SimdRotateLeft32(
 	const __m256i Value,
 	const uint8_t Distance)
 {
@@ -52,7 +52,7 @@ RotateLeft32(
 
 static inline
 __m256i
-RotateRight32(
+SimdRotateRight32(
 	const __m256i Value,
 	const uint8_t Distance)
 {
@@ -64,35 +64,35 @@ RotateRight32(
 
 static inline
 __m256i
-CalculateS1(
+SimdCalculateS1(
 	const __m256i E)
 {
-	__m256i er6 = RotateRight32(E, 6);
-	__m256i er11 = RotateRight32(E, 11);
-	__m256i er25 = RotateRight32(E, 25);
+	__m256i er6 = SimdRotateRight32(E, 6);
+	__m256i er11 = SimdRotateRight32(E, 11);
+	__m256i er25 = SimdRotateRight32(E, 25);
 	__m256i ret = _mm256_xor_si256(er6, er11);
 	return _mm256_xor_si256(ret, er25);
 }
 
 static inline
 __m256i
-CalculateS0(
+SimdCalculateS0(
 	const __m256i A)
 {
-	__m256i ar2 = RotateRight32(A, 2);
-	__m256i ar13 = RotateRight32(A, 13);
-	__m256i ar22 = RotateRight32(A, 22);
+	__m256i ar2 = SimdRotateRight32(A, 2);
+	__m256i ar13 = SimdRotateRight32(A, 13);
+	__m256i ar22 = SimdRotateRight32(A, 22);
 	__m256i ret = _mm256_xor_si256(ar2, ar13);
 	return _mm256_xor_si256(ret, ar22);
 }
 
 static inline
 __m256i
-CalculateExtendS0(
+SimdCalculateExtendS0(
 	const __m256i W)
 {
-	__m256i wr7 = RotateRight32(W, 7);
-	__m256i wr18 = RotateRight32(W, 18);
+	__m256i wr7 = SimdRotateRight32(W, 7);
+	__m256i wr18 = SimdRotateRight32(W, 18);
 	__m256i wr3 = _mm256_srli_epi32(W, 3);
 	__m256i ret = _mm256_xor_si256(wr7, wr18);
 	return _mm256_xor_si256(ret, wr3);
@@ -100,11 +100,11 @@ CalculateExtendS0(
 
 static inline
 __m256i
-CalculateExtendS1(
+SimdCalculateExtendS1(
 	const __m256i W)
 {
-	__m256i wr17 = RotateRight32(W, 17);
-	__m256i wr19 = RotateRight32(W, 19);
+	__m256i wr17 = SimdRotateRight32(W, 17);
+	__m256i wr19 = SimdRotateRight32(W, 19);
 	__m256i wr10 = _mm256_srli_epi32(W, 10);
 	__m256i ret = _mm256_xor_si256(wr17, wr19);
 	return _mm256_xor_si256(ret, wr10);
@@ -112,7 +112,7 @@ CalculateExtendS1(
 
 static inline
 __m256i
-CalculateCh(
+SimdCalculateCh(
 	const __m256i E,
 	const __m256i F,
 	const __m256i G)
@@ -124,7 +124,7 @@ CalculateCh(
 
 static inline
 __m256i
-CalculateMaj(
+SimdCalculateMaj(
 	const __m256i A,
 	const __m256i B,
 	const __m256i C)
@@ -138,19 +138,19 @@ CalculateMaj(
 
 static inline
 __m256i
-CalculateTemp2(
+SimdCalculateTemp2(
 	const __m256i A,
 	const __m256i B,
 	const __m256i C)
 {
-	__m256i s0 = CalculateS0(A);
-	__m256i maj = CalculateMaj(A, B, C);
+	__m256i s0 = SimdCalculateS0(A);
+	__m256i maj = SimdCalculateMaj(A, B, C);
 	return _mm256_add_epi32(s0, maj);
 }
 
 static inline
 __m256i
-CalculateTemp1(
+SimdCalculateTemp1(
 	const __m256i E,
 	const __m256i F,
 	const __m256i G,
@@ -158,8 +158,8 @@ CalculateTemp1(
 	const __m256i K,
 	const __m256i W)
 {
-	__m256i s1 = CalculateS1(E);
-	__m256i ch = CalculateCh(E, F, G);
+	__m256i s1 = SimdCalculateS1(E);
+	__m256i ch = SimdCalculateCh(E, F, G);
 	__m256i ret = _mm256_add_epi32(H, s1);
 	ret = _mm256_add_epi32(ret, ch);
 	ret = _mm256_add_epi32(ret, K);
@@ -168,7 +168,7 @@ CalculateTemp1(
 
 static inline
 void
-ExpandMessageSchedule(
+SimdExpandMessageSchedule(
 	SimdSha2Context* Context,
 	SimdShaValue* messageSchedule)
 {
@@ -180,8 +180,8 @@ ExpandMessageSchedule(
 	
 	for (size_t i = 16; i < 64; i++)
 	{
-		__m256i s0 = CalculateExtendS0(_mm256_load_si256(&messageSchedule[i-15].u256));
-		__m256i s1 = CalculateExtendS1(_mm256_load_si256(&messageSchedule[i-2].u256));
+		__m256i s0 = SimdCalculateExtendS0(_mm256_load_si256(&messageSchedule[i-15].u256));
+		__m256i s1 = SimdCalculateExtendS1(_mm256_load_si256(&messageSchedule[i-2].u256));
 		__m256i res = _mm256_add_epi32(_mm256_load_si256(&messageSchedule[i-16].u256), s0);
 		res = _mm256_add_epi32(res, _mm256_load_si256(&messageSchedule[i-7].u256));
 		res = _mm256_add_epi32(res, s1);
@@ -206,7 +206,7 @@ SimdSha256Init(
 	Context->Lanes = Lanes;
 }
 
-void
+static inline void
 SimdSha256Transform(
 	SimdSha2Context* Context)
 {
@@ -214,7 +214,7 @@ SimdSha256Transform(
 	// Expand the message schedule
 	//
 	ALIGN(32) SimdShaValue messageSchedule[64];
-	ExpandMessageSchedule(Context, messageSchedule);
+	SimdExpandMessageSchedule(Context, messageSchedule);
 	
 	__m256i a = _mm256_load_si256(&Context->H[0].u256), initialA = a;
 	__m256i b = _mm256_load_si256(&Context->H[1].u256), initialB = b;
@@ -232,8 +232,8 @@ SimdSha256Transform(
 	{
 		__m256i k = _mm256_set1_epi32(RoundConstants[i]);
 		__m256i w = _mm256_load_si256(&messageSchedule[i].u256);
-		__m256i temp1 = CalculateTemp1(e, f, g, h, k, w);
-		__m256i temp2 = CalculateTemp2(a, b, c);
+		__m256i temp1 = SimdCalculateTemp1(e, f, g, h, k, w);
+		__m256i temp2 = SimdCalculateTemp2(a, b, c);
 		h = g;
 		g = f;
 		f = e;
@@ -257,6 +257,7 @@ SimdSha256Transform(
 	_mm256_store_si256(&Context->H[7].u256, _mm256_add_epi32(initialH, h));
 }
 
+static inline
 SecondPreimageResult
 SimdSha256TransformSecondPreimage(
 	SimdSha2SecondPreimageContext* Context)
@@ -278,7 +279,7 @@ SimdSha256TransformSecondPreimage(
 	result.LaneMap = 0;
 	result.Result = SECOND_PREIMAGE_CANDIDATE_NOT_FOUND;
 	
-	ExpandMessageSchedule(&Context->ShaContext, messageSchedule);
+	SimdExpandMessageSchedule(&Context->ShaContext, messageSchedule);
 	
 	__m256i a = _mm256_load_si256(&Context->ShaContext.H[0].u256), initialA = a;
 	__m256i b = _mm256_load_si256(&Context->ShaContext.H[1].u256), initialB = b;
@@ -296,8 +297,8 @@ SimdSha256TransformSecondPreimage(
 	{
 		__m256i k = _mm256_set1_epi32(RoundConstants[i]);
 		__m256i w = _mm256_load_si256(&messageSchedule[i].u256);
-		__m256i temp1 = CalculateTemp1(e, f, g, h, k, w);
-		__m256i temp2 = CalculateTemp2(a, b, c);
+		__m256i temp1 = SimdCalculateTemp1(e, f, g, h, k, w);
+		__m256i temp2 = SimdCalculateTemp2(a, b, c);
 		h = g;
 		g = f;
 		f = e;
@@ -317,8 +318,8 @@ SimdSha256TransformSecondPreimage(
 	{
 		__m256i k = _mm256_set1_epi32(RoundConstants[i]);
 		__m256i w = _mm256_load_si256(&messageSchedule[i].u256);
-		__m256i temp1 = CalculateTemp1(e, f, g, h, k, w);
-		__m256i temp2 = CalculateTemp2(a, b, c);
+		__m256i temp1 = SimdCalculateTemp1(e, f, g, h, k, w);
+		__m256i temp2 = SimdCalculateTemp2(a, b, c);
 		h = g;
 		g = f;
 		f = e;
@@ -414,7 +415,7 @@ exit:
 
 static inline
 void
-WriteSingleByte(
+SimdWriteSingleByte(
 	SimdSha2Context* Context,
 	const size_t Lane,
 	const size_t Buffer,
@@ -447,11 +448,11 @@ SimdSha256Update(
 		// 4-byte aligned
 		{
 			uint32_t** buffer32 = (uint32_t**) Buffers;
-			size_t nextIndex = next / 4;
+			size_t nextInputIndex = next / 4;
 			
 			for (size_t lane = 0; lane < Context->Lanes; lane++)
 			{
-				Context->Buffer[nextIndex].u32[lane] = __builtin_bswap32(buffer32[lane][nextIndex]);
+				Context->Buffer[bufferIndex].u32[lane] = __builtin_bswap32(buffer32[lane][nextInputIndex]);
 			}
 			toWrite -= 4;
 			Context->Length += 4;
@@ -463,7 +464,7 @@ SimdSha256Update(
 			bufferOffset = Context->Length % 4;
 			for (size_t lane = 0; lane < Context->Lanes; lane++)
 			{
-				WriteSingleByte(Context, lane, bufferIndex, bufferOffset, Buffers[lane][next]);
+				SimdWriteSingleByte(Context, lane, bufferIndex, bufferOffset, Buffers[lane][next]);
 			}
 			toWrite--;
 			Context->Length++;
@@ -497,7 +498,7 @@ SimdSha256AppendSize(
 	
 	for (size_t lane = 0; lane < Context->Lanes; lane++)
 	{
-		WriteSingleByte(Context, lane, bufferIndex, bufferOffset, 0x80);
+		SimdWriteSingleByte(Context, lane, bufferIndex, bufferOffset, 0x80);
 	}
 	Context->Length++;
 	
@@ -653,3 +654,302 @@ void SimdSha256GetHashes(
 	}
 }
 
+void Sha256Init(
+	Sha2Context* Context)
+{
+	for (size_t i = 0; i < 8; i++)
+		Context->H[i] = InitialValues[i];
+	Context->Length = 0;
+	Context->BitLength = 0;
+	memset(&Context->Buffer[0], 0, sizeof(Context->Buffer));
+}
+
+static inline
+uint32_t
+RotateRight32(
+	const uint32_t Value,
+	const size_t Distance)
+{
+	return (Value >> Distance) | (Value << (32 - Distance));
+}
+
+static inline
+uint32_t
+CalculateExtendS0(
+	const uint32_t W)
+{
+	uint32_t wr7 = RotateRight32(W, 7);
+	uint32_t wr18 = RotateRight32(W, 18);
+	uint32_t wr3 = W >> 3;
+	return wr7 ^ wr18 ^ wr3;
+}
+
+static inline
+uint32_t
+CalculateExtendS1(
+	const uint32_t W)
+{
+	uint32_t wr17 = RotateRight32(W, 17);
+	uint32_t wr19 = RotateRight32(W, 19);
+	uint32_t wr10 = W >> 10;
+	return wr17 ^ wr19 ^ wr10;
+}
+
+static inline
+void
+ExpandMessageSchedule(
+	Sha2Context* Context,
+	uint32_t* messageSchedule)
+{
+	for (size_t i = 0; i < 16; i++)
+	{
+		messageSchedule[i] = Context->Buffer[i];
+	}
+	
+	for (size_t i = 16; i < 64; i++)
+	{
+		uint32_t s0 = CalculateExtendS0(messageSchedule[i-15]);
+		uint32_t s1 = CalculateExtendS1(messageSchedule[i-2]);
+		messageSchedule[i] = messageSchedule[i-16] + s0 + messageSchedule[i-7] + s1;
+	}
+}
+
+static inline
+uint32_t
+CalculateS1(
+	const uint32_t E)
+{
+	uint32_t er6 = RotateRight32(E, 6);
+	uint32_t er11 = RotateRight32(E, 11);
+	uint32_t er25 = RotateRight32(E, 25);
+	return er6 ^ er11 ^ er25;
+}
+
+static inline
+uint32_t
+CalculateS0(
+	const uint32_t A)
+{
+	uint32_t ar2 = RotateRight32(A, 2);
+	uint32_t ar13 = RotateRight32(A, 13);
+	uint32_t ar22 = RotateRight32(A, 22);
+	return ar2 ^ ar13 ^ ar22;
+}
+
+static inline
+uint32_t
+CalculateCh(
+	const uint32_t E,
+	const uint32_t F,
+	const uint32_t G)
+{
+	uint32_t eAndF = E & F;
+	uint32_t notEAndG = (!E) & G;
+	return eAndF ^ notEAndG;
+}
+
+static inline
+uint32_t
+CalculateMaj(
+	const uint32_t A,
+	const uint32_t B,
+	const uint32_t C)
+{
+	uint32_t aAndB = A & B;
+	uint32_t aAndC = A & C;
+	uint32_t bAndC = B & C;
+	return aAndB ^ aAndC ^ bAndC;
+}
+
+static inline
+uint32_t
+CalculateTemp2(
+	const uint32_t A,
+	const uint32_t B,
+	const uint32_t C)
+{
+	uint32_t s0 = CalculateS0(A);
+	uint32_t maj = CalculateMaj(A, B, C);
+	return s0 + maj;
+}
+
+static inline
+uint32_t
+CalculateTemp1(
+	const uint32_t E,
+	const uint32_t F,
+	const uint32_t G,
+	const uint32_t H,
+	const uint32_t K,
+	const uint32_t W)
+{
+	uint32_t s1 = CalculateS1(E);
+	uint32_t ch = CalculateCh(E, F, G);
+	return H + s1 + ch + K + W;
+}
+
+static inline void
+Sha256Transform(
+	Sha2Context* Context)
+{
+	//
+	// Expand the message schedule
+	//
+	uint32_t messageSchedule[64];
+	ExpandMessageSchedule(Context, messageSchedule);
+	
+	uint32_t a = Context->H[0];
+	uint32_t b = Context->H[1];
+	uint32_t c = Context->H[2];
+	uint32_t d = Context->H[3];
+	uint32_t e = Context->H[4];
+	uint32_t f = Context->H[5];
+	uint32_t g = Context->H[6];
+	uint32_t h = Context->H[7];
+
+	//
+	// Sha256 compression function
+	//
+	for (size_t i = 0; i < 64; i++)
+	{
+		uint32_t k = RoundConstants[i];
+		uint32_t w = messageSchedule[i];
+		uint32_t temp1 = CalculateTemp1(e, f, g, h, k, w);
+		uint32_t temp2 = CalculateTemp2(a, b, c);
+		h = g;
+		g = f;
+		f = e;
+		e = d + temp1;
+		d = c;
+		c = b;
+		b = a;
+		a = temp1 + temp2;
+	}
+	
+	//
+	// Output to the hash state values
+	//
+	Context->H[0] += a;
+	Context->H[1] += b;
+	Context->H[2] += c;
+	Context->H[3] += d;
+	Context->H[4] += e;
+	Context->H[5] += f;
+	Context->H[6] += g;
+	Context->H[7] += h;
+}
+
+static inline
+void
+WriteSingleByte(
+	Sha2Context* Context,
+	const size_t Buffer,
+	const size_t Offset,
+	const uint8_t Byte)
+{
+	uint8_t* bufferPtr = (uint8_t*)&Context->Buffer[Buffer];
+	bufferPtr[sizeof(uint32_t) - 1 - Offset] = Byte;
+}
+
+void Sha256Update(
+	Sha2Context* Context,
+	const size_t Length,
+	const uint8_t* Buffer)
+{
+	size_t toWrite = Length;
+	size_t bufferIndex;
+	size_t bufferOffset;
+	size_t next;
+	
+	next = 0;
+
+	while (toWrite > 0)
+	{
+		bufferIndex = Context->Length / 4;
+
+		if ((Context->Length & 0x3) == 0 &&
+			toWrite >= 4)
+		// 4-byte aligned
+		{
+			uint32_t* buffer32 = (uint32_t*) Buffer;
+			size_t nextInputIndex = next / 4;
+			Context->Buffer[bufferIndex] = __builtin_bswap32(buffer32[nextInputIndex]);
+			toWrite -= 4;
+			Context->Length += 4;
+			Context->BitLength += 32;
+			next += 4;
+		}
+		else
+		{
+			bufferOffset = Context->Length % 4;
+			WriteSingleByte(Context, bufferIndex, bufferOffset, Buffer[next]);
+			toWrite--;
+			Context->Length++;
+			Context->BitLength += 8;
+			next++;
+		}
+
+		if (Context->Length == 64)
+		{
+			Sha256Transform(Context);
+			Context->Length = 0;
+			memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
+		}
+	}
+}
+
+static inline
+void
+Sha256AppendSize(
+	Sha2Context* Context)
+/*++
+ Appends the 1-bit and the message length to the hash buffer
+ Also performs the additional Transform step if required
+ --*/
+{
+	//
+	// Write the 1 bit
+	//
+	size_t bufferIndex = Context->Length / 4;
+	size_t bufferOffset = Context->Length % 4;
+	WriteSingleByte(Context, bufferIndex, bufferOffset, 0x80);
+	Context->Length++;
+	
+	if (Context->Length >= 56)
+	{
+		Sha256Transform(Context);
+		memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
+	}
+	
+	//
+	// Write the length into the last 64 bits
+	//
+	Context->Buffer[14] = Context->BitLength >> 32;
+	Context->Buffer[15] = Context->BitLength & 0xffffffff;
+}
+
+void Sha256Finalize(
+	Sha2Context* Context)
+{
+	//
+	// Add the message length
+	//
+	Sha256AppendSize(Context);
+
+	//
+	// Compute the final transformation
+	//
+	Sha256Transform(Context);
+	
+	//
+	// Change endianness
+	//
+	Context->H[0] = __builtin_bswap32(Context->H[0]);
+	Context->H[1] = __builtin_bswap32(Context->H[1]);
+	Context->H[2] = __builtin_bswap32(Context->H[2]);
+	Context->H[3] = __builtin_bswap32(Context->H[3]);
+	Context->H[4] = __builtin_bswap32(Context->H[4]);
+	Context->H[5] = __builtin_bswap32(Context->H[5]);
+	Context->H[6] = __builtin_bswap32(Context->H[6]);
+	Context->H[7] = __builtin_bswap32(Context->H[7]);
+}

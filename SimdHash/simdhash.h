@@ -44,6 +44,14 @@ typedef struct _SimdSha2Context
 	size_t       Lanes;
 } SimdSha2Context;
 
+typedef struct _Sha2Context
+{
+	uint32_t H[8];
+	uint32_t Buffer[BUFFER_SIZE_DWORDS];
+	uint64_t Length;
+	uint64_t BitLength;
+} Sha2Context;
+
 typedef struct _SimdSha2SecondPreimageContext
 {
 	SimdSha2Context ShaContext;
@@ -82,6 +90,16 @@ void SimdSha256GetHash(
 	uint8_t* HashBuffer,
 	const size_t Lane);
 
+void Sha256Init(
+	Sha2Context* Context);
+
+void Sha256Update(
+	Sha2Context* Context,
+	const size_t Length,
+	const uint8_t* Buffer);
+
+void Sha256Finalize(
+	Sha2Context* Context);
 
 #ifdef __cplusplus
 }

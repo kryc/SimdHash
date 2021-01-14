@@ -49,6 +49,9 @@ FunctionalityTests(void)
 	SimdSha2Context sha256ctx;
 	uint8_t* buffers[SIMD_COUNT];
 	uint8_t hash[SHA256_SIZE];
+	char hex[SHA256_SIZE * 2 + 1];
+
+	memset(hex, 0, sizeof(hex));
 
 	for (size_t i = 0; i < SIMD_COUNT; i++)
 	{
@@ -63,12 +66,29 @@ FunctionalityTests(void)
 	
 	if (memcmp(&hash[0], &g_TestExpected[0], sizeof(g_TestExpected)) == 0)
 	{
-		printf("Functional tests passed\n");
+		printf("Simd Functional tests passed\n");
+		ToHex(hex, sizeof(hex), hash, SHA256_SIZE);
+		printf("\t%s\n", hex);
 	}
 	else
 	{
-		printf("Functional tests failed\n");
+		printf("Simd Functional tests failed\n");
 	}
+
+	Sha2Context linearSha2Context;
+	Sha256Init(&linearSha2Context);
+	Sha256Update(&linearSha2Context, strlen((char*)g_TestData), (const uint8_t*)&g_TestData[0]);
+	Sha256Finalize(&linearSha2Context);
+
+	printf("\t%08x%08x%08x%08x%08x%08x%08x%08x\n",
+		linearSha2Context.H[0],
+		linearSha2Context.H[1],
+		linearSha2Context.H[2],
+		linearSha2Context.H[3],
+		linearSha2Context.H[4],
+		linearSha2Context.H[5],
+		linearSha2Context.H[6],
+		linearSha2Context.H[7]);
 }
 
 static struct timespec
@@ -107,10 +127,10 @@ PerformanceTests(void)
 --*/
 {
 	SimdSha2Context sha256ctx;
+	Sha2Context linearSha2Context;
 	uint8_t* buffers[SIMD_COUNT];
 	struct timespec begin;
 	long elapsed;
-	//double timeTaken, fastest, slowest, average;
 	size_t hashesPerSec, fastest, slowest, average;
 	static const size_t numTests = 1000000;
 
@@ -151,11 +171,43 @@ PerformanceTests(void)
 	//
 	// Display captured statistics
 	//
-	printf("Performance Tests over %zu iterations\n", numTests);
+	printf("SIMD Performance Tests over %zu iterations\n", numTests);
 	printf("Fastest (8h/s): %zu\n", fastest);
 	printf("Slowest (8h/s): %zu\n", slowest);
 	printf("Average (8h/s): %zu\n", average);
 	printf("Hashes/core/s : %zu\n", average * 8);
+
+	average = 0;
+	fastest = 0;
+	slowest = SIZE_MAX;
+
+	//
+	// Perform tests, capturing statistics
+	//
+	for (size_t i = 0; i < numTests; i++)
+	{
+		begin = timer_start();
+		Sha256Init(&linearSha2Context);
+		Sha256Update(&linearSha2Context, strlen((char*)g_TestData), (const uint8_t*)&g_TestData[0]);
+		Sha256Finalize(&linearSha2Context);
+		elapsed = timer_end(begin);
+
+		hashesPerSec = 1e9 / elapsed;
+
+		if (hashesPerSec > fastest)
+			fastest = hashesPerSec;
+		if (hashesPerSec < slowest)
+			slowest = hashesPerSec;
+		average += hashesPerSec;
+	}
+
+	average /= numTests;
+
+	printf("Linear Performance Tests over %zu iterations\n", numTests);
+	printf("Fastest (h/s): %zu\n", fastest);
+	printf("Slowest (h/s): %zu\n", slowest);
+	printf("Average (h/s): %zu\n", average);
+	printf("Hashes/core/s: %zu\n", average);
 }
 
 int main(int argc, char* argv[])
