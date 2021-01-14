@@ -80,15 +80,8 @@ FunctionalityTests(void)
 	Sha256Update(&linearSha2Context, strlen((char*)g_TestData), (const uint8_t*)&g_TestData[0]);
 	Sha256Finalize(&linearSha2Context);
 
-	printf("\t%08x%08x%08x%08x%08x%08x%08x%08x\n",
-		linearSha2Context.H[0],
-		linearSha2Context.H[1],
-		linearSha2Context.H[2],
-		linearSha2Context.H[3],
-		linearSha2Context.H[4],
-		linearSha2Context.H[5],
-		linearSha2Context.H[6],
-		linearSha2Context.H[7]);
+	ToHex(hex, sizeof(hex), &linearSha2Context.H[0], SHA256_SIZE);
+	printf("\t%s\n", hex);
 }
 
 static struct timespec

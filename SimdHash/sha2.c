@@ -743,8 +743,8 @@ CalculateCh(
 	const uint32_t F,
 	const uint32_t G)
 {
-	uint32_t eAndF = E & F;
-	uint32_t notEAndG = (!E) & G;
+	uint32_t eAndF = (E & F);
+	uint32_t notEAndG = ((~E) & G);
 	return eAndF ^ notEAndG;
 }
 
@@ -755,9 +755,9 @@ CalculateMaj(
 	const uint32_t B,
 	const uint32_t C)
 {
-	uint32_t aAndB = A & B;
-	uint32_t aAndC = A & C;
-	uint32_t bAndC = B & C;
+	uint32_t aAndB = (A & B);
+	uint32_t aAndC = (A & C);
+	uint32_t bAndC = (B & C);
 	return aAndB ^ aAndC ^ bAndC;
 }
 
