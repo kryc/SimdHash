@@ -216,14 +216,14 @@ SimdSha256Transform(
 	ALIGN(32) SimdShaValue messageSchedule[64];
 	SimdExpandMessageSchedule(Context, messageSchedule);
 	
-	__m256i a = _mm256_load_si256(&Context->H[0].u256), initialA = a;
-	__m256i b = _mm256_load_si256(&Context->H[1].u256), initialB = b;
-	__m256i c = _mm256_load_si256(&Context->H[2].u256), initialC = c;
-	__m256i d = _mm256_load_si256(&Context->H[3].u256), initialD = d;
-	__m256i e = _mm256_load_si256(&Context->H[4].u256), initialE = e;
-	__m256i f = _mm256_load_si256(&Context->H[5].u256), initialF = f;
-	__m256i g = _mm256_load_si256(&Context->H[6].u256), initialG = g;
-	__m256i h = _mm256_load_si256(&Context->H[7].u256), initialH = h;
+	__m256i a = _mm256_load_si256(&Context->H[0].u256);
+	__m256i b = _mm256_load_si256(&Context->H[1].u256);
+	__m256i c = _mm256_load_si256(&Context->H[2].u256);
+	__m256i d = _mm256_load_si256(&Context->H[3].u256);
+	__m256i e = _mm256_load_si256(&Context->H[4].u256);
+	__m256i f = _mm256_load_si256(&Context->H[5].u256);
+	__m256i g = _mm256_load_si256(&Context->H[6].u256);
+	__m256i h = _mm256_load_si256(&Context->H[7].u256);
 
 	//
 	// Sha256 compression function
@@ -247,14 +247,14 @@ SimdSha256Transform(
 	//
 	// Output to the hash state values
 	//
-	_mm256_store_si256(&Context->H[0].u256, _mm256_add_epi32(initialA, a));
-	_mm256_store_si256(&Context->H[1].u256, _mm256_add_epi32(initialB, b));
-	_mm256_store_si256(&Context->H[2].u256, _mm256_add_epi32(initialC, c));
-	_mm256_store_si256(&Context->H[3].u256, _mm256_add_epi32(initialD, d));
-	_mm256_store_si256(&Context->H[4].u256, _mm256_add_epi32(initialE, e));
-	_mm256_store_si256(&Context->H[5].u256, _mm256_add_epi32(initialF, f));
-	_mm256_store_si256(&Context->H[6].u256, _mm256_add_epi32(initialG, g));
-	_mm256_store_si256(&Context->H[7].u256, _mm256_add_epi32(initialH, h));
+	_mm256_store_si256(&Context->H[0].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[0].u256), a));
+	_mm256_store_si256(&Context->H[1].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[1].u256), b));
+	_mm256_store_si256(&Context->H[2].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[2].u256), c));
+	_mm256_store_si256(&Context->H[3].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[3].u256), d));
+	_mm256_store_si256(&Context->H[4].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[4].u256), e));
+	_mm256_store_si256(&Context->H[5].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[5].u256), f));
+	_mm256_store_si256(&Context->H[6].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[6].u256), g));
+	_mm256_store_si256(&Context->H[7].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[7].u256), h));
 }
 
 static inline
