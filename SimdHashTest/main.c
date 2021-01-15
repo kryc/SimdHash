@@ -15,8 +15,22 @@
 #include <limits.h>
 #include "simdhash.h"
 
-static const uint8_t g_TestData[] = "AAAAAAAAAAAAAAAA";
-static const uint8_t g_TestExpected[] = {0x99,0x12,0x04,0xfb,0xa2,0xb6,0x21,0x6d,0x47,0x62,0x82,0xd3,0x75,0xab,0x88,0xd2,0x0e,0x61,0x08,0xd1,0x09,0xae,0xcd,0xed,0x97,0xef,0x42,0x4d,0xdd,0x11,0x47,0x06};
+typedef struct _TestVector
+{
+	size_t 	 Length;
+	uint8_t* PreImage;
+	uint8_t Digest[SHA256_SIZE];
+} TestVector, *PTestVector;
+
+//
+// Test vectors
+// Source: https://www.di-mgt.com.au/sha_testvectors.html
+//
+static const TestVector g_TestVectors[] = {
+	{0, (uint8_t*)"", {0xe3,0xb0,0xc4,0x42,0x98,0xfc,0x1c,0x14,0x9a,0xfb,0xf4,0xc8,0x99,0x6f,0xb9,0x24,0x27,0xae,0x41,0xe4,0x64,0x9b,0x93,0x4c,0xa4,0x95,0x99,0x1b,0x78,0x52,0xb8,0x55}},
+	{3, (uint8_t*)"abc", {0xba,0x78,0x16,0xbf,0x8f,0x01,0xcf,0xea,0x41,0x41,0x40,0xde,0x5d,0xae,0x22,0x23,0xb0,0x03,0x61,0xa3,0x96,0x17,0x7a,0x9c,0xb4,0x10,0xff,0x61,0xf2,0x00,0x15,0xad}},
+	{112, (uint8_t*)"abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu", {0xcf,0x5b,0x16,0xa7,0x78,0xaf,0x83,0x80,0x03,0x6c,0xe5,0x9e,0x7b,0x04,0x92,0x37,0x0b,0x24,0x9b,0x11,0xe8,0xf0,0x7a,0x51,0xaf,0xac,0x45,0x03,0x7a,0xfe,0xe9,0xd1}}
+};
 
 static bool
 ToHex(char* Out, size_t OutLength, uint8_t* Buffer, size_t BufferLength)
@@ -53,35 +67,41 @@ FunctionalityTests(void)
 
 	memset(hex, 0, sizeof(hex));
 
-	for (size_t i = 0; i < SIMD_COUNT; i++)
+	for (size_t c = 0; c < sizeof(g_TestVectors)/sizeof(*g_TestVectors); c++)
 	{
-		buffers[i] = (uint8_t*)g_TestData;
-	}
-	
-	SimdSha256Init(&sha256ctx, SIMD_COUNT);
-	SimdSha256Update(&sha256ctx, strlen((char*)g_TestData), (const uint8_t**)buffers);
-	SimdSha256Finalize(&sha256ctx);
-	
-	SimdSha256GetHash(&sha256ctx, hash, 0);
-	
-	if (memcmp(&hash[0], &g_TestExpected[0], sizeof(g_TestExpected)) == 0)
-	{
-		printf("Simd Functional tests passed\n");
-		ToHex(hex, sizeof(hex), hash, SHA256_SIZE);
+		for (size_t i = 0; i < SIMD_COUNT; i++)
+		{
+			buffers[i] = (uint8_t*)g_TestVectors[c].PreImage;
+		}
+		
+		SimdSha256Init(&sha256ctx, SIMD_COUNT);
+		SimdSha256Update(&sha256ctx, g_TestVectors[c].Length, (const uint8_t**)buffers);
+		SimdSha256Finalize(&sha256ctx);
+		
+		SimdSha256GetHash(&sha256ctx, hash, 0);
+		
+		if (memcmp(&hash[0], &g_TestVectors[c].Digest[0], SHA256_SIZE) == 0)
+		{
+			printf("Simd Functional tests passed\n");
+			ToHex(hex, sizeof(hex), hash, SHA256_SIZE);
+			printf("\t%s\n", hex);
+		}
+		else
+		{
+			printf("Simd Functional tests failed\n");
+		}
+
+		Sha2Context linearSha2Context;
+		Sha256Init(&linearSha2Context);
+		Sha256Update(&linearSha2Context, g_TestVectors[c].Length, (const uint8_t*)&g_TestVectors[c].PreImage[0]);
+		Sha256Finalize(&linearSha2Context);
+
+		ToHex(hex, sizeof(hex), (uint8_t*)&linearSha2Context.H[0], SHA256_SIZE);
 		printf("\t%s\n", hex);
-	}
-	else
-	{
-		printf("Simd Functional tests failed\n");
+
 	}
 
-	Sha2Context linearSha2Context;
-	Sha256Init(&linearSha2Context);
-	Sha256Update(&linearSha2Context, strlen((char*)g_TestData), (const uint8_t*)&g_TestData[0]);
-	Sha256Finalize(&linearSha2Context);
-
-	ToHex(hex, sizeof(hex), &linearSha2Context.H[0], SHA256_SIZE);
-	printf("\t%s\n", hex);
+	
 }
 
 static struct timespec
@@ -132,7 +152,7 @@ PerformanceTests(void)
 	//
 	for (size_t i = 0; i < SIMD_COUNT; i++)
 	{
-		buffers[i] = (uint8_t*)g_TestData;
+		buffers[i] = (uint8_t*)g_TestVectors[0].PreImage;
 	}
 
 	average = 0;
@@ -146,7 +166,7 @@ PerformanceTests(void)
 	{
 		begin = timer_start();
 		SimdSha256Init(&sha256ctx, SIMD_COUNT);
-		SimdSha256Update(&sha256ctx, strlen((char*)g_TestData), (const uint8_t**)buffers);
+		SimdSha256Update(&sha256ctx, g_TestVectors[0].Length, (const uint8_t**)buffers);
 		SimdSha256Finalize(&sha256ctx);
 		elapsed = timer_end(begin);
 
@@ -181,7 +201,7 @@ PerformanceTests(void)
 	{
 		begin = timer_start();
 		Sha256Init(&linearSha2Context);
-		Sha256Update(&linearSha2Context, strlen((char*)g_TestData), (const uint8_t*)&g_TestData[0]);
+		Sha256Update(&linearSha2Context, g_TestVectors[0].Length, (const uint8_t*)&g_TestVectors[0].PreImage[0]);
 		Sha256Finalize(&linearSha2Context);
 		elapsed = timer_end(begin);
 
