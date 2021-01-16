@@ -331,7 +331,7 @@ SimdSha256TransformSecondPreimage(
 			__m256i targetD = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[3]), initialD);
 			__m256i cmpH  = _mm256_cmpeq_epi32(targetH, e);
 			__m256i cmpD  = _mm256_cmpeq_epi32(targetD, a);
-			__m256i cmpDH = _mm256_or_si256(cmpH, cmpD);
+			__m256i cmpDH = _mm256_and_si256(cmpH, cmpD);
 			resultMap = _mm256_movemask_ps((__m256)cmpDH);
 			if (resultMap == 0)
 				goto exit;
@@ -342,7 +342,7 @@ SimdSha256TransformSecondPreimage(
 			__m256i targetC = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[2]), initialC);
 			__m256i cmpG = _mm256_cmpeq_epi32(targetG, e);
 			__m256i cmpC = _mm256_cmpeq_epi32(targetC, a);
-			__m256i cmpGC = _mm256_or_si256(cmpG, cmpC);
+			__m256i cmpGC = _mm256_and_si256(cmpG, cmpC);
 			resultMap &= _mm256_movemask_ps((__m256)cmpGC);
 			if (resultMap == 0)
 				goto exit;
@@ -353,7 +353,7 @@ SimdSha256TransformSecondPreimage(
 			__m256i targetB = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[1]), initialB);
 			__m256i cmpF = _mm256_cmpeq_epi32(targetF, e);
 			__m256i cmpB = _mm256_cmpeq_epi32(targetB, a);
-			__m256i cmpFB = _mm256_or_si256(cmpF, cmpB);
+			__m256i cmpFB = _mm256_and_si256(cmpF, cmpB);
 			resultMap &= _mm256_movemask_ps((__m256)cmpFB);
 			if (resultMap == 0)
 				goto exit;
@@ -364,7 +364,7 @@ SimdSha256TransformSecondPreimage(
 			__m256i targetA = _mm256_sub_epi32(_mm256_set1_epi32(Context->Target32[0]), initialA);
 			__m256i cmpE = _mm256_cmpeq_epi32(targetE, e);
 			__m256i cmpA = _mm256_cmpeq_epi32(targetA, a);
-			__m256i cmpEA = _mm256_or_si256(cmpE, cmpA);
+			__m256i cmpEA = _mm256_and_si256(cmpE, cmpA);
 			resultMap &= _mm256_movemask_ps((__m256)cmpEA);
 			if (resultMap == 0)
 				goto exit;
