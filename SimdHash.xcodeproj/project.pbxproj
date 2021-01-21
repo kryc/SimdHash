@@ -9,8 +9,10 @@
 /* Begin PBXBuildFile section */
 		EE315618250FFFB200CAD3FD /* sha2.c in Sources */ = {isa = PBXBuildFile; fileRef = EE559FE524F700BF006BA9E8 /* sha2.c */; };
 		EE315619250FFFB600CAD3FD /* simdhash.h in Headers */ = {isa = PBXBuildFile; fileRef = EE559FE424F700BF006BA9E8 /* simdhash.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE6F9C8525B84C0400551C54 /* sha1.c in Sources */ = {isa = PBXBuildFile; fileRef = EE6F9C8425B84C0400551C54 /* sha1.c */; };
 		EEA8745325A7B12000E451FA /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = EEA8745225A7B12000E451FA /* main.c */; };
 		EEA8745D25A7B36B00E451FA /* libSimdHash.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EE315614250FFF9700CAD3FD /* libSimdHash.dylib */; };
+		EEF59A2C25B9DCFF00240F2B /* shacommon.c in Sources */ = {isa = PBXBuildFile; fileRef = EEF59A2B25B9DCFF00240F2B /* shacommon.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -29,8 +31,12 @@
 		EE315614250FFF9700CAD3FD /* libSimdHash.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libSimdHash.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE559FE424F700BF006BA9E8 /* simdhash.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = simdhash.h; sourceTree = "<group>"; };
 		EE559FE524F700BF006BA9E8 /* sha2.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = sha2.c; sourceTree = "<group>"; };
+		EE6F9C8425B84C0400551C54 /* sha1.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = sha1.c; sourceTree = "<group>"; };
+		EE6F9C8825B84C2300551C54 /* simdcommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = simdcommon.h; sourceTree = "<group>"; };
+		EE6F9C8B25B84D2300551C54 /* shacommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = shacommon.h; sourceTree = "<group>"; };
 		EEA8745025A7B12000E451FA /* SimdHashTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SimdHashTest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEA8745225A7B12000E451FA /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		EEF59A2B25B9DCFF00240F2B /* shacommon.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = shacommon.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,7 +81,11 @@
 			isa = PBXGroup;
 			children = (
 				EE559FE424F700BF006BA9E8 /* simdhash.h */,
+				EE6F9C8825B84C2300551C54 /* simdcommon.h */,
+				EE6F9C8B25B84D2300551C54 /* shacommon.h */,
+				EE6F9C8425B84C0400551C54 /* sha1.c */,
 				EE559FE524F700BF006BA9E8 /* sha2.c */,
+				EEF59A2B25B9DCFF00240F2B /* shacommon.c */,
 			);
 			path = SimdHash;
 			sourceTree = "<group>";
@@ -184,6 +194,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EEF59A2C25B9DCFF00240F2B /* shacommon.c in Sources */,
+				EE6F9C8525B84C0400551C54 /* sha1.c in Sources */,
 				EE315618250FFFB200CAD3FD /* sha2.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -60,7 +60,7 @@ FunctionalityTests(void)
 	that the algorithms are providing correct results	
 --*/
 {
-	SimdSha2Context sha256ctx;
+	SimdShaContext sha256ctx;
 	uint8_t* buffers[SIMD_COUNT];
 	uint8_t hash[SHA256_SIZE];
 	char hex[SHA256_SIZE * 2 + 1];
@@ -139,7 +139,7 @@ PerformanceTests(void)
 	per second but does not measure correctness.
 --*/
 {
-	SimdSha2Context sha256ctx;
+	SimdShaContext sha256ctx;
 	Sha2Context linearSha2Context;
 	uint8_t* buffers[SIMD_COUNT];
 	struct timespec begin;

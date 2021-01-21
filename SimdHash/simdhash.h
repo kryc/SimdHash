@@ -14,8 +14,17 @@
 #include <immintrin.h>	// AVX
 
 #define SIMD_COUNT 8
-#define BUFFER_SIZE_DWORDS (64/4)
-#define SHA256_SIZE (256/8)
+#define SHA1_BUFFER_SIZE (64)
+#define SHA1_BUFFER_SIZE_DWORDS (SHA1_BUFFER_SIZE / 4)
+#define SHA1_H_COUNT (5)
+#define SHA256_BUFFER_SIZE (64)
+#define SHA256_BUFFER_SIZE_DWORDS (SHA256_BUFFER_SIZE / 4)
+#define SHA256_SIZE (256 / 8)
+#define SHA256_H_COUNT (8)
+
+#define MAX_H_COUNT SHA256_H_COUNT
+#define MAX_BUFFER_SIZE SHA256_BUFFER_SIZE
+#define MAX_BUFFER_SIZE_DWORDS (MAX_BUFFER_SIZE / 4)
 
 #ifdef _MSC_VER
   // MSVC...
@@ -29,51 +38,54 @@
 extern "C" {
 #endif
 
-typedef union _SimdShaValue
+typedef union _SimdValue
 {
-	uint32_t u32[256/32];
+	uint8_t  epi32_u8 [256/32][4];	// Access to each lane as a uint8 array
+	uint32_t epi32_u32[256/32];		// Access to each lane as a uint32
 	__m256i  u256;
-} SimdShaValue;
+} SimdValue;
 
-typedef struct _SimdSha2Context
+typedef struct _SimdShaContext
 {
-	SimdShaValue H[8];
-	SimdShaValue Buffer[BUFFER_SIZE_DWORDS];
-	uint64_t     Length;
-	uint64_t     BitLength;
-	size_t       Lanes;
-} SimdSha2Context;
+	SimdValue H[MAX_H_COUNT];
+	SimdValue Buffer[MAX_BUFFER_SIZE_DWORDS];
+	size_t    HSize;
+	size_t    BufferSize;
+	uint64_t  Length;
+	uint64_t  BitLength;
+	size_t    Lanes;
+} SimdShaContext, *PSimdSha2Context;
 
 typedef struct _Sha2Context
 {
-	uint32_t H[8];
-	uint32_t Buffer[BUFFER_SIZE_DWORDS];
+	uint32_t H[SHA256_H_COUNT];
+	uint32_t Buffer[SHA256_BUFFER_SIZE_DWORDS];
 	uint64_t Length;
 	uint64_t BitLength;
-} Sha2Context;
+} Sha2Context, *PSha2Context;
 
 typedef struct _SimdSha2SecondPreimageContext
 {
-	SimdSha2Context ShaContext;
+	SimdShaContext ShaContext;
 	uint8_t 		Target8[SHA256_SIZE];
 	uint32_t 		Target32[SHA256_SIZE/4];
-} SimdSha2SecondPreimageContext;
+} SimdSha2SecondPreimageContext, *PSimdSha2SecondPreimageContext;
 
 void SimdSha256Init(
-	SimdSha2Context* Context,
+	SimdShaContext* Context,
 	const size_t Lanes);
 
 void SimdSha256Update(
-	SimdSha2Context* Context,
+	SimdShaContext* Context,
 	const size_t Length,
 	const uint8_t* Buffers[]);
 
 void SimdSha256Finalize(
-	SimdSha2Context* Context);
+	SimdShaContext* Context);
 
 void SimdSha256SecondPreimageInit(
 	SimdSha2SecondPreimageContext* Context,
-	SimdSha2Context* ShaContext,
+	SimdShaContext* ShaContext,
 	const uint8_t* Target);
 
 size_t SimdSha256SecondPreimage(
@@ -82,11 +94,11 @@ size_t SimdSha256SecondPreimage(
 	const uint8_t* Buffers[]);
 
 void SimdSha256GetHashes(
-	SimdSha2Context* Context,
+	SimdShaContext* Context,
 	uint8_t** HashBuffers);
 
 void SimdSha256GetHash(
-	SimdSha2Context* Context,
+	SimdShaContext* Context,
 	uint8_t* HashBuffer,
 	const size_t Lane);
 
