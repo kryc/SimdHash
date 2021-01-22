@@ -146,24 +146,24 @@ SimdCalculateTemp1(
 
 static inline
 void
-SimdExpandMessageSchedule(
+SimdSha256ExpandMessageSchedule(
 	SimdShaContext* Context,
-	SimdValue* messageSchedule)
+	SimdValue* MessageSchedule)
 {
-	for (size_t i = 0; i < 16; i++)
+	for (size_t i = 0; i < SHA256_BUFFER_SIZE_DWORDS; i++)
 	{
 		__m256i w = _mm256_load_si256(&Context->Buffer[i].u256);
-		_mm256_store_si256(&messageSchedule[i].u256, w);
+		_mm256_store_si256(&MessageSchedule[i].u256, w);
 	}
 	
-	for (size_t i = 16; i < 64; i++)
+	for (size_t i = SHA256_BUFFER_SIZE_DWORDS; i < SHA256_MESSAGE_SCHEDULE_SIZE_DWORDS; i++)
 	{
-		__m256i s0 = SimdCalculateExtendS0(_mm256_load_si256(&messageSchedule[i-15].u256));
-		__m256i s1 = SimdCalculateExtendS1(_mm256_load_si256(&messageSchedule[i-2].u256));
-		__m256i res = _mm256_add_epi32(_mm256_load_si256(&messageSchedule[i-16].u256), s0);
-		res = _mm256_add_epi32(res, _mm256_load_si256(&messageSchedule[i-7].u256));
+		__m256i s0 = SimdCalculateExtendS0(_mm256_load_si256(&MessageSchedule[i-15].u256));
+		__m256i s1 = SimdCalculateExtendS1(_mm256_load_si256(&MessageSchedule[i-2].u256));
+		__m256i res = _mm256_add_epi32(_mm256_load_si256(&MessageSchedule[i-16].u256), s0);
+		res = _mm256_add_epi32(res, _mm256_load_si256(&MessageSchedule[i-7].u256));
 		res = _mm256_add_epi32(res, s1);
-		_mm256_store_si256(&messageSchedule[i].u256, res);
+		_mm256_store_si256(&MessageSchedule[i].u256, res);
 	}
 }
 
@@ -193,8 +193,8 @@ SimdSha256Transform(
 	//
 	// Expand the message schedule
 	//
-	ALIGN(32) SimdValue messageSchedule[64];
-	SimdExpandMessageSchedule(Context, messageSchedule);
+	ALIGN(32) SimdValue messageSchedule[SHA256_MESSAGE_SCHEDULE_SIZE_DWORDS];
+	SimdSha256ExpandMessageSchedule(Context, messageSchedule);
 	
 	__m256i a = _mm256_load_si256(&Context->H[0].u256);
 	__m256i b = _mm256_load_si256(&Context->H[1].u256);
@@ -259,7 +259,7 @@ SimdSha256TransformSecondPreimage(
 	result.LaneMap = 0;
 	result.Result = SECOND_PREIMAGE_CANDIDATE_NOT_FOUND;
 	
-	SimdExpandMessageSchedule(&Context->ShaContext, messageSchedule);
+	SimdSha256ExpandMessageSchedule(&Context->ShaContext, messageSchedule);
 	
 	__m256i a = _mm256_load_si256(&Context->ShaContext.H[0].u256), initialA = a;
 	__m256i b = _mm256_load_si256(&Context->ShaContext.H[1].u256), initialB = b;
