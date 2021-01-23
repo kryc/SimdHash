@@ -18,18 +18,19 @@ SimdShaUpdateBuffer(
 	const size_t Length,
 	const uint8_t* Buffers[]);
 
-inline __m256i
+static inline __m256i
 SimdShaBitwiseChoiceWithControl(
 	const __m256i Choice1,
 	const __m256i Choice2,
 	const __m256i Control)
 {
+	// f = (b and c) or ((not b) and d)
 	__m256i ctrlAndC1 = _mm256_and_si256(Control, Choice1);
 	__m256i notCtrlAndC2 = _mm256_andnot_si256(Control, Choice2);
 	return _mm256_or_si256(ctrlAndC1, notCtrlAndC2);
 }
 
-inline __m256i
+static inline __m256i
 SimdShaBitwiseMajority(
 	const __m256i A,
 	const __m256i B,

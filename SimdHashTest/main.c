@@ -19,17 +19,28 @@ typedef struct _TestVector
 {
 	size_t 	 Length;
 	uint8_t* PreImage;
-	uint8_t Digest[SHA256_SIZE];
+	uint8_t  Sha256Digest[SHA256_SIZE];
+	uint8_t  Sha1Digest[SHA1_SIZE];
 } TestVector, *PTestVector;
 
 //
 // Test vectors
 // Source: https://www.di-mgt.com.au/sha_testvectors.html
 //
-static const TestVector g_TestVectors[] = {
-	{0, (uint8_t*)"", {0xe3,0xb0,0xc4,0x42,0x98,0xfc,0x1c,0x14,0x9a,0xfb,0xf4,0xc8,0x99,0x6f,0xb9,0x24,0x27,0xae,0x41,0xe4,0x64,0x9b,0x93,0x4c,0xa4,0x95,0x99,0x1b,0x78,0x52,0xb8,0x55}},
-	{3, (uint8_t*)"abc", {0xba,0x78,0x16,0xbf,0x8f,0x01,0xcf,0xea,0x41,0x41,0x40,0xde,0x5d,0xae,0x22,0x23,0xb0,0x03,0x61,0xa3,0x96,0x17,0x7a,0x9c,0xb4,0x10,0xff,0x61,0xf2,0x00,0x15,0xad}},
-	{112, (uint8_t*)"abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu", {0xcf,0x5b,0x16,0xa7,0x78,0xaf,0x83,0x80,0x03,0x6c,0xe5,0x9e,0x7b,0x04,0x92,0x37,0x0b,0x24,0x9b,0x11,0xe8,0xf0,0x7a,0x51,0xaf,0xac,0x45,0x03,0x7a,0xfe,0xe9,0xd1}}
+static const TestVector g_ShaTestVectors[] = {
+	{0, (uint8_t*)"", {0xe3,0xb0,0xc4,0x42,0x98,0xfc,0x1c,0x14,0x9a,0xfb,0xf4,0xc8,0x99,0x6f,0xb9,0x24,0x27,0xae,0x41,0xe4,0x64,0x9b,0x93,0x4c,0xa4,0x95,0x99,0x1b,0x78,0x52,0xb8,0x55},
+		{0xda,0x39,0xa3,0xee,0x5e,0x6b,0x4b,0x0d,0x32,0x55,0xbf,0xef,0x95,0x60,0x18,0x90,0xaf,0xd8,0x07,0x09}
+	},
+	{3, (uint8_t*)"abc", {0xba,0x78,0x16,0xbf,0x8f,0x01,0xcf,0xea,0x41,0x41,0x40,0xde,0x5d,0xae,0x22,0x23,0xb0,0x03,0x61,0xa3,0x96,0x17,0x7a,0x9c,0xb4,0x10,0xff,0x61,0xf2,0x00,0x15,0xad},
+		{0xa9,0x99,0x3e,0x36,0x47,0x06,0x81,0x6a,0xba,0x3e,0x25,0x71,0x78,0x50,0xc2,0x6c,0x9c,0xd0,0xd8,0x9d}
+	},
+	{56, (uint8_t*)"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
+		{0x24,0x8d,0x6a,0x61,0xd2,0x06,0x38,0xb8,0xe5,0xc0,0x26,0x93,0x0c,0x3e,0x60,0x39,0xa3,0x3c,0xe4,0x59,0x64,0xff,0x21,0x67,0xf6,0xec,0xed,0xd4,0x19,0xdb,0x06,0xc1},
+		{0x84,0x98,0x3e,0x44,0x1c,0x3b,0xd2,0x6e,0xba,0xae,0x4a,0xa1,0xf9,0x51,0x29,0xe5,0xe5,0x46,0x70,0xf1}
+	},
+	{112, (uint8_t*)"abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu", {0xcf,0x5b,0x16,0xa7,0x78,0xaf,0x83,0x80,0x03,0x6c,0xe5,0x9e,0x7b,0x04,0x92,0x37,0x0b,0x24,0x9b,0x11,0xe8,0xf0,0x7a,0x51,0xaf,0xac,0x45,0x03,0x7a,0xfe,0xe9,0xd1},
+		{0xa4,0x9b,0x24,0x46,0xa0,0x2c,0x64,0x5b,0xf4,0x19,0xf9,0x95,0xb6,0x70,0x91,0x25,0x3a,0x04,0xa2,0x59}
+	}
 };
 
 static bool
@@ -60,47 +71,87 @@ FunctionalityTests(void)
 	that the algorithms are providing correct results	
 --*/
 {
-	SimdShaContext sha256ctx;
+	SimdShaContext ctx;
 	uint8_t* buffers[SIMD_COUNT];
 	uint8_t hash[SHA256_SIZE];
 	char hex[SHA256_SIZE * 2 + 1];
+	bool sha256fail, sha1fail;
 
 	memset(hex, 0, sizeof(hex));
+	
+	sha256fail = false;
+	sha1fail = false;
 
-	for (size_t c = 0; c < sizeof(g_TestVectors)/sizeof(*g_TestVectors); c++)
+	for (size_t c = 0; c < sizeof(g_ShaTestVectors)/sizeof(*g_ShaTestVectors); c++)
 	{
+		printf("[+] Vector %zu\n", c);
+		
 		for (size_t i = 0; i < SIMD_COUNT; i++)
 		{
-			buffers[i] = (uint8_t*)g_TestVectors[c].PreImage;
+			buffers[i] = (uint8_t*)g_ShaTestVectors[c].PreImage;
 		}
 		
-		SimdSha256Init(&sha256ctx, SIMD_COUNT);
-		SimdSha256Update(&sha256ctx, g_TestVectors[c].Length, (const uint8_t**)buffers);
-		SimdSha256Finalize(&sha256ctx);
+		SimdSha256Init(&ctx, SIMD_COUNT);
+		SimdSha256Update(&ctx, g_ShaTestVectors[c].Length, (const uint8_t**)buffers);
+		SimdSha256Finalize(&ctx);
+		SimdSha256GetHash(&ctx, hash, 0);
 		
-		SimdSha256GetHash(&sha256ctx, hash, 0);
+		ToHex(hex, sizeof(hex), hash, SHA256_SIZE);
 		
-		if (memcmp(&hash[0], &g_TestVectors[c].Digest[0], SHA256_SIZE) == 0)
+		if (memcmp(&hash[0], &g_ShaTestVectors[c].Sha256Digest[0], SHA256_SIZE) != 0)
 		{
-			printf("Simd Functional tests passed\n");
-			ToHex(hex, sizeof(hex), hash, SHA256_SIZE);
-			printf("\t%s\n", hex);
+			sha256fail = true;
+			printf("[!] SHA256: %s\n", hex);
 		}
 		else
 		{
-			printf("Simd Functional tests failed\n");
+			printf("[+] SHA256: %s\n", hex);
+		}
+		
+		SimdSha1Init(&ctx, SIMD_COUNT);
+		SimdSha1Update(&ctx, g_ShaTestVectors[c].Length, (const uint8_t**)buffers);
+		SimdSha1Finalize(&ctx);
+		SimdSha1GetHash(&ctx, hash, 0);
+		
+		ToHex(hex, sizeof(hex), hash, SHA1_SIZE);
+		
+		if (memcmp(&hash[0], &g_ShaTestVectors[c].Sha1Digest[0], SHA1_SIZE) != 0)
+		{
+			sha1fail = true;
+			printf("[!] SHA1:   %s\n", hex);
+		}
+		else
+		{
+			printf("[+] SHA1:   %s\n", hex);
 		}
 
-		Sha2Context linearSha2Context;
+		/*Sha2Context linearSha2Context;
 		Sha256Init(&linearSha2Context);
-		Sha256Update(&linearSha2Context, g_TestVectors[c].Length, (const uint8_t*)&g_TestVectors[c].PreImage[0]);
+		Sha256Update(&linearSha2Context, g_ShaTestVectors[c].Length, (const uint8_t*)&g_ShaTestVectors[c].PreImage[0]);
 		Sha256Finalize(&linearSha2Context);
 
 		ToHex(hex, sizeof(hex), (uint8_t*)&linearSha2Context.H[0], SHA256_SIZE);
-		printf("\t%s\n", hex);
+		printf("\t%s\n", hex);*/
 
 	}
 
+	if (sha256fail)
+	{
+		printf("[!] SHA256 Functional test(s) failed!\n");
+	}
+	else
+	{
+		printf("[+] SHA256 Functional tests passed!\n");
+	}
+	
+	if (sha1fail)
+	{
+		printf("[!] SHA1 Functional test(s) failed!\n");
+	}
+	else
+	{
+		printf("[+] SHA1 Functional tests passed!\n");
+	}
 	
 }
 
@@ -152,7 +203,7 @@ PerformanceTests(void)
 	//
 	for (size_t i = 0; i < SIMD_COUNT; i++)
 	{
-		buffers[i] = (uint8_t*)g_TestVectors[0].PreImage;
+		buffers[i] = (uint8_t*)g_ShaTestVectors[0].PreImage;
 	}
 
 	average = 0;
@@ -166,7 +217,7 @@ PerformanceTests(void)
 	{
 		begin = timer_start();
 		SimdSha256Init(&sha256ctx, SIMD_COUNT);
-		SimdSha256Update(&sha256ctx, g_TestVectors[0].Length, (const uint8_t**)buffers);
+		SimdSha256Update(&sha256ctx, g_ShaTestVectors[0].Length, (const uint8_t**)buffers);
 		SimdSha256Finalize(&sha256ctx);
 		elapsed = timer_end(begin);
 
@@ -201,7 +252,7 @@ PerformanceTests(void)
 	{
 		begin = timer_start();
 		Sha256Init(&linearSha2Context);
-		Sha256Update(&linearSha2Context, g_TestVectors[0].Length, (const uint8_t*)&g_TestVectors[0].PreImage[0]);
+		Sha256Update(&linearSha2Context, g_ShaTestVectors[0].Length, (const uint8_t*)&g_ShaTestVectors[0].PreImage[0]);
 		Sha256Finalize(&linearSha2Context);
 		elapsed = timer_end(begin);
 

@@ -17,12 +17,13 @@
 #define SHA1_BUFFER_SIZE (64)
 #define SHA1_BUFFER_SIZE_DWORDS (SHA1_BUFFER_SIZE / 4)
 #define SHA1_H_COUNT (5)
+#define SHA1_SIZE (SHA1_H_COUNT * 4)
 #define SHA1_MESSAGE_SCHEDULE_SIZE (320)
 #define SHA1_MESSAGE_SCHEDULE_SIZE_DWORDS (SHA1_MESSAGE_SCHEDULE_SIZE / 4)
 #define SHA256_BUFFER_SIZE (64)
 #define SHA256_BUFFER_SIZE_DWORDS (SHA256_BUFFER_SIZE / 4)
-#define SHA256_SIZE (256 / 8)
 #define SHA256_H_COUNT (8)
+#define SHA256_SIZE (SHA256_H_COUNT * 4)
 #define SHA256_MESSAGE_SCHEDULE_SIZE (256)
 #define SHA256_MESSAGE_SCHEDULE_SIZE_DWORDS (SHA256_MESSAGE_SCHEDULE_SIZE / 4)
 
@@ -102,6 +103,27 @@ void SimdSha256GetHashes(
 	uint8_t** HashBuffers);
 
 void SimdSha256GetHash(
+	SimdShaContext* Context,
+	uint8_t* HashBuffer,
+	const size_t Lane);
+
+void SimdSha1Init(
+	SimdShaContext* Context,
+	const size_t Lanes);
+
+void SimdSha1Update(
+	SimdShaContext* Context,
+	const size_t Length,
+	const uint8_t* Buffers[]);
+
+void SimdSha1Finalize(
+	SimdShaContext* Context);
+
+void SimdSha1GetHashes(
+	SimdShaContext* Context,
+	uint8_t** HashBuffers);
+
+void SimdSha1GetHash(
 	SimdShaContext* Context,
 	uint8_t* HashBuffer,
 	const size_t Lane);

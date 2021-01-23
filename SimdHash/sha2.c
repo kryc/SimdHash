@@ -90,39 +90,13 @@ SimdCalculateExtendS1(
 
 static inline
 __m256i
-SimdCalculateCh(
-	const __m256i E,
-	const __m256i F,
-	const __m256i G)
-{
-	__m256i eAndF = _mm256_and_si256(E, F);
-	__m256i notEAndG = _mm256_andnot_si256(E, G);
-	return _mm256_xor_si256(eAndF, notEAndG);
-}
-
-static inline
-__m256i
-SimdCalculateMaj(
-	const __m256i A,
-	const __m256i B,
-	const __m256i C)
-{
-	__m256i aAndB = _mm256_and_si256(A, B);
-	__m256i aAndC = _mm256_and_si256(A, C);
-	__m256i bAndC = _mm256_and_si256(B, C);
-	__m256i ret = _mm256_xor_si256(aAndB, aAndC);
-	return _mm256_xor_si256(ret, bAndC);
-}
-
-static inline
-__m256i
 SimdCalculateTemp2(
 	const __m256i A,
 	const __m256i B,
 	const __m256i C)
 {
 	__m256i s0 = SimdCalculateS0(A);
-	__m256i maj = SimdCalculateMaj(A, B, C);
+	__m256i maj = SimdShaBitwiseMajority(A, B, C);
 	return _mm256_add_epi32(s0, maj);
 }
 
@@ -137,7 +111,7 @@ SimdCalculateTemp1(
 	const __m256i W)
 {
 	__m256i s1 = SimdCalculateS1(E);
-	__m256i ch = SimdCalculateCh(E, F, G);
+	__m256i ch = SimdShaBitwiseChoiceWithControl(F, G, E);
 	__m256i ret = _mm256_add_epi32(H, s1);
 	ret = _mm256_add_epi32(ret, ch);
 	ret = _mm256_add_epi32(ret, K);

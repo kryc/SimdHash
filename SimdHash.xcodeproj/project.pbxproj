@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EE0825E325BC39FC001F1E36 /* shacommon.h in Headers */ = {isa = PBXBuildFile; fileRef = EE6F9C8B25B84D2300551C54 /* shacommon.h */; };
 		EE315618250FFFB200CAD3FD /* sha2.c in Sources */ = {isa = PBXBuildFile; fileRef = EE559FE524F700BF006BA9E8 /* sha2.c */; };
 		EE315619250FFFB600CAD3FD /* simdhash.h in Headers */ = {isa = PBXBuildFile; fileRef = EE559FE424F700BF006BA9E8 /* simdhash.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EE6F9C8525B84C0400551C54 /* sha1.c in Sources */ = {isa = PBXBuildFile; fileRef = EE6F9C8425B84C0400551C54 /* sha1.c */; };
@@ -112,6 +113,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE0825E325BC39FC001F1E36 /* shacommon.h in Headers */,
 				EE315619250FFFB600CAD3FD /* simdhash.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
