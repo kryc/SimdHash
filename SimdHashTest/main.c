@@ -211,6 +211,7 @@ PerformanceTests(void)
 	slowest = SIZE_MAX;
 
 	//
+	// SHA256
 	// Perform tests, capturing statistics
 	//
 	for (size_t i = 0; i < numTests; i++)
@@ -235,7 +236,43 @@ PerformanceTests(void)
 	//
 	// Display captured statistics
 	//
-	printf("SIMD Performance Tests over %zu iterations\n", numTests);
+	printf("SIMD SHA256 Performance Tests over %zu iterations\n", numTests);
+	printf("Fastest (8h/s): %zu\n", fastest);
+	printf("Slowest (8h/s): %zu\n", slowest);
+	printf("Average (8h/s): %zu\n", average);
+	printf("Hashes/core/s : %zu\n", average * 8);
+
+	average = 0;
+	fastest = 0;
+	slowest = SIZE_MAX;
+
+	//
+	// SHA1
+	// Perform tests, capturing statistics
+	//
+	for (size_t i = 0; i < numTests; i++)
+	{
+		begin = timer_start();
+		SimdSha1Init(&sha256ctx, SIMD_COUNT);
+		SimdSha1Update(&sha256ctx, g_ShaTestVectors[0].Length, (const uint8_t**)buffers);
+		SimdSha1Finalize(&sha256ctx);
+		elapsed = timer_end(begin);
+
+		hashesPerSec = 1e9 / elapsed;
+
+		if (hashesPerSec > fastest)
+			fastest = hashesPerSec;
+		if (hashesPerSec < slowest)
+			slowest = hashesPerSec;
+		average += hashesPerSec;
+	}
+
+	average /= numTests;
+
+	//
+	// Display captured statistics
+	//
+	printf("SIMD SHA1 Performance Tests over %zu iterations\n", numTests);
 	printf("Fastest (8h/s): %zu\n", fastest);
 	printf("Slowest (8h/s): %zu\n", slowest);
 	printf("Average (8h/s): %zu\n", average);
