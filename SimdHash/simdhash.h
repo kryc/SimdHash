@@ -127,6 +127,10 @@ void SimdSha1GetHashes(
 	SimdShaContext* Context,
 	uint8_t** HashBuffers);
 
+void SimdSha256GetHashesUnrolled(
+	SimdShaContext* Context,
+	uint8_t* HashBuffers);
+
 void SimdSha1GetHash(
 	SimdShaContext* Context,
 	uint8_t* HashBuffer,

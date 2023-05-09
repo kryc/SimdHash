@@ -557,6 +557,44 @@ void SimdSha256GetHashes(
 	}
 }
 
+#define GET_HASH(pOut, iLane){ \
+	*(pOut)++ = Context->H[0].epi32_u32[(iLane)]; \
+	*(pOut)++ = Context->H[1].epi32_u32[(iLane)]; \
+	*(pOut)++ = Context->H[2].epi32_u32[(iLane)]; \
+	*(pOut)++ = Context->H[3].epi32_u32[(iLane)]; \
+	*(pOut)++ = Context->H[4].epi32_u32[(iLane)]; \
+	*(pOut)++ = Context->H[5].epi32_u32[(iLane)]; \
+	*(pOut)++ = Context->H[6].epi32_u32[(iLane)]; \
+	*(pOut)++ = Context->H[7].epi32_u32[(iLane)]; \
+}
+
+void SimdSha256GetHashesUnrolled(
+	SimdShaContext* Context,
+	uint8_t* HashBuffers)
+{
+	uint32_t* out = (uint32_t*)HashBuffers;
+
+	switch (Context->Lanes)
+	{
+		case 8:
+			GET_HASH(out, 7);
+		case 7:
+			GET_HASH(out, 6);
+		case 6:
+			GET_HASH(out, 5);
+		case 5:
+			GET_HASH(out, 4);
+		case 4:
+			GET_HASH(out, 3);
+		case 3:
+			GET_HASH(out, 2);
+		case 2:
+			GET_HASH(out, 1);
+		case 1:
+			GET_HASH(out, 0);
+	}
+}
+
 void Sha256Init(
 	Sha2Context* Context)
 {
