@@ -98,9 +98,13 @@ size_t SimdSha256SecondPreimage(
 	const size_t Length,
 	const uint8_t* Buffers[]);
 
-void SimdSha256GetHashes(
+void SimdSha256GetHashes2D(
 	SimdShaContext* Context,
 	uint8_t** HashBuffers);
+
+void SimdSha256GetHashes(
+	SimdShaContext* Context,
+	uint8_t* HashBuffers);
 
 void SimdSha256GetHash(
 	SimdShaContext* Context,
@@ -143,4 +147,4 @@ void Sha256Finalize(
 }
 #endif
 
-#endif /* sha2_h */
+#endif /* simdhash_h */

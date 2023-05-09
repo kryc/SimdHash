@@ -537,13 +537,23 @@ void SimdSha256GetHash(
 	nextBuffer[7] = Context->H[7].epi32_u32[Lane];
 }
 
-void SimdSha256GetHashes(
+void SimdSha256GetHashes2D(
 	SimdShaContext* Context,
 	uint8_t** HashBuffers)
 {
 	for (size_t i = 0; i < Context->Lanes; i++)
 	{
 		SimdSha256GetHash(Context, HashBuffers[i], i);
+	}
+}
+
+void SimdSha256GetHashes(
+	SimdShaContext* Context,
+	uint8_t* HashBuffers)
+{
+	for (size_t i = 0; i < Context->Lanes; i++)
+	{
+		SimdSha256GetHash(Context, &HashBuffers[(i * SHA256_SIZE)], i);
 	}
 }
 
