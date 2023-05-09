@@ -558,14 +558,14 @@ void SimdSha256GetHashes(
 }
 
 #define GET_HASH(pOut, iLane){ \
-	*(pOut)++ = Context->H[0].epi32_u32[(iLane)]; \
-	*(pOut)++ = Context->H[1].epi32_u32[(iLane)]; \
-	*(pOut)++ = Context->H[2].epi32_u32[(iLane)]; \
-	*(pOut)++ = Context->H[3].epi32_u32[(iLane)]; \
-	*(pOut)++ = Context->H[4].epi32_u32[(iLane)]; \
-	*(pOut)++ = Context->H[5].epi32_u32[(iLane)]; \
-	*(pOut)++ = Context->H[6].epi32_u32[(iLane)]; \
-	*(pOut)++ = Context->H[7].epi32_u32[(iLane)]; \
+	pOut[(iLane * SHA256_H_COUNT) + 0] = Context->H[0].epi32_u32[(iLane)]; \
+	pOut[(iLane * SHA256_H_COUNT) + 1] = Context->H[1].epi32_u32[(iLane)]; \
+	pOut[(iLane * SHA256_H_COUNT) + 2] = Context->H[2].epi32_u32[(iLane)]; \
+	pOut[(iLane * SHA256_H_COUNT) + 3] = Context->H[3].epi32_u32[(iLane)]; \
+	pOut[(iLane * SHA256_H_COUNT) + 4] = Context->H[4].epi32_u32[(iLane)]; \
+	pOut[(iLane * SHA256_H_COUNT) + 5] = Context->H[5].epi32_u32[(iLane)]; \
+	pOut[(iLane * SHA256_H_COUNT) + 6] = Context->H[6].epi32_u32[(iLane)]; \
+	pOut[(iLane * SHA256_H_COUNT) + 7] = Context->H[7].epi32_u32[(iLane)]; \
 }
 
 void SimdSha256GetHashesUnrolled(
