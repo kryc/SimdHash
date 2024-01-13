@@ -1,17 +1,20 @@
 //
-//  sha2.h
+//  simdhash.h
 //  SimdHash
 //
 //  Created by Gareth Evans on 26/08/2020.
 //  Copyright © 2020 Gareth Evans. All rights reserved.
 //
 
-#ifndef sha2_h
-#define sha2_h
+#ifndef simdhash_h
+#define simdhash_h
 
 #include <stdio.h>
 #include <stdint.h>
 #include <immintrin.h>	// AVX
+
+#include "common.h"
+#include "simdcommon.h"
 
 #define SIMD_COUNT 8
 #define SHA1_BUFFER_SIZE (64)
@@ -43,13 +46,6 @@
 extern "C" {
 #endif
 
-typedef union _SimdValue
-{
-	uint8_t  epi32_u8 [256/32][4];	// Access to each lane as a uint8 array
-	uint32_t epi32_u32[256/32];		// Access to each lane as a uint32
-	__m256i  u256;
-} SimdValue;
-
 typedef struct _SimdShaContext
 {
 	SimdValue H[MAX_H_COUNT];
@@ -60,14 +56,6 @@ typedef struct _SimdShaContext
 	uint64_t  BitLength;
 	size_t    Lanes;
 } SimdShaContext, *PSimdSha2Context;
-
-typedef struct _Sha2Context
-{
-	uint32_t H[SHA256_H_COUNT];
-	uint32_t Buffer[SHA256_BUFFER_SIZE_DWORDS];
-	uint64_t Length;
-	uint64_t BitLength;
-} Sha2Context, *PSha2Context;
 
 typedef struct _SimdSha2SecondPreimageContext
 {
@@ -136,16 +124,23 @@ void SimdSha1GetHash(
 	uint8_t* HashBuffer,
 	const size_t Lane);
 
-void Sha256Init(
-	Sha2Context* Context);
-
-void Sha256Update(
-	Sha2Context* Context,
-	const size_t Length,
-	const uint8_t* Buffer);
-
-void Sha256Finalize(
-	Sha2Context* Context);
+#ifdef TEST
+__m256i SimdCalculateS0(
+	const __m256i A);
+__m256i SimdCalculateS1(
+	const __m256i E);
+__m256i SimdCalculateTemp1(
+	const __m256i E,
+	const __m256i F,
+	const __m256i G,
+	const __m256i H,
+	const __m256i K,
+	const __m256i W);
+__m256i SimdCalculateTemp2(
+	const __m256i A,
+	const __m256i B,
+	const __m256i C);
+#endif
 
 #ifdef __cplusplus
 }

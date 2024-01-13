@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <limits.h>
+
 #include "simdhash.h"
 
 typedef struct _TestVector
@@ -38,13 +39,14 @@ static const TestVector g_ShaTestVectors[] = {
 		{0x24,0x8d,0x6a,0x61,0xd2,0x06,0x38,0xb8,0xe5,0xc0,0x26,0x93,0x0c,0x3e,0x60,0x39,0xa3,0x3c,0xe4,0x59,0x64,0xff,0x21,0x67,0xf6,0xec,0xed,0xd4,0x19,0xdb,0x06,0xc1},
 		{0x84,0x98,0x3e,0x44,0x1c,0x3b,0xd2,0x6e,0xba,0xae,0x4a,0xa1,0xf9,0x51,0x29,0xe5,0xe5,0x46,0x70,0xf1}
 	},
-	{112, (uint8_t*)"abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu", {0xcf,0x5b,0x16,0xa7,0x78,0xaf,0x83,0x80,0x03,0x6c,0xe5,0x9e,0x7b,0x04,0x92,0x37,0x0b,0x24,0x9b,0x11,0xe8,0xf0,0x7a,0x51,0xaf,0xac,0x45,0x03,0x7a,0xfe,0xe9,0xd1},
+	{112, (uint8_t*)"abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu",
+		{0xcf,0x5b,0x16,0xa7,0x78,0xaf,0x83,0x80,0x03,0x6c,0xe5,0x9e,0x7b,0x04,0x92,0x37,0x0b,0x24,0x9b,0x11,0xe8,0xf0,0x7a,0x51,0xaf,0xac,0x45,0x03,0x7a,0xfe,0xe9,0xd1},
 		{0xa4,0x9b,0x24,0x46,0xa0,0x2c,0x64,0x5b,0xf4,0x19,0xf9,0x95,0xb6,0x70,0x91,0x25,0x3a,0x04,0xa2,0x59}
 	}
 };
 
 static bool
-ToHex(char* Out, size_t OutLength, uint8_t* Buffer, size_t BufferLength)
+ToHex(char* Out, size_t OutLength, const uint8_t* Buffer, size_t BufferLength)
 {
 	char* nextOut;
 	
@@ -72,6 +74,7 @@ FunctionalityTests(void)
 --*/
 {
 	SimdShaContext ctx;
+	// Sha2Context sha2ctx;
 	uint8_t* buffers[SIMD_COUNT];
 	uint8_t hash[SHA256_SIZE];
 	char hex[SHA256_SIZE * 2 + 1];
@@ -96,16 +99,26 @@ FunctionalityTests(void)
 		SimdSha256Finalize(&ctx);
 		SimdSha256GetHash(&ctx, hash, 0);
 		
+		ToHex(hex, sizeof(hex), &g_ShaTestVectors[c].Sha256Digest[0], SHA256_SIZE);
+		printf("[+] Expected: %s\n", hex);
+
+		// Sha256Init(&sha2ctx);
+		// Sha256Update(&sha2ctx, g_ShaTestVectors[c].Length, (const uint8_t*)&g_ShaTestVectors[c].PreImage);
+		// Sha256Finalize(&sha2ctx);
+
+		// ToHex(hex, sizeof(hex), (uint8_t*)&sha2ctx.H[0], SHA256_SIZE);
+		printf("[+] Regular:  %s\n", hex);
+
 		ToHex(hex, sizeof(hex), hash, SHA256_SIZE);
 		
 		if (memcmp(&hash[0], &g_ShaTestVectors[c].Sha256Digest[0], SHA256_SIZE) != 0)
 		{
 			sha256fail = true;
-			printf("[!] SHA256: %s\n", hex);
+			printf("[!] SHA256:   %s\n", hex);
 		}
 		else
 		{
-			printf("[+] SHA256: %s\n", hex);
+			printf("[+] SHA256:   %s\n", hex);
 		}
 		
 		SimdSha1Init(&ctx, SIMD_COUNT);
@@ -113,16 +126,19 @@ FunctionalityTests(void)
 		SimdSha1Finalize(&ctx);
 		SimdSha1GetHash(&ctx, hash, 0);
 		
+		ToHex(hex, sizeof(hex), &g_ShaTestVectors[c].Sha1Digest[0], SHA1_SIZE);
+		printf("[+] Expected: %s\n", hex);
+
 		ToHex(hex, sizeof(hex), hash, SHA1_SIZE);
 		
 		if (memcmp(&hash[0], &g_ShaTestVectors[c].Sha1Digest[0], SHA1_SIZE) != 0)
 		{
 			sha1fail = true;
-			printf("[!] SHA1:   %s\n", hex);
+			printf("[!] SHA1:     %s\n", hex);
 		}
 		else
 		{
-			printf("[+] SHA1:   %s\n", hex);
+			printf("[+] SHA1:     %s\n", hex);
 		}
 
 		/*Sha2Context linearSha2Context;
@@ -191,7 +207,6 @@ PerformanceTests(void)
 --*/
 {
 	SimdShaContext sha256ctx;
-	Sha2Context linearSha2Context;
 	uint8_t* buffers[SIMD_COUNT];
 	struct timespec begin;
 	long elapsed;
@@ -277,42 +292,10 @@ PerformanceTests(void)
 	printf("Slowest (8h/s): %zu\n", slowest);
 	printf("Average (8h/s): %zu\n", average);
 	printf("Hashes/core/s : %zu\n", average * 8);
-
-	average = 0;
-	fastest = 0;
-	slowest = SIZE_MAX;
-
-	//
-	// Perform tests, capturing statistics
-	//
-	for (size_t i = 0; i < numTests; i++)
-	{
-		begin = timer_start();
-		Sha256Init(&linearSha2Context);
-		Sha256Update(&linearSha2Context, g_ShaTestVectors[0].Length, (const uint8_t*)&g_ShaTestVectors[0].PreImage[0]);
-		Sha256Finalize(&linearSha2Context);
-		elapsed = timer_end(begin);
-
-		hashesPerSec = 1e9 / elapsed;
-
-		if (hashesPerSec > fastest)
-			fastest = hashesPerSec;
-		if (hashesPerSec < slowest)
-			slowest = hashesPerSec;
-		average += hashesPerSec;
-	}
-
-	average /= numTests;
-
-	printf("Linear Performance Tests over %zu iterations\n", numTests);
-	printf("Fastest (h/s): %zu\n", fastest);
-	printf("Slowest (h/s): %zu\n", slowest);
-	printf("Average (h/s): %zu\n", average);
-	printf("Hashes/core/s: %zu\n", average);
 }
 
 int main(int argc, char* argv[])
 {
 	FunctionalityTests();
-	PerformanceTests();
+	// PerformanceTests();
 }

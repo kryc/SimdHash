@@ -1,5 +1,5 @@
 //
-//  sha2.c
+//  simd_sha2.c
 //  SimdHash
 //
 //  Created by Gareth Evans on 26/08/2020.
@@ -11,16 +11,17 @@
 #include <assert.h>
 #include <string.h>		// memset
 #include <immintrin.h>	// AVX
+
 #include "simdhash.h"
 #include "simdcommon.h"
 #include "shacommon.h"
 
-static const uint32_t Sha256InitialValues[] = {
+static const uint32_t Sha256InitialValues[8] = {
 	0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
 	0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 };
 
-static const uint32_t Sha256RoundConstants[] = {
+static const uint32_t Sha256RoundConstants[64] = {
 	0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
 	0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
 	0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -30,7 +31,6 @@ static const uint32_t Sha256RoundConstants[] = {
 	0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
 	0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
-
 typedef struct _SecondPreimageResult
 {
 	uint64_t LaneMap : 63;
@@ -40,7 +40,7 @@ typedef struct _SecondPreimageResult
 #define SECOND_PREIMAGE_CANDIDATE_FOUND     1
 #define SECOND_PREIMAGE_CANDIDATE_NOT_FOUND 0
 
-static inline
+inline
 __m256i
 SimdCalculateS1(
 	const __m256i E)
@@ -52,7 +52,7 @@ SimdCalculateS1(
 	return _mm256_xor_si256(ret, er25);
 }
 
-static inline
+inline
 __m256i
 SimdCalculateS0(
 	const __m256i A)
@@ -64,7 +64,7 @@ SimdCalculateS0(
 	return _mm256_xor_si256(ret, ar22);
 }
 
-static inline
+inline
 __m256i
 SimdCalculateExtendS0(
 	const __m256i W)
@@ -76,7 +76,7 @@ SimdCalculateExtendS0(
 	return _mm256_xor_si256(ret, wr3);
 }
 
-static inline
+inline
 __m256i
 SimdCalculateExtendS1(
 	const __m256i W)
@@ -88,7 +88,7 @@ SimdCalculateExtendS1(
 	return _mm256_xor_si256(ret, wr10);
 }
 
-static inline
+inline
 __m256i
 SimdCalculateTemp2(
 	const __m256i A,
@@ -100,7 +100,7 @@ SimdCalculateTemp2(
 	return _mm256_add_epi32(s0, maj);
 }
 
-static inline
+inline
 __m256i
 SimdCalculateTemp1(
 	const __m256i E,
@@ -593,304 +593,4 @@ void SimdSha256GetHashesUnrolled(
 		case 1:
 			GET_HASH(out, 0);
 	}
-}
-
-void Sha256Init(
-	Sha2Context* Context)
-{
-	for (size_t i = 0; i < 8; i++)
-		Context->H[i] = Sha256InitialValues[i];
-	Context->Length = 0;
-	Context->BitLength = 0;
-	memset(&Context->Buffer[0], 0, sizeof(Context->Buffer));
-}
-
-static inline
-uint32_t
-RotateRight32(
-	const uint32_t Value,
-	const size_t Distance)
-{
-	return (Value >> Distance) | (Value << (32 - Distance));
-}
-
-static inline
-uint32_t
-CalculateExtendS0(
-	const uint32_t W)
-{
-	uint32_t wr7 = RotateRight32(W, 7);
-	uint32_t wr18 = RotateRight32(W, 18);
-	uint32_t wr3 = W >> 3;
-	return wr7 ^ wr18 ^ wr3;
-}
-
-static inline
-uint32_t
-CalculateExtendS1(
-	const uint32_t W)
-{
-	uint32_t wr17 = RotateRight32(W, 17);
-	uint32_t wr19 = RotateRight32(W, 19);
-	uint32_t wr10 = W >> 10;
-	return wr17 ^ wr19 ^ wr10;
-}
-
-static inline
-void
-ExpandMessageSchedule(
-	Sha2Context* Context,
-	uint32_t* messageSchedule)
-{
-	for (size_t i = 0; i < 16; i++)
-	{
-		messageSchedule[i] = Context->Buffer[i];
-	}
-	
-	for (size_t i = 16; i < 64; i++)
-	{
-		uint32_t s0 = CalculateExtendS0(messageSchedule[i-15]);
-		uint32_t s1 = CalculateExtendS1(messageSchedule[i-2]);
-		messageSchedule[i] = messageSchedule[i-16] + s0 + messageSchedule[i-7] + s1;
-	}
-}
-
-static inline
-uint32_t
-CalculateS1(
-	const uint32_t E)
-{
-	uint32_t er6 = RotateRight32(E, 6);
-	uint32_t er11 = RotateRight32(E, 11);
-	uint32_t er25 = RotateRight32(E, 25);
-	return er6 ^ er11 ^ er25;
-}
-
-static inline
-uint32_t
-CalculateS0(
-	const uint32_t A)
-{
-	uint32_t ar2 = RotateRight32(A, 2);
-	uint32_t ar13 = RotateRight32(A, 13);
-	uint32_t ar22 = RotateRight32(A, 22);
-	return ar2 ^ ar13 ^ ar22;
-}
-
-static inline
-uint32_t
-CalculateCh(
-	const uint32_t E,
-	const uint32_t F,
-	const uint32_t G)
-{
-	uint32_t eAndF = (E & F);
-	uint32_t notEAndG = ((~E) & G);
-	return eAndF ^ notEAndG;
-}
-
-static inline
-uint32_t
-CalculateMaj(
-	const uint32_t A,
-	const uint32_t B,
-	const uint32_t C)
-{
-	uint32_t aAndB = (A & B);
-	uint32_t aAndC = (A & C);
-	uint32_t bAndC = (B & C);
-	return aAndB ^ aAndC ^ bAndC;
-}
-
-static inline
-uint32_t
-CalculateTemp2(
-	const uint32_t A,
-	const uint32_t B,
-	const uint32_t C)
-{
-	uint32_t s0 = CalculateS0(A);
-	uint32_t maj = CalculateMaj(A, B, C);
-	return s0 + maj;
-}
-
-static inline
-uint32_t
-CalculateTemp1(
-	const uint32_t E,
-	const uint32_t F,
-	const uint32_t G,
-	const uint32_t H,
-	const uint32_t K,
-	const uint32_t W)
-{
-	uint32_t s1 = CalculateS1(E);
-	uint32_t ch = CalculateCh(E, F, G);
-	return H + s1 + ch + K + W;
-}
-
-static inline void
-Sha256Transform(
-	Sha2Context* Context)
-{
-	//
-	// Expand the message schedule
-	//
-	uint32_t messageSchedule[64];
-	ExpandMessageSchedule(Context, messageSchedule);
-	
-	uint32_t a = Context->H[0];
-	uint32_t b = Context->H[1];
-	uint32_t c = Context->H[2];
-	uint32_t d = Context->H[3];
-	uint32_t e = Context->H[4];
-	uint32_t f = Context->H[5];
-	uint32_t g = Context->H[6];
-	uint32_t h = Context->H[7];
-
-	//
-	// Sha256 compression function
-	//
-	for (size_t i = 0; i < 64; i++)
-	{
-		uint32_t k = Sha256RoundConstants[i];
-		uint32_t w = messageSchedule[i];
-		uint32_t temp1 = CalculateTemp1(e, f, g, h, k, w);
-		uint32_t temp2 = CalculateTemp2(a, b, c);
-		h = g;
-		g = f;
-		f = e;
-		e = d + temp1;
-		d = c;
-		c = b;
-		b = a;
-		a = temp1 + temp2;
-	}
-	
-	//
-	// Output to the hash state values
-	//
-	Context->H[0] += a;
-	Context->H[1] += b;
-	Context->H[2] += c;
-	Context->H[3] += d;
-	Context->H[4] += e;
-	Context->H[5] += f;
-	Context->H[6] += g;
-	Context->H[7] += h;
-}
-
-static inline
-void
-WriteSingleByte(
-	Sha2Context* Context,
-	const size_t Buffer,
-	const size_t Offset,
-	const uint8_t Byte)
-{
-	uint8_t* bufferPtr = (uint8_t*)&Context->Buffer[Buffer];
-	bufferPtr[sizeof(uint32_t) - 1 - Offset] = Byte;
-}
-
-void Sha256Update(
-	Sha2Context* Context,
-	const size_t Length,
-	const uint8_t* Buffer)
-{
-	size_t toWrite = Length;
-	size_t bufferIndex;
-	size_t bufferOffset;
-	size_t next;
-	
-	next = 0;
-
-	while (toWrite > 0)
-	{
-		bufferIndex = Context->Length / 4;
-
-		if ((Context->Length & 0x3) == 0 &&
-			toWrite >= 4)
-		// 4-byte aligned
-		{
-			uint32_t* buffer32 = (uint32_t*) Buffer;
-			size_t nextInputIndex = next / 4;
-			Context->Buffer[bufferIndex] = __builtin_bswap32(buffer32[nextInputIndex]);
-			toWrite -= 4;
-			Context->Length += 4;
-			Context->BitLength += 32;
-			next += 4;
-		}
-		else
-		{
-			bufferOffset = Context->Length % 4;
-			WriteSingleByte(Context, bufferIndex, bufferOffset, Buffer[next]);
-			toWrite--;
-			Context->Length++;
-			Context->BitLength += 8;
-			next++;
-		}
-
-		if (Context->Length == 64)
-		{
-			Sha256Transform(Context);
-			Context->Length = 0;
-			memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
-		}
-	}
-}
-
-static inline
-void
-Sha256AppendSize(
-	Sha2Context* Context)
-/*++
- Appends the 1-bit and the message length to the hash buffer
- Also performs the additional Transform step if required
- --*/
-{
-	//
-	// Write the 1 bit
-	//
-	size_t bufferIndex = Context->Length / 4;
-	size_t bufferOffset = Context->Length % 4;
-	WriteSingleByte(Context, bufferIndex, bufferOffset, 0x80);
-	Context->Length++;
-	
-	if (Context->Length >= 56)
-	{
-		Sha256Transform(Context);
-		memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
-	}
-	
-	//
-	// Write the length into the last 64 bits
-	//
-	Context->Buffer[14] = Context->BitLength >> 32;
-	Context->Buffer[15] = Context->BitLength & 0xffffffff;
-}
-
-void Sha256Finalize(
-	Sha2Context* Context)
-{
-	//
-	// Add the message length
-	//
-	Sha256AppendSize(Context);
-
-	//
-	// Compute the final transformation
-	//
-	Sha256Transform(Context);
-	
-	//
-	// Change endianness
-	//
-	Context->H[0] = __builtin_bswap32(Context->H[0]);
-	Context->H[1] = __builtin_bswap32(Context->H[1]);
-	Context->H[2] = __builtin_bswap32(Context->H[2]);
-	Context->H[3] = __builtin_bswap32(Context->H[3]);
-	Context->H[4] = __builtin_bswap32(Context->H[4]);
-	Context->H[5] = __builtin_bswap32(Context->H[5]);
-	Context->H[6] = __builtin_bswap32(Context->H[6]);
-	Context->H[7] = __builtin_bswap32(Context->H[7]);
 }

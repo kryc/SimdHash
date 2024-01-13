@@ -29,6 +29,8 @@ add_library(simdhash ${LIBSOURCES})
 add_custom_target(simdhash_tests)
 file(GLOB TESTS "./SimdHashTest/*.c")
 foreach(TEST ${TESTS})
+    add_definitions( -DTEST )
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -g -ggdb")
     get_filename_component(TESTNAME ${TEST} NAME_WE)
     add_executable(${TESTNAME} EXCLUDE_FROM_ALL ${TEST} ${SOURCES})
     target_include_directories(${TESTNAME}
