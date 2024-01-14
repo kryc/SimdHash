@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <immintrin.h>	// AVX
 
-#include "common.h"
 #include "simdcommon.h"
 
 #define SIMD_COUNT (SIMD_WIDTH / 32)
