@@ -34,17 +34,16 @@
 #define MAX_BUFFER_SIZE SHA256_BUFFER_SIZE
 #define MAX_BUFFER_SIZE_DWORDS (MAX_BUFFER_SIZE / 4)
 
-#ifdef _MSC_VER
-  // MSVC...
-  #define ALIGN(n) declspec(align(n))
-#else
-  // the civilised world...
-  #define ALIGN(n) __attribute__ ((aligned(n)))
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef union _SimdValue
+{
+	uint8_t  epi32_u8 [SIMD_WIDTH/32][4];	// Access to each lane as a uint8 array
+	uint32_t epi32_u32[SIMD_WIDTH/32];		// Access to each lane as a uint32
+	simd_t   usimd;
+} SimdValue __attribute__((__aligned__(32)));
 
 typedef struct _SimdShaContext
 {
