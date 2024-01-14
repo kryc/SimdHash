@@ -123,42 +123,48 @@ RunTests(
 )
 {
     SimdValue s0o;
-    __m256i s0s;
+    simd_t s0s, s0t;
     int ret;
 
     ret = 0;
 
-    s0s = _mm256_set1_epi32(TestVal);
+    s0s = set1_epi32(TestVal);
 
     printf("Running test #%d\n", Iteration);
 
     uint32_t u32 = CalculateS0(TestVal);
-    s0o.u256 = SimdCalculateS0(s0s);
+    s0t = SimdCalculateS0(s0s);
+    store_simd(&s0o.usimd, s0t);
     ret ^= u32 ^ s0o.epi32_u32[0];
     printf("\tS0 = %08x %08x\n", u32, s0o.epi32_u32[0]);
 
     u32 = CalculateS1(TestVal);
-    s0o.u256 = SimdCalculateS1(s0s);
+    s0t = SimdCalculateS1(s0s);
+    store_simd(&s0o.usimd, s0t);
     ret ^= u32 ^ s0o.epi32_u32[0];
     printf("\tS1 = %08x %08x\n", u32, s0o.epi32_u32[0]);
 
     u32 = CalculateCh(TestVal, TestVal, TestVal);
-    s0o.u256 = SimdShaBitwiseChoiceWithControl(s0s, s0s, s0s);
+    s0t = SimdShaBitwiseChoiceWithControl(s0s, s0s, s0s);
+    store_simd(&s0o.usimd, s0t);
     ret ^= u32 ^ s0o.epi32_u32[0];
     printf("\tCh = %08x %08x\n", u32, s0o.epi32_u32[0]);
 
     u32 = CalculateMaj(TestVal, TestVal, TestVal);
-    s0o.u256 = SimdShaBitwiseMajority(s0s, s0s, s0s);
+    s0t = SimdShaBitwiseMajority(s0s, s0s, s0s);
+    store_simd(&s0o.usimd, s0t);
     ret ^= u32 ^ s0o.epi32_u32[0];
     printf("\tMj = %08x %08x\n", u32, s0o.epi32_u32[0]);
 
     u32 = CalculateTemp1(TestVal, TestVal, TestVal, TestVal, TestVal, TestVal);
-    s0o.u256 = SimdCalculateTemp1(s0s, s0s, s0s, s0s, s0s, s0s);
+    s0t = SimdCalculateTemp1(s0s, s0s, s0s, s0s, s0s, s0s);
+    store_simd(&s0o.usimd, s0t);
     ret ^= u32 ^ s0o.epi32_u32[0];
     printf("\tT1 = %08x %08x\n", u32, s0o.epi32_u32[0]);
 
     u32 = CalculateTemp2(TestVal, TestVal, TestVal);
-    s0o.u256 = SimdCalculateTemp2(s0s, s0s, s0s);
+    s0t = SimdCalculateTemp2(s0s, s0s, s0s);
+    store_simd(&s0o.usimd, s0t);
     ret ^= u32 ^ s0o.epi32_u32[0];
     printf("\tT2 = %08x %08x\n", u32, s0o.epi32_u32[0]);
 

@@ -11,6 +11,8 @@
 
 #include <immintrin.h>
 
+#include "simdcommon.h"
+
 #ifndef SHABITWISECHOICE
 #define SHABITWISECHOICE 0
 #endif
@@ -46,11 +48,11 @@ SimdShaUpdateBuffer(
 	const size_t Length,
 	const uint8_t* Buffers[]);
 
-static inline __m256i
+static inline simd_t
 SimdShaBitwiseChoiceWithControlOriginal(
-	const __m256i Choice1,
-	const __m256i Choice2,
-	const __m256i Control)
+	const simd_t Choice1,
+	const simd_t Choice2,
+	const simd_t Control)
 /*++
 	Version: Original
 	Operations: and,  andnot, or
@@ -59,16 +61,16 @@ SimdShaBitwiseChoiceWithControlOriginal(
 --*/
 {
 	// f = (b and c) or ((not b) and d)
-	__m256i ctrlAndC1 = _mm256_and_si256(Control, Choice1);
-	__m256i notCtrlAndC2 = _mm256_andnot_si256(Control, Choice2);
-	return _mm256_or_si256(ctrlAndC1, notCtrlAndC2);
+	simd_t ctrlAndC1 = and_simd(Control, Choice1);
+	simd_t notCtrlAndC2 = andnot_simd(Control, Choice2);
+	return or_simd(ctrlAndC1, notCtrlAndC2);
 }
 
-static inline __m256i
+static inline simd_t
 SimdShaBitwiseChoiceWithControlAlt1(
-	const __m256i Choice1,
-	const __m256i Choice2,
-	const __m256i Control)
+	const simd_t Choice1,
+	const simd_t Choice2,
+	const simd_t Control)
 /*++
 	Version: Alternative 1
 	Operations: xor,  and,   xor
@@ -77,16 +79,16 @@ SimdShaBitwiseChoiceWithControlAlt1(
 --*/
 {
 	// f = d xor (b and (c xor d))
-	__m256i cXorD = _mm256_xor_si256(Choice1, Choice2);
-	__m256i bAndCXordD = _mm256_and_si256(Control, cXorD);
-	return _mm256_xor_si256(Choice2, bAndCXordD);
+	simd_t cXorD = xor_simd(Choice1, Choice2);
+	simd_t bAndCXordD = and_simd(Control, cXorD);
+	return xor_simd(Choice2, bAndCXordD);
 }
 
-static inline __m256i
+static inline simd_t
 SimdShaBitwiseChoiceWithControlAlt2(
-	const __m256i Choice1,
-	const __m256i Choice2,
-	const __m256i Control)
+	const simd_t Choice1,
+	const simd_t Choice2,
+	const simd_t Control)
 /*++
 	Version: Alternative 2
 	Operations: andnot,  and,   xor
@@ -95,16 +97,16 @@ SimdShaBitwiseChoiceWithControlAlt2(
 --*/
 {
 	// f = (b and c) xor ((not b) and d)
-	__m256i notCtrlAndC2 = _mm256_andnot_si256(Control, Choice2);
-	__m256i ctrlAndC1 = _mm256_and_si256(Control, Choice1);
-	return _mm256_xor_si256(notCtrlAndC2, ctrlAndC1);
+	simd_t notCtrlAndC2 = andnot_simd(Control, Choice2);
+	simd_t ctrlAndC1 = and_simd(Control, Choice1);
+	return xor_simd(notCtrlAndC2, ctrlAndC1);
 }
 
-static inline __m256i
+static inline simd_t
 SimdShaBitwiseMajorityOriginal(
-	const __m256i A,
-	const __m256i B,
-	const __m256i C)
+	const simd_t A,
+	const simd_t B,
+	const simd_t C)
 /*++
 	Version: Original
 	Operations:  and,  and,   and,   xor,   xor
@@ -113,18 +115,18 @@ SimdShaBitwiseMajorityOriginal(
 --*/
 {
 	// f = (b and c) or (b and d) or (c and d) 
-	__m256i aAndB = _mm256_and_si256(A, B);
-	__m256i aAndC = _mm256_and_si256(A, C);
-	__m256i bAndC = _mm256_and_si256(B, C);
-	__m256i ret = _mm256_or_si256(aAndB, aAndC);
-	return _mm256_or_si256(ret, bAndC);
+	simd_t aAndB = and_simd(A, B);
+	simd_t aAndC = and_simd(A, C);
+	simd_t bAndC = and_simd(B, C);
+	simd_t ret = or_simd(aAndB, aAndC);
+	return or_simd(ret, bAndC);
 }
 
-static inline __m256i
+static inline simd_t
 SimdShaBitwiseMajorityAlt1(
-	const __m256i A,
-	const __m256i B,
-	const __m256i C)
+	const simd_t A,
+	const simd_t B,
+	const simd_t C)
 /*++
 	Version: Original
 	Operations:  and,   or,   and,    or, 
@@ -133,17 +135,17 @@ SimdShaBitwiseMajorityAlt1(
 --*/
 {
 	// f = (b and c) or (d and (b or c))
-	__m256i bOrC = _mm256_or_si256(B, C);
-	__m256i dAndBOrC = _mm256_and_si256(A, bOrC);
-	__m256i bAndC = _mm256_and_si256(B, C);
-	return _mm256_or_si256(bAndC, dAndBOrC);
+	simd_t bOrC = or_simd(B, C);
+	simd_t dAndBOrC = and_simd(A, bOrC);
+	simd_t bAndC = and_simd(B, C);
+	return or_simd(bAndC, dAndBOrC);
 }
 
-static inline __m256i
+static inline simd_t
 SimdShaBitwiseMajorityAlt2(
-	const __m256i A,
-	const __m256i B,
-	const __m256i C)
+	const simd_t A,
+	const simd_t B,
+	const simd_t C)
 /*++
 	Version: Original
 	Operations:  and,  xor,   and,    or, 
@@ -152,17 +154,17 @@ SimdShaBitwiseMajorityAlt2(
 --*/
 {
 	// f = (b and c) or (d and (b xor c))
-	__m256i bXorC = _mm256_xor_si256(B, C);
-	__m256i dAndBXorC = _mm256_and_si256(A, bXorC);
-	__m256i bAndC = _mm256_and_si256(B, C);
-	return _mm256_or_si256(bAndC, dAndBXorC);
+	simd_t bXorC = xor_simd(B, C);
+	simd_t dAndBXorC = and_simd(A, bXorC);
+	simd_t bAndC = and_simd(B, C);
+	return or_simd(bAndC, dAndBXorC);
 }
 
-static inline __m256i
+static inline simd_t
 SimdShaBitwiseMajorityAlt3(
-	const __m256i A,
-	const __m256i B,
-	const __m256i C)
+	const simd_t A,
+	const simd_t B,
+	const simd_t C)
 /*++
 	Version: Original
 	Operations:  and,  xor,   and,   xor, 
@@ -171,17 +173,17 @@ SimdShaBitwiseMajorityAlt3(
 --*/
 {
 	// f = (b and c) xor (d and (b xor c))
-	__m256i bXorC = _mm256_xor_si256(B, C);
-	__m256i dAndBXorC = _mm256_and_si256(A, bXorC);
-	__m256i bAndC = _mm256_and_si256(B, C);
-	return _mm256_xor_si256(bAndC, dAndBXorC);
+	simd_t bXorC = xor_simd(B, C);
+	simd_t dAndBXorC = and_simd(A, bXorC);
+	simd_t bAndC = and_simd(B, C);
+	return xor_simd(bAndC, dAndBXorC);
 }
 
-static inline __m256i
+static inline simd_t
 SimdShaBitwiseMajorityAlt5(
-	const __m256i A,
-	const __m256i B,
-	const __m256i C)
+	const simd_t A,
+	const simd_t B,
+	const simd_t C)
 /*++
 	Version: Original
 	Operations:  and,  and,   and,   xor,  xor
@@ -190,11 +192,11 @@ SimdShaBitwiseMajorityAlt5(
 --*/
 {
 	// (b and c) xor (b and d) xor (c and d)
-	__m256i aAndB = _mm256_and_si256(A, B);
-	__m256i aAndC = _mm256_and_si256(A, C);
-	__m256i bAndC = _mm256_and_si256(B, C);
-	__m256i ret = _mm256_xor_si256(aAndB, aAndC);
-	return _mm256_xor_si256(ret, bAndC);
+	simd_t aAndB = and_simd(A, B);
+	simd_t aAndC = and_simd(A, C);
+	simd_t bAndC = and_simd(B, C);
+	simd_t ret = xor_simd(aAndB, aAndC);
+	return xor_simd(ret, bAndC);
 }
 
 #endif /* shacommon_h */

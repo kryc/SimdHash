@@ -30,7 +30,7 @@ SimdSha1Init(
 {
 	for (size_t i = 0; i < 5; i++)
 	{
-		_mm256_store_si256(&Context->H[i].u256, _mm256_set1_epi32(Sha1InitialValues[i]));
+		store_simd(&Context->H[i].usimd, set1_epi32(Sha1InitialValues[i]));
 	}
 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
 	Context->HSize = SHA1_H_COUNT;
@@ -48,19 +48,19 @@ SimdSha1ExpandMessageSchedule(
 {
 	for (size_t i = 0; i < SHA1_BUFFER_SIZE_DWORDS; i++)
 	{
-		__m256i w = _mm256_load_si256(&Context->Buffer[i].u256);
-		_mm256_store_si256(&MessageSchedule[i].u256, w);
+		simd_t w = load_simd(&Context->Buffer[i].usimd);
+		store_simd(&MessageSchedule[i].usimd, w);
 	}
 	
 	for (size_t i = SHA1_BUFFER_SIZE_DWORDS; i < SHA1_MESSAGE_SCHEDULE_SIZE_DWORDS; i++)
 	{
 		// w[i] = (w[i-3] xor w[i-8] xor w[i-14] xor w[i-16]) leftrotate 1
-		__m256i w = _mm256_load_si256(&MessageSchedule[i-3].u256);
-		w = _mm256_xor_si256(w, _mm256_load_si256(&MessageSchedule[i-8].u256));
-		w = _mm256_xor_si256(w, _mm256_load_si256(&MessageSchedule[i-14].u256));
-		w = _mm256_xor_si256(w, _mm256_load_si256(&MessageSchedule[i-16].u256));
-		w = _mm256_rotl_epi32(w, 1);
-		_mm256_store_si256(&MessageSchedule[i].u256, w);
+		simd_t w = load_simd(&MessageSchedule[i-3].usimd);
+		w = xor_simd(w, load_simd(&MessageSchedule[i-8].usimd));
+		w = xor_simd(w, load_simd(&MessageSchedule[i-14].usimd));
+		w = xor_simd(w, load_simd(&MessageSchedule[i-16].usimd));
+		w = rotl_epi32(w, 1);
+		store_simd(&MessageSchedule[i].usimd, w);
 	}
 }
 
@@ -68,18 +68,18 @@ static inline void
 SimdSha1Transform(
 	SimdShaContext* Context)
 {
-	__m256i f, k;
+	simd_t f, k;
 	//
 	// Expand the message schedule
 	//
-	ALIGN(32) SimdValue messageSchedule[SHA1_MESSAGE_SCHEDULE_SIZE_DWORDS];
+	SimdValue messageSchedule[SHA1_MESSAGE_SCHEDULE_SIZE_DWORDS];
 	SimdSha1ExpandMessageSchedule(Context, messageSchedule);
 	
-	__m256i a = _mm256_load_si256(&Context->H[0].u256);
-	__m256i b = _mm256_load_si256(&Context->H[1].u256);
-	__m256i c = _mm256_load_si256(&Context->H[2].u256);
-	__m256i d = _mm256_load_si256(&Context->H[3].u256);
-	__m256i e = _mm256_load_si256(&Context->H[4].u256);
+	simd_t a = load_simd(&Context->H[0].usimd);
+	simd_t b = load_simd(&Context->H[1].usimd);
+	simd_t c = load_simd(&Context->H[2].usimd);
+	simd_t d = load_simd(&Context->H[3].usimd);
+	simd_t e = load_simd(&Context->H[4].usimd);
 
 	//
 	// Sha1 compression function
@@ -90,36 +90,36 @@ SimdSha1Transform(
 		{
 			// f = (b and c) or ((not b) and d)
 			f = SimdShaBitwiseChoiceWithControl(c, d, b);
-			k = _mm256_set1_epi32(Sha1RoundConstants[0]);
+			k = set1_epi32(Sha1RoundConstants[0]);
 		}
 		else if (i < 40)
 		{
 			// f = b xor c xor d
-			f = _mm256_xor_si256(b, _mm256_xor_si256(c, d));
-			k = _mm256_set1_epi32(Sha1RoundConstants[1]);
+			f = xor_simd(b, xor_simd(c, d));
+			k = set1_epi32(Sha1RoundConstants[1]);
 		}
 		else if (i < 60)
 		{
 			// f = (b and c) or (b and d) or (c and d)
 			f = SimdShaBitwiseMajority(b, c, d);
-			k = _mm256_set1_epi32(Sha1RoundConstants[2]);
+			k = set1_epi32(Sha1RoundConstants[2]);
 		}
 		else //if (i < 80)
 		{
 			// f = b xor c xor d
-			f = _mm256_xor_si256(b, _mm256_xor_si256(c, d));
-			k = _mm256_set1_epi32(Sha1RoundConstants[3]);
+			f = xor_simd(b, xor_simd(c, d));
+			k = set1_epi32(Sha1RoundConstants[3]);
 		}
 		
-		__m256i w = _mm256_load_si256(&messageSchedule[i].u256);
-		__m256i temp = _mm256_rotl_epi32(a, 5);
-		temp = _mm256_add_epi32(temp, f);
-		temp = _mm256_add_epi32(temp, e);
-		temp = _mm256_add_epi32(temp, k);
-		temp = _mm256_add_epi32(temp, w);
+		simd_t w = load_simd(&messageSchedule[i].usimd);
+		simd_t temp = rotl_epi32(a, 5);
+		temp = add_epi32(temp, f);
+		temp = add_epi32(temp, e);
+		temp = add_epi32(temp, k);
+		temp = add_epi32(temp, w);
 		e = d;
 		d = c;
-		c = _mm256_rotl_epi32(b, 30);
+		c = rotl_epi32(b, 30);
 		b = a;
 		a = temp;
 	}
@@ -127,11 +127,11 @@ SimdSha1Transform(
 	//
 	// Output to the hash state values
 	//
-	_mm256_store_si256(&Context->H[0].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[0].u256), a));
-	_mm256_store_si256(&Context->H[1].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[1].u256), b));
-	_mm256_store_si256(&Context->H[2].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[2].u256), c));
-	_mm256_store_si256(&Context->H[3].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[3].u256), d));
-	_mm256_store_si256(&Context->H[4].u256, _mm256_add_epi32(_mm256_load_si256(&Context->H[4].u256), e));
+	store_simd(&Context->H[0].usimd, add_epi32(load_simd(&Context->H[0].usimd), a));
+	store_simd(&Context->H[1].usimd, add_epi32(load_simd(&Context->H[1].usimd), b));
+	store_simd(&Context->H[2].usimd, add_epi32(load_simd(&Context->H[2].usimd), c));
+	store_simd(&Context->H[3].usimd, add_epi32(load_simd(&Context->H[3].usimd), d));
+	store_simd(&Context->H[4].usimd, add_epi32(load_simd(&Context->H[4].usimd), e));
 }
 
 void
@@ -187,8 +187,8 @@ SimdSha1AppendSize(
 	//
 	// Write the length into the last 64 bits
 	//
-	_mm256_store_si256(&Context->Buffer[14].u256, _mm256_set1_epi32(Context->BitLength >> 32));
-	_mm256_store_si256(&Context->Buffer[15].u256, _mm256_set1_epi32(Context->BitLength & 0xffffffff));
+	store_simd(&Context->Buffer[14].usimd, set1_epi32(Context->BitLength >> 32));
+	store_simd(&Context->Buffer[15].usimd, set1_epi32(Context->BitLength & 0xffffffff));
 }
 
 void
@@ -208,18 +208,17 @@ SimdSha1Finalize(
 	//
 	// Change endianness
 	//
-	__m256i shufMask = _mm256_setr_epi8(3,2,1,0,7,6,5,4,11,10,9,8,15,14,13,12,19,18,17,16,23,22,21,20,27,26,25,24,31,30,29,28);
-	__m256i a = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[0].u256), shufMask);
-	__m256i b = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[1].u256), shufMask);
-	__m256i c = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[2].u256), shufMask);
-	__m256i d = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[3].u256), shufMask);
-	__m256i e = _mm256_shuffle_epi8(_mm256_load_si256(&Context->H[4].u256), shufMask);
+	simd_t a = bswap_epi32(load_simd(&Context->H[0].usimd));
+	simd_t b = bswap_epi32(load_simd(&Context->H[1].usimd));
+	simd_t c = bswap_epi32(load_simd(&Context->H[2].usimd));
+	simd_t d = bswap_epi32(load_simd(&Context->H[3].usimd));
+	simd_t e = bswap_epi32(load_simd(&Context->H[4].usimd));
 	
-	_mm256_store_si256(&Context->H[0].u256, a);
-	_mm256_store_si256(&Context->H[1].u256, b);
-	_mm256_store_si256(&Context->H[2].u256, c);
-	_mm256_store_si256(&Context->H[3].u256, d);
-	_mm256_store_si256(&Context->H[4].u256, e);
+	store_simd(&Context->H[0].usimd, a);
+	store_simd(&Context->H[1].usimd, b);
+	store_simd(&Context->H[2].usimd, c);
+	store_simd(&Context->H[3].usimd, d);
+	store_simd(&Context->H[4].usimd, e);
 }
 
 void SimdSha1GetHash(

@@ -16,7 +16,7 @@
 #include "common.h"
 #include "simdcommon.h"
 
-#define SIMD_COUNT 8
+#define SIMD_COUNT (SIMD_WIDTH / 32)
 #define SHA1_BUFFER_SIZE (64)
 #define SHA1_BUFFER_SIZE_DWORDS (SHA1_BUFFER_SIZE / 4)
 #define SHA1_H_COUNT (5)
@@ -57,13 +57,6 @@ typedef struct _SimdShaContext
 	size_t    Lanes;
 } SimdShaContext, *PSimdSha2Context;
 
-typedef struct _SimdSha2SecondPreimageContext
-{
-	SimdShaContext ShaContext;
-	uint8_t 		Target8[SHA256_SIZE];
-	uint32_t 		Target32[SHA256_SIZE/4];
-} SimdSha2SecondPreimageContext, *PSimdSha2SecondPreimageContext;
-
 void SimdSha256Init(
 	SimdShaContext* Context,
 	const size_t Lanes);
@@ -75,16 +68,6 @@ void SimdSha256Update(
 
 void SimdSha256Finalize(
 	SimdShaContext* Context);
-
-void SimdSha256SecondPreimageInit(
-	SimdSha2SecondPreimageContext* Context,
-	SimdShaContext* ShaContext,
-	const uint8_t* Target);
-
-size_t SimdSha256SecondPreimage(
-	SimdSha2SecondPreimageContext* Context,
-	const size_t Length,
-	const uint8_t* Buffers[]);
 
 void SimdSha256GetHashes2D(
 	SimdShaContext* Context,
@@ -125,21 +108,21 @@ void SimdSha1GetHash(
 	const size_t Lane);
 
 #ifdef TEST
-__m256i SimdCalculateS0(
-	const __m256i A);
-__m256i SimdCalculateS1(
-	const __m256i E);
-__m256i SimdCalculateTemp1(
-	const __m256i E,
-	const __m256i F,
-	const __m256i G,
-	const __m256i H,
-	const __m256i K,
-	const __m256i W);
-__m256i SimdCalculateTemp2(
-	const __m256i A,
-	const __m256i B,
-	const __m256i C);
+simd_t SimdCalculateS0(
+	const simd_t A);
+simd_t SimdCalculateS1(
+	const simd_t E);
+simd_t SimdCalculateTemp1(
+	const simd_t E,
+	const simd_t F,
+	const simd_t G,
+	const simd_t H,
+	const simd_t K,
+	const simd_t W);
+simd_t SimdCalculateTemp2(
+	const simd_t A,
+	const simd_t B,
+	const simd_t C);
 #endif
 
 #ifdef __cplusplus
