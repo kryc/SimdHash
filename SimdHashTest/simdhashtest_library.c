@@ -116,41 +116,81 @@ CalculateTemp1(
 	return H + s1 + ch + K + W;
 }
 
+int
+RunTests(
+    const int Iteration,
+    const uint32_t TestVal
+)
+{
+    SimdValue s0o;
+    __m256i s0s;
+    int ret;
+
+    ret = 0;
+
+    s0s = _mm256_set1_epi32(TestVal);
+
+    printf("Running test #%d\n", Iteration);
+
+    uint32_t u32 = CalculateS0(TestVal);
+    s0o.u256 = SimdCalculateS0(s0s);
+    ret ^= u32 ^ s0o.epi32_u32[0];
+    printf("\tS0 = %08x %08x\n", u32, s0o.epi32_u32[0]);
+
+    u32 = CalculateS1(TestVal);
+    s0o.u256 = SimdCalculateS1(s0s);
+    ret ^= u32 ^ s0o.epi32_u32[0];
+    printf("\tS1 = %08x %08x\n", u32, s0o.epi32_u32[0]);
+
+    u32 = CalculateCh(TestVal, TestVal, TestVal);
+    s0o.u256 = SimdShaBitwiseChoiceWithControl(s0s, s0s, s0s);
+    ret ^= u32 ^ s0o.epi32_u32[0];
+    printf("\tCh = %08x %08x\n", u32, s0o.epi32_u32[0]);
+
+    u32 = CalculateMaj(TestVal, TestVal, TestVal);
+    s0o.u256 = SimdShaBitwiseMajority(s0s, s0s, s0s);
+    ret ^= u32 ^ s0o.epi32_u32[0];
+    printf("\tMj = %08x %08x\n", u32, s0o.epi32_u32[0]);
+
+    u32 = CalculateTemp1(TestVal, TestVal, TestVal, TestVal, TestVal, TestVal);
+    s0o.u256 = SimdCalculateTemp1(s0s, s0s, s0s, s0s, s0s, s0s);
+    ret ^= u32 ^ s0o.epi32_u32[0];
+    printf("\tT1 = %08x %08x\n", u32, s0o.epi32_u32[0]);
+
+    u32 = CalculateTemp2(TestVal, TestVal, TestVal);
+    s0o.u256 = SimdCalculateTemp2(s0s, s0s, s0s);
+    ret ^= u32 ^ s0o.epi32_u32[0];
+    printf("\tT2 = %08x %08x\n", u32, s0o.epi32_u32[0]);
+
+    return ret;
+}
+
 int main(
     int argc,
     char* argv[]
 )
 {
-    SimdValue s0o;
-    __m256i s0s;
+    uint32_t random_test;
+    int ret;
 
-    const uint32_t test_val = 0x41414141;
+    ret = 0;
 
-    s0s = _mm256_set1_epi32(test_val);
+    srand(time(NULL));
+
+    for(int i = 0; i < 5; i++)
+    {
+        random_test = (uint32_t)rand();
+        ret ^= RunTests(i, random_test);
+    }
     
-    uint32_t u32 = CalculateS0(test_val);
-    s0o.u256 = SimdCalculateS0(s0s);
-    printf("S0 = %08x %08x\n", u32, s0o.epi32_u32[0]);
-
-    u32 = CalculateS1(test_val);
-    s0o.u256 = SimdCalculateS1(s0s);
-    printf("S1 = %08x %08x\n", u32, s0o.epi32_u32[0]);
-
-    u32 = CalculateCh(test_val, test_val, test_val);
-    s0o.u256 = SimdShaBitwiseChoiceWithControl(s0s, s0s, s0s);
-    printf("Ch = %08x %08x\n", u32, s0o.epi32_u32[0]);
-
-    u32 = CalculateMaj(test_val, test_val, test_val);
-    s0o.u256 = SimdShaBitwiseMajority(s0s, s0s, s0s);
-    printf("Mj = %08x %08x\n", u32, s0o.epi32_u32[0]);
-
-    u32 = CalculateTemp1(test_val, test_val, test_val, test_val, test_val, test_val);
-    s0o.u256 = SimdCalculateTemp1(s0s, s0s, s0s, s0s, s0s, s0s);
-    printf("T1 = %08x %08x\n", u32, s0o.epi32_u32[0]);
-
-    u32 = CalculateTemp2(test_val, test_val, test_val);
-    s0o.u256 = SimdCalculateTemp2(s0s, s0s, s0s);
-    printf("T2 = %08x %08x\n", u32, s0o.epi32_u32[0]);
+    if (ret == 0)
+    {
+        printf("All tests passed\n");
+    }
+    else
+    {
+        printf("Test failure detected\n");
+    }
 
     return 0;
 }
