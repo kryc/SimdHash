@@ -245,3 +245,38 @@ void SimdSha1GetHashes(
 		SimdSha1GetHash(Context, HashBuffers[i], i);
 	}
 }
+
+#define GET_HASH(pOut, iLane){ \
+	pOut[(iLane * SHA1_H_COUNT) + 0] = Context->H[0].epi32_u32[(iLane)]; \
+	pOut[(iLane * SHA1_H_COUNT) + 1] = Context->H[1].epi32_u32[(iLane)]; \
+	pOut[(iLane * SHA1_H_COUNT) + 2] = Context->H[2].epi32_u32[(iLane)]; \
+	pOut[(iLane * SHA1_H_COUNT) + 3] = Context->H[3].epi32_u32[(iLane)]; \
+	pOut[(iLane * SHA1_H_COUNT) + 4] = Context->H[4].epi32_u32[(iLane)]; \
+}
+
+void SimdSha1GetHashesUnrolled(
+	SimdShaContext* Context,
+	uint8_t* HashBuffers)
+{
+	uint32_t* out = (uint32_t*)HashBuffers;
+
+	switch (Context->Lanes)
+	{
+		case 8:
+			GET_HASH(out, 7);
+		case 7:
+			GET_HASH(out, 6);
+		case 6:
+			GET_HASH(out, 5);
+		case 5:
+			GET_HASH(out, 4);
+		case 4:
+			GET_HASH(out, 3);
+		case 3:
+			GET_HASH(out, 2);
+		case 2:
+			GET_HASH(out, 1);
+		case 1:
+			GET_HASH(out, 0);
+	}
+}
