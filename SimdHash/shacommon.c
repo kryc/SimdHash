@@ -14,7 +14,8 @@ SimdShaUpdateBuffer(
 	SimdShaContext* Context,
 	const size_t Offset,
 	const size_t Length,
-	const uint8_t* Buffers[])
+	const uint8_t* Buffers[],
+	const uint8_t BigEndian)
 {
 	size_t toWrite;
 	size_t bufferIndex;
@@ -37,7 +38,14 @@ SimdShaUpdateBuffer(
 			
 			for (size_t lane = 0; lane < Context->Lanes; lane++)
 			{
-				Context->Buffer[bufferIndex].epi32_u32[lane] = __builtin_bswap32(buffer32[lane][nextInputIndex]);
+				if (BigEndian)
+				{
+					Context->Buffer[bufferIndex].epi32_u32[lane] = __builtin_bswap32(buffer32[lane][nextInputIndex]);
+				}
+				else
+				{
+					Context->Buffer[bufferIndex].epi32_u32[lane] = buffer32[lane][nextInputIndex];
+				}
 			}
 			toWrite -= 4;
 			Context->Length += 4;
@@ -49,7 +57,14 @@ SimdShaUpdateBuffer(
 			bufferOffset = Context->Length % 4;
 			for (size_t lane = 0; lane < Context->Lanes; lane++)
 			{
-				Context->Buffer[bufferIndex].epi32_u8[lane][(sizeof(uint32_t) - 1 - bufferOffset)] = Buffers[lane][next];
+				if (BigEndian)
+				{
+					Context->Buffer[bufferIndex].epi32_u8[lane][(sizeof(uint32_t) - 1 - bufferOffset)] = Buffers[lane][next];
+				}
+				else
+				{
+					Context->Buffer[bufferIndex].epi32_u8[lane][bufferOffset] = Buffers[lane][next];
+				}
 			}
 			toWrite--;
 			Context->Length++;

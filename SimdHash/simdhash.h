@@ -16,6 +16,10 @@
 #include "simdcommon.h"
 
 #define SIMD_COUNT (SIMD_WIDTH / 32)
+#define MD5_BUFFER_SIZE (64)
+#define MD5_BUFFER_SIZE_DWORDS (MD5_BUFFER_SIZE / 4)
+#define MD5_H_COUNT (4)
+#define MD5_SIZE (MD5_H_COUNT * 4)
 #define SHA1_BUFFER_SIZE (64)
 #define SHA1_BUFFER_SIZE_DWORDS (SHA1_BUFFER_SIZE / 4)
 #define SHA1_H_COUNT (5)
@@ -80,6 +84,10 @@ void SimdSha256GetHash(
 	uint8_t* HashBuffer,
 	const size_t Lane);
 
+void SimdSha256GetHashesUnrolled(
+	SimdShaContext* Context,
+	uint8_t* HashBuffers);
+
 void SimdSha1Init(
 	SimdShaContext* Context,
 	const size_t Lanes);
@@ -96,15 +104,36 @@ void SimdSha1GetHashes(
 	SimdShaContext* Context,
 	uint8_t** HashBuffers);
 
-void SimdSha256GetHashesUnrolled(
-	SimdShaContext* Context,
-	uint8_t* HashBuffers);
-
 void SimdSha1GetHashesUnrolled(
 	SimdShaContext* Context,
 	uint8_t* HashBuffers);
 
 void SimdSha1GetHash(
+	SimdShaContext* Context,
+	uint8_t* HashBuffer,
+	const size_t Lane);
+
+void SimdMd5Init(
+	SimdShaContext* Context,
+	const size_t Lanes);
+
+void SimdMd5Update(
+	SimdShaContext* Context,
+	const size_t Length,
+	const uint8_t* Buffers[]);
+
+void SimdMd5Finalize(
+	SimdShaContext* Context);
+
+void SimdMd5GetHashes(
+	SimdShaContext* Context,
+	uint8_t** HashBuffers);
+
+void SimdMd5GetHashesUnrolled(
+	SimdShaContext* Context,
+	uint8_t* HashBuffers);
+
+void SimdMd5GetHash(
 	SimdShaContext* Context,
 	uint8_t* HashBuffer,
 	const size_t Lane);

@@ -10,8 +10,9 @@
 #define simdcommon_h
 
 #include <assert.h>
+#include <immintrin.h>
+#include <math.h>
 #include <stdint.h>
-#include <immintrin.h>	// AVX
 
 #ifdef __AVX512F__
 #define simd_t __m512i
@@ -50,7 +51,11 @@
 #define andnot_simd     _mm256_andnot_si256
 #define cmpeq_epi32     _mm256_cmpeq_epi32
 #define movemask_ps     _mm256_movemask_ps
+// Custom
 #define bswap_epi32     _mm256_bswap_epi32
+#define xmul_epu32      _mm256_xmul_epu32
+#define mod2_epi32      _mm256_mod2_epi32
+#define not_simd        _mm256_not_mm256
 #endif
 
 //
@@ -94,6 +99,39 @@ _mm256_rotr_epi32(
 	return _mm256_or_si256(shl, shr);
 }
 
+static inline
+__m256i
+_mm256_xmul_epu32(
+	const __m256i Value1,
+	const __m256i Value2
+)
+{
+	__m256i res_lo = _mm256_mul_epu32(Value1, Value2);
+	__m256i res_hi = _mm256_mul_epu32(_mm256_srli_epi64(Value1, 32), _mm256_srli_epi64(Value2, 32));
+	return _mm256_or_si256(_mm256_slli_epi64(res_hi, 32), res_lo);
+}
+
+static inline
+__m256i
+_mm256_mod2_epi32(
+	const __m256i Value1,
+	const uint32_t Mod2
+)
+{
+	int count = log2(Mod2);
+	__m256i quotient = _mm256_srli_epi32(Value1, count);	// Division
+	__m256i remainder = _mm256_sub_epi32(Value1, _mm256_xmul_epu32(_mm256_set1_epi32(Mod2), quotient));
+	return remainder;
+}
+
+static inline
+__m256i
+_mm256_not_mm256(
+	const __m256i Value
+)
+{
+	return _mm256_xor_si256(Value, _mm256_set1_epi32(-1));
+}
 
 //
 // AVX512 Utilities
@@ -138,6 +176,31 @@ _mm512_rotr_epi32(
 	__m512i shr = _mm512_srli_epi32(Value, Distance);
 	__m512i shl = _mm512_slli_epi32(Value, 32 - Distance);
 	return _mm512_or_si512(shl, shr);
+}
+
+static inline
+__m512i
+_mm512_xmul_epu32(
+	const __m512i Value1,
+	const __m512i Value2
+)
+{
+	__m512i res_lo = _mm512_mul_epu32(Value1, Value2);
+	__m512i res_hi = _mm512_mul_epu32(_mm512_srli_epi64(Value1, 32), _mm512_srli_epi64(Value2, 32));
+	return _mm512_or_si512(_mm512_slli_epi64(res_hi, 32), res_lo);
+}
+
+static inline
+__m512i
+_mm512_mod2_epi32(
+	const __m512i Value1,
+	const uint32_t Mod2
+)
+{
+	int count = log2(Mod2);
+	__m512i quotient = _mm512_srli_epi32(Value1, count);	// Division
+	__m512i remainder = _mm512_sub_epi32(Value1, _mm512_xmul_epu32(_mm512_set1_epi32(Mod2), quotient));
+	return remainder;
 }
 
 #endif /* simdcommon_h */

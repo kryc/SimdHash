@@ -46,7 +46,8 @@ SimdShaUpdateBuffer(
 	SimdShaContext* Context,
 	const size_t Offset,
 	const size_t Length,
-	const uint8_t* Buffers[]);
+	const uint8_t* Buffers[],
+	const uint8_t BigEndian);
 
 static inline simd_t
 SimdShaBitwiseChoiceWithControlOriginal(

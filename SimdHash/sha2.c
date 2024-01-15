@@ -64,7 +64,7 @@ SimdCalculateS0(
 	return xor_simd(ret, ar22);
 }
 
-inline
+// inline
 simd_t
 SimdCalculateExtendS0(
 	const simd_t W)
@@ -76,7 +76,7 @@ SimdCalculateExtendS0(
 	return xor_simd(ret, wr3);
 }
 
-inline
+// inline
 simd_t
 SimdCalculateExtendS1(
 	const simd_t W)
@@ -223,7 +223,7 @@ SimdSha256Update(
 	while (toWrite > 0)
 	{
 		offset = Length - toWrite;
-		toWrite = SimdShaUpdateBuffer(Context, offset, Length, Buffers);
+		toWrite = SimdShaUpdateBuffer(Context, offset, Length, Buffers, 1);
 
 		if (Context->Length == SHA256_BUFFER_SIZE)
 		{

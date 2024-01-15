@@ -146,7 +146,7 @@ SimdSha1Update(
 	while (toWrite > 0)
 	{
 		offset = Length - toWrite;
-		toWrite = SimdShaUpdateBuffer(Context, offset, Length, Buffers);
+		toWrite = SimdShaUpdateBuffer(Context, offset, Length, Buffers, 1);
 
 		if (Context->Length == SHA1_BUFFER_SIZE)
 		{

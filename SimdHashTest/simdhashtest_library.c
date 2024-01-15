@@ -14,6 +14,7 @@
 #include <time.h>
 #include <limits.h>
 #include <immintrin.h>	// AVX
+#include <inttypes.h>
 
 #include "simdhash.h"
 #include "simdcommon.h"
@@ -117,7 +118,7 @@ CalculateTemp1(
 }
 
 int
-RunTests(
+RunHashTests(
     const int Iteration,
     const uint32_t TestVal
 )
@@ -171,6 +172,43 @@ RunTests(
     return ret;
 }
 
+int
+RunLibraryTests(
+    void
+)
+{
+    printf("Running library code tests\n");
+
+    SimdValue res;
+
+    simd_t z = xmul_epu32(set1_epi32(128), set1_epi32(10));
+    store_simd(&res.usimd, z);
+    for (size_t i = 0; i < SIMD_COUNT; i++)
+        printf("%" PRIu32 " ", res.epi32_u32[i]);
+    printf("\n");
+
+    z = mod2_epi32(set1_epi32(1600), 16);
+    store_simd(&res.usimd, z);
+    for (size_t i = 0; i < SIMD_COUNT; i++)
+            printf("%" PRIu32 " ", res.epi32_u32[i]);
+    printf("\n");
+
+    z = mod2_epi32(set1_epi32(1601), 16);
+    store_simd(&res.usimd, z);
+    for (size_t i = 0; i < SIMD_COUNT; i++)
+            printf("%" PRIu32 " ", res.epi32_u32[i]);
+    printf("\n");
+
+    z = not_simd(set1_epi32(0x41414141));
+    store_simd(&res.usimd, z);
+    printf("%" PRIu32 "\n", ~0x41414141);
+    for (size_t i = 0; i < SIMD_COUNT; i++)
+            printf("%" PRIu32 " ", res.epi32_u32[i]);
+    printf("\n");
+
+    return 0;
+}
+
 int main(
     int argc,
     char* argv[]
@@ -181,12 +219,14 @@ int main(
 
     ret = 0;
 
+    return RunLibraryTests();
+
     srand(time(NULL));
 
     for(int i = 0; i < 5; i++)
     {
         random_test = (uint32_t)rand();
-        ret ^= RunTests(i, random_test);
+        ret ^= RunHashTests(i, random_test);
     }
     
     if (ret == 0)
