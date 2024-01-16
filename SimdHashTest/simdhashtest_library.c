@@ -118,56 +118,97 @@ CalculateTemp1(
 }
 
 int
+TestEqual32(
+    const SimdValue Simd,
+    const uint32_t Value 
+)
+{
+    for (
+        size_t i = 0;
+        i < sizeof(Simd.epi32_u32) / sizeof(uint32_t);
+        i++
+    )
+    {
+        if (Simd.epi32_u32[i] != Value)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int
 RunHashTests(
     const int Iteration,
     const uint32_t TestVal
 )
 {
-    SimdValue s0o;
-    simd_t s0s, s0t;
+    SimdValue res;
+    simd_t test, s0t;
     int ret;
+    uint32_t u32;
 
     ret = 0;
 
-    s0s = set1_epi32(TestVal);
+    test = set1_epi32(TestVal);
 
     printf("Running test #%d\n", Iteration);
 
-    uint32_t u32 = CalculateS0(TestVal);
-    s0t = SimdCalculateS0(s0s);
-    store_simd(&s0o.usimd, s0t);
-    ret ^= u32 ^ s0o.epi32_u32[0];
-    printf("\tS0 = %08x %08x\n", u32, s0o.epi32_u32[0]);
+    printf("CalculateS0: ");
+    u32 = CalculateS0(TestVal);
+    s0t = SimdCalculateS0(test);
+    store_simd(&res.usimd, s0t);
+    ret ^= u32 ^ res.epi32_u32[0];
+    TestEqual32(res, u32) == 0 ? printf("Pass\n") : printf("Fail\n");
 
+    printf("CalculateS1: ");
     u32 = CalculateS1(TestVal);
-    s0t = SimdCalculateS1(s0s);
-    store_simd(&s0o.usimd, s0t);
-    ret ^= u32 ^ s0o.epi32_u32[0];
-    printf("\tS1 = %08x %08x\n", u32, s0o.epi32_u32[0]);
+    s0t = SimdCalculateS1(test);
+    store_simd(&res.usimd, s0t);
+    ret ^= u32 ^ res.epi32_u32[0];
+    TestEqual32(res, u32) == 0 ? printf("Pass\n") : printf("Fail\n");
 
+    printf("CalculateExtendS0: ");
+    u32 = CalculateExtendS0(TestVal);
+    s0t = SimdCalculateExtendS0(test);
+    store_simd(&res.usimd, s0t);
+    ret ^= u32 ^ res.epi32_u32[0];
+    TestEqual32(res, u32) == 0 ? printf("Pass\n") : printf("Fail\n");
+
+    printf("CalculateExtendS1: ");
+    u32 = CalculateExtendS1(TestVal);
+    s0t = SimdCalculateExtendS1(test);
+    store_simd(&res.usimd, s0t);
+    ret ^= u32 ^ res.epi32_u32[0];
+    TestEqual32(res, u32) == 0 ? printf("Pass\n") : printf("Fail\n");
+
+    printf("CalculateCh: ");
     u32 = CalculateCh(TestVal, TestVal, TestVal);
-    s0t = SimdShaBitwiseChoiceWithControl(s0s, s0s, s0s);
-    store_simd(&s0o.usimd, s0t);
-    ret ^= u32 ^ s0o.epi32_u32[0];
-    printf("\tCh = %08x %08x\n", u32, s0o.epi32_u32[0]);
+    s0t = SimdShaBitwiseChoiceWithControl(test, test, test);
+    store_simd(&res.usimd, s0t);
+    ret ^= u32 ^ res.epi32_u32[0];
+    TestEqual32(res, u32) == 0 ? printf("Pass\n") : printf("Fail\n");
 
+    printf("CalculateMaj: ");
     u32 = CalculateMaj(TestVal, TestVal, TestVal);
-    s0t = SimdShaBitwiseMajority(s0s, s0s, s0s);
-    store_simd(&s0o.usimd, s0t);
-    ret ^= u32 ^ s0o.epi32_u32[0];
-    printf("\tMj = %08x %08x\n", u32, s0o.epi32_u32[0]);
+    s0t = SimdShaBitwiseMajority(test, test, test);
+    store_simd(&res.usimd, s0t);
+    ret ^= u32 ^ res.epi32_u32[0];
+    TestEqual32(res, u32) == 0 ? printf("Pass\n") : printf("Fail\n");
 
+    printf("CalculateTemp1: ");
     u32 = CalculateTemp1(TestVal, TestVal, TestVal, TestVal, TestVal, TestVal);
-    s0t = SimdCalculateTemp1(s0s, s0s, s0s, s0s, s0s, s0s);
-    store_simd(&s0o.usimd, s0t);
-    ret ^= u32 ^ s0o.epi32_u32[0];
-    printf("\tT1 = %08x %08x\n", u32, s0o.epi32_u32[0]);
+    s0t = SimdCalculateTemp1(test, test, test, test, test, test);
+    store_simd(&res.usimd, s0t);
+    ret ^= u32 ^ res.epi32_u32[0];
+    TestEqual32(res, u32) == 0 ? printf("Pass\n") : printf("Fail\n");
 
+    printf("CalculateTemp2: ");
     u32 = CalculateTemp2(TestVal, TestVal, TestVal);
-    s0t = SimdCalculateTemp2(s0s, s0s, s0s);
-    store_simd(&s0o.usimd, s0t);
-    ret ^= u32 ^ s0o.epi32_u32[0];
-    printf("\tT2 = %08x %08x\n", u32, s0o.epi32_u32[0]);
+    s0t = SimdCalculateTemp2(test, test, test);
+    store_simd(&res.usimd, s0t);
+    ret ^= u32 ^ res.epi32_u32[0];
+    TestEqual32(res, u32) == 0 ? printf("Pass\n") : printf("Fail\n");
 
     return ret;
 }
@@ -181,30 +222,25 @@ RunLibraryTests(
 
     SimdValue res;
 
+    printf("\txmul_epu32: ");
     simd_t z = xmul_epu32(set1_epi32(128), set1_epi32(10));
     store_simd(&res.usimd, z);
-    for (size_t i = 0; i < SIMD_COUNT; i++)
-        printf("%" PRIu32 " ", res.epi32_u32[i]);
-    printf("\n");
+    TestEqual32(res, 128 * 10) == 0 ? printf("Pass\n") : printf("Fail\n");
 
+    printf("\tmod2_epi32: ");
     z = mod2_epi32(set1_epi32(1600), 16);
     store_simd(&res.usimd, z);
-    for (size_t i = 0; i < SIMD_COUNT; i++)
-            printf("%" PRIu32 " ", res.epi32_u32[i]);
-    printf("\n");
+    TestEqual32(res, 1600 % 16) == 0 ? printf("Pass\n") : printf("Fail\n");
 
+    printf("\tmod2_epi32: ");
     z = mod2_epi32(set1_epi32(1601), 16);
     store_simd(&res.usimd, z);
-    for (size_t i = 0; i < SIMD_COUNT; i++)
-            printf("%" PRIu32 " ", res.epi32_u32[i]);
-    printf("\n");
+    TestEqual32(res, 1601 % 16) == 0 ? printf("Pass\n") : printf("Fail\n");
 
+    printf("\tnot_simd: ");
     z = not_simd(set1_epi32(0x41414141));
     store_simd(&res.usimd, z);
-    printf("%" PRIu32 "\n", ~0x41414141);
-    for (size_t i = 0; i < SIMD_COUNT; i++)
-            printf("%" PRIu32 " ", res.epi32_u32[i]);
-    printf("\n");
+    TestEqual32(res, ~0x41414141) == 0 ? printf("Pass\n") : printf("Fail\n");
 
     return 0;
 }
@@ -219,11 +255,11 @@ int main(
 
     ret = 0;
 
-    return RunLibraryTests();
+    RunLibraryTests();
 
     srand(time(NULL));
 
-    for(int i = 0; i < 5; i++)
+    for(int i = 0; i < 1; i++)
     {
         random_test = (uint32_t)rand();
         ret ^= RunHashTests(i, random_test);

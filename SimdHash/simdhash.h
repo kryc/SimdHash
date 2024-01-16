@@ -143,6 +143,10 @@ simd_t SimdCalculateS0(
 	const simd_t A);
 simd_t SimdCalculateS1(
 	const simd_t E);
+simd_t SimdCalculateExtendS0(
+	const simd_t A);
+simd_t SimdCalculateExtendS1(
+	const simd_t E);
 simd_t SimdCalculateTemp1(
 	const simd_t E,
 	const simd_t F,

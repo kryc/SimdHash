@@ -32,7 +32,11 @@
 #define andnot_simd     _mm512_andnot_si512
 #define cmpeq_epi32     _mm512_cmpeq_epi32
 #define movemask_ps     _mm512_movemask_ps
+// Custom
 #define bswap_epi32     _mm512_bswap_epi32
+#define xmul_epu32      _mm512_xmul_epu32
+#define mod2_epi32      _mm512_mod2_epi32
+#define not_simd        _mm512_not_mm512
 #else
 #define simd_t __m256i
 #define SIMD_WIDTH      256
@@ -130,7 +134,7 @@ _mm256_not_mm256(
 	const __m256i Value
 )
 {
-	return _mm256_xor_si256(Value, _mm256_set1_epi32(-1));
+	return _mm256_xor_si256(Value, _mm256_set1_epi64x(-1));
 }
 
 //
@@ -201,6 +205,15 @@ _mm512_mod2_epi32(
 	__m512i quotient = _mm512_srli_epi32(Value1, count);	// Division
 	__m512i remainder = _mm512_sub_epi32(Value1, _mm512_xmul_epu32(_mm512_set1_epi32(Mod2), quotient));
 	return remainder;
+}
+
+static inline
+__m512i
+_mm512_not_mm512(
+	const __m512i Value
+)
+{
+	return _mm512_xor_si512(Value, _mm512_set1_epi64(-1));
 }
 
 #endif /* simdcommon_h */
