@@ -40,10 +40,30 @@ typedef struct _SecondPreimageResult
 #define SECOND_PREIMAGE_CANDIDATE_FOUND     1
 #define SECOND_PREIMAGE_CANDIDATE_NOT_FOUND 0
 
+extern
+void
+SimdSha256Init(
+	SimdHashContext* Context
+)
+{
+	for (size_t i = 0; i < 8; i++)
+	{
+		store_simd(&Context->H[i].usimd, set1_epi32(Sha256InitialValues[i]));
+	}
+	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
+	Context->HSize = SHA256_H_COUNT;
+	Context->HashSize = SHA256_SIZE;
+	Context->BufferSize = SHA256_BUFFER_SIZE;
+	Context->Lanes = SIMD_COUNT;
+	Context->Length = 0;
+	Context->BitLength = 0;
+}
+
 inline
 simd_t
 SimdCalculateS1(
-	const simd_t E)
+	const simd_t E
+)
 {
 	simd_t er6 = rotr_epi32(E, 6);
 	simd_t er11 = rotr_epi32(E, 11);
@@ -55,7 +75,8 @@ SimdCalculateS1(
 inline
 simd_t
 SimdCalculateS0(
-	const simd_t A)
+	const simd_t A
+)
 {
 	simd_t ar2 = rotr_epi32(A, 2);
 	simd_t ar13 = rotr_epi32(A, 13);
@@ -67,7 +88,8 @@ SimdCalculateS0(
 // inline
 simd_t
 SimdCalculateExtendS0(
-	const simd_t W)
+	const simd_t W
+)
 {
 	simd_t wr7 = rotr_epi32(W, 7);
 	simd_t wr18 = rotr_epi32(W, 18);
@@ -79,7 +101,8 @@ SimdCalculateExtendS0(
 // inline
 simd_t
 SimdCalculateExtendS1(
-	const simd_t W)
+	const simd_t W
+)
 {
 	simd_t wr17 = rotr_epi32(W, 17);
 	simd_t wr19 = rotr_epi32(W, 19);
@@ -93,7 +116,8 @@ simd_t
 SimdCalculateTemp2(
 	const simd_t A,
 	const simd_t B,
-	const simd_t C)
+	const simd_t C
+)
 {
 	simd_t s0 = SimdCalculateS0(A);
 	simd_t maj = SimdShaBitwiseMajority(A, B, C);
@@ -108,7 +132,8 @@ SimdCalculateTemp1(
 	const simd_t G,
 	const simd_t H,
 	const simd_t K,
-	const simd_t W)
+	const simd_t W
+)
 {
 	simd_t s1 = SimdCalculateS1(E);
 	simd_t ch = SimdShaBitwiseChoiceWithControl(F, G, E);
@@ -121,8 +146,9 @@ SimdCalculateTemp1(
 static inline
 void
 SimdSha256ExpandMessageSchedule(
-	SimdShaContext* Context,
-	SimdValue* MessageSchedule)
+	SimdHashContext* Context,
+	SimdValue* MessageSchedule
+)
 {
 	for (size_t i = 0; i < SHA256_BUFFER_SIZE_DWORDS; i++)
 	{
@@ -141,28 +167,10 @@ SimdSha256ExpandMessageSchedule(
 	}
 }
 
-extern
-void
-SimdSha256Init(
-	SimdShaContext* Context,
-	const size_t Lanes)
-{
-	for (size_t i = 0; i < 8; i++)
-	{
-		store_simd(&Context->H[i].usimd, set1_epi32(Sha256InitialValues[i]));
-	}
-	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
-	Context->HSize = SHA256_H_COUNT;
-	Context->BufferSize = SHA256_BUFFER_SIZE;
-	Context->Length = 0;
-	Context->BitLength = 0;
-	assert(Lanes <= SIMD_COUNT);
-	Context->Lanes = Lanes;
-}
-
 static inline void
 SimdSha256Transform(
-	SimdShaContext* Context)
+	SimdHashContext* Context
+)
 {
 	//
 	// Expand the message schedule
@@ -213,9 +221,10 @@ SimdSha256Transform(
 
 void
 SimdSha256Update(
-	SimdShaContext* Context,
+	SimdHashContext* Context,
 	const size_t Length,
-	const uint8_t* Buffers[])
+	const uint8_t* Buffers[]
+)
 {
 	size_t toWrite = Length;
 	size_t offset;
@@ -237,7 +246,8 @@ SimdSha256Update(
 static inline
 void
 SimdSha256AppendSize(
-	SimdShaContext* Context)
+	SimdHashContext* Context
+)
 /*++
  Appends the 1-bit and the message length to the hash buffer
  Also performs the additional Transform step if required
@@ -270,7 +280,8 @@ SimdSha256AppendSize(
 
 void
 SimdSha256Finalize(
-	SimdShaContext* Context)
+	SimdHashContext* Context
+)
 {
 	//
 	// Add the message length
@@ -302,80 +313,4 @@ SimdSha256Finalize(
 	store_simd(&Context->H[5].usimd, f);
 	store_simd(&Context->H[6].usimd, g);
 	store_simd(&Context->H[7].usimd, h);
-}
-
-void SimdSha256GetHash(
-	SimdShaContext* Context,
-	uint8_t* HashBuffer,
-	const size_t Lane)
-{
-	uint32_t* nextBuffer;
-	
-	nextBuffer = (uint32_t*)HashBuffer;
-	nextBuffer[0] = Context->H[0].epi32_u32[Lane];
-	nextBuffer[1] = Context->H[1].epi32_u32[Lane];
-	nextBuffer[2] = Context->H[2].epi32_u32[Lane];
-	nextBuffer[3] = Context->H[3].epi32_u32[Lane];
-	nextBuffer[4] = Context->H[4].epi32_u32[Lane];
-	nextBuffer[5] = Context->H[5].epi32_u32[Lane];
-	nextBuffer[6] = Context->H[6].epi32_u32[Lane];
-	nextBuffer[7] = Context->H[7].epi32_u32[Lane];
-}
-
-void SimdSha256GetHashes2D(
-	SimdShaContext* Context,
-	uint8_t** HashBuffers)
-{
-	for (size_t i = 0; i < Context->Lanes; i++)
-	{
-		SimdSha256GetHash(Context, HashBuffers[i], i);
-	}
-}
-
-void SimdSha256GetHashes(
-	SimdShaContext* Context,
-	uint8_t* HashBuffers)
-{
-	for (size_t i = 0; i < Context->Lanes; i++)
-	{
-		SimdSha256GetHash(Context, &HashBuffers[(i * SHA256_SIZE)], i);
-	}
-}
-
-#define GET_HASH(pOut, iLane){ \
-	pOut[(iLane * SHA256_H_COUNT) + 0] = Context->H[0].epi32_u32[(iLane)]; \
-	pOut[(iLane * SHA256_H_COUNT) + 1] = Context->H[1].epi32_u32[(iLane)]; \
-	pOut[(iLane * SHA256_H_COUNT) + 2] = Context->H[2].epi32_u32[(iLane)]; \
-	pOut[(iLane * SHA256_H_COUNT) + 3] = Context->H[3].epi32_u32[(iLane)]; \
-	pOut[(iLane * SHA256_H_COUNT) + 4] = Context->H[4].epi32_u32[(iLane)]; \
-	pOut[(iLane * SHA256_H_COUNT) + 5] = Context->H[5].epi32_u32[(iLane)]; \
-	pOut[(iLane * SHA256_H_COUNT) + 6] = Context->H[6].epi32_u32[(iLane)]; \
-	pOut[(iLane * SHA256_H_COUNT) + 7] = Context->H[7].epi32_u32[(iLane)]; \
-}
-
-void SimdSha256GetHashesUnrolled(
-	SimdShaContext* Context,
-	uint8_t* HashBuffers)
-{
-	uint32_t* out = (uint32_t*)HashBuffers;
-
-	switch (Context->Lanes)
-	{
-		case 8:
-			GET_HASH(out, 7);
-		case 7:
-			GET_HASH(out, 6);
-		case 6:
-			GET_HASH(out, 5);
-		case 5:
-			GET_HASH(out, 4);
-		case 4:
-			GET_HASH(out, 3);
-		case 3:
-			GET_HASH(out, 2);
-		case 2:
-			GET_HASH(out, 1);
-		case 1:
-			GET_HASH(out, 0);
-	}
 }

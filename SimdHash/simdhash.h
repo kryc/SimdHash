@@ -48,95 +48,78 @@ typedef union _SimdValue
 	simd_t   usimd;
 } SimdValue __attribute__((__aligned__(32)));
 
-typedef struct _SimdShaContext
+typedef struct _SimdHashContext
 {
 	SimdValue H[MAX_H_COUNT];
 	SimdValue Buffer[MAX_BUFFER_SIZE_DWORDS];
 	size_t    HSize;
+	size_t    HashSize;
 	size_t    BufferSize;
 	uint64_t  Length;
 	uint64_t  BitLength;
 	size_t    Lanes;
-} SimdShaContext, *PSimdSha2Context;
+} SimdHashContext;
 
-void SimdSha256Init(
-	SimdShaContext* Context,
-	const size_t Lanes);
-
-void SimdSha256Update(
-	SimdShaContext* Context,
-	const size_t Length,
-	const uint8_t* Buffers[]);
-
-void SimdSha256Finalize(
-	SimdShaContext* Context);
-
-void SimdSha256GetHashes2D(
-	SimdShaContext* Context,
-	uint8_t** HashBuffers);
-
-void SimdSha256GetHashes(
-	SimdShaContext* Context,
-	uint8_t* HashBuffers);
-
-void SimdSha256GetHash(
-	SimdShaContext* Context,
-	uint8_t* HashBuffer,
-	const size_t Lane);
-
-void SimdSha256GetHashesUnrolled(
-	SimdShaContext* Context,
-	uint8_t* HashBuffers);
-
-void SimdSha1Init(
-	SimdShaContext* Context,
-	const size_t Lanes);
-
-void SimdSha1Update(
-	SimdShaContext* Context,
-	const size_t Length,
-	const uint8_t* Buffers[]);
-
-void SimdSha1Finalize(
-	SimdShaContext* Context);
-
-void SimdSha1GetHashes(
-	SimdShaContext* Context,
-	uint8_t** HashBuffers);
-
-void SimdSha1GetHashesUnrolled(
-	SimdShaContext* Context,
-	uint8_t* HashBuffers);
-
-void SimdSha1GetHash(
-	SimdShaContext* Context,
-	uint8_t* HashBuffer,
-	const size_t Lane);
-
+//
+// MD5
+//
 void SimdMd5Init(
-	SimdShaContext* Context,
-	const size_t Lanes);
+	SimdHashContext* Context);
 
 void SimdMd5Update(
-	SimdShaContext* Context,
+	SimdHashContext* Context,
 	const size_t Length,
 	const uint8_t* Buffers[]);
 
 void SimdMd5Finalize(
-	SimdShaContext* Context);
+	SimdHashContext* Context);
 
-void SimdMd5GetHashes(
-	SimdShaContext* Context,
-	uint8_t** HashBuffers);
+//
+// SHA1
+//
+void SimdSha1Init(
+	SimdHashContext* Context);
 
-void SimdMd5GetHashesUnrolled(
-	SimdShaContext* Context,
-	uint8_t* HashBuffers);
+void SimdSha1Update(
+	SimdHashContext* Context,
+	const size_t Length,
+	const uint8_t* Buffers[]);
 
-void SimdMd5GetHash(
-	SimdShaContext* Context,
+void SimdSha1Finalize(
+	SimdHashContext* Context);
+
+//
+// SHA256
+//
+void SimdSha256Init(
+	SimdHashContext* Context);
+
+void SimdSha256Update(
+	SimdHashContext* Context,
+	const size_t Length,
+	const uint8_t* Buffers[]);
+
+void SimdSha256Finalize(
+	SimdHashContext* Context);
+
+//
+// SimdHash Utility
+//
+void
+SimdHashGetHash(
+	SimdHashContext* Context,
 	uint8_t* HashBuffer,
 	const size_t Lane);
+
+void
+SimdHashGetHashes2D(
+	SimdHashContext* Context,
+	uint8_t** HashBuffers);
+
+void
+SimdHashGetHashes(
+	SimdHashContext* Context,
+	uint8_t* HashBuffers);
 
 #ifdef TEST
 simd_t SimdCalculateS0(

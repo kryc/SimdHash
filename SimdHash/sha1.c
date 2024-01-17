@@ -25,8 +25,7 @@ static const uint32_t Sha1RoundConstants[] = {
 
 void
 SimdSha1Init(
-	SimdShaContext* Context,
-	const size_t Lanes)
+	SimdHashContext* Context)
 {
 	for (size_t i = 0; i < 5; i++)
 	{
@@ -34,16 +33,16 @@ SimdSha1Init(
 	}
 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
 	Context->HSize = SHA1_H_COUNT;
+	Context->HashSize = SHA1_SIZE;
 	Context->BufferSize = SHA1_BUFFER_SIZE;
+	Context->Lanes = SIMD_COUNT;
 	Context->Length = 0;
 	Context->BitLength = 0;
-	assert(Lanes <= SIMD_COUNT);
-	Context->Lanes = Lanes;
 }
 
 static inline void
 SimdSha1ExpandMessageSchedule(
-	SimdShaContext* Context,
+	SimdHashContext* Context,
 	SimdValue* MessageSchedule)
 {
 	for (size_t i = 0; i < SHA1_BUFFER_SIZE_DWORDS; i++)
@@ -66,7 +65,7 @@ SimdSha1ExpandMessageSchedule(
 
 static inline void
 SimdSha1Transform(
-	SimdShaContext* Context)
+	SimdHashContext* Context)
 {
 	simd_t f, k;
 	//
@@ -136,9 +135,10 @@ SimdSha1Transform(
 
 void
 SimdSha1Update(
-	SimdShaContext* Context,
+	SimdHashContext* Context,
 	const size_t Length,
-	const uint8_t* Buffers[])
+	const uint8_t* Buffers[]
+)
 {
 	size_t toWrite = Length;
 	size_t offset;
@@ -160,7 +160,7 @@ SimdSha1Update(
 static inline
 void
 SimdSha1AppendSize(
-	SimdShaContext* Context)
+	SimdHashContext* Context)
 /*++
  Appends the 1-bit and the message length to the hash buffer
  Also performs the additional Transform step if required
@@ -193,7 +193,7 @@ SimdSha1AppendSize(
 
 void
 SimdSha1Finalize(
-	SimdShaContext* Context)
+	SimdHashContext* Context)
 {
 	//
 	// Add the message length
@@ -219,64 +219,4 @@ SimdSha1Finalize(
 	store_simd(&Context->H[2].usimd, c);
 	store_simd(&Context->H[3].usimd, d);
 	store_simd(&Context->H[4].usimd, e);
-}
-
-void SimdSha1GetHash(
-	SimdShaContext* Context,
-	uint8_t* HashBuffer,
-	const size_t Lane)
-{
-	uint32_t* nextBuffer;
-	
-	nextBuffer = (uint32_t*)HashBuffer;
-	nextBuffer[0] = Context->H[0].epi32_u32[Lane];
-	nextBuffer[1] = Context->H[1].epi32_u32[Lane];
-	nextBuffer[2] = Context->H[2].epi32_u32[Lane];
-	nextBuffer[3] = Context->H[3].epi32_u32[Lane];
-	nextBuffer[4] = Context->H[4].epi32_u32[Lane];
-}
-
-void SimdSha1GetHashes(
-	SimdShaContext* Context,
-	uint8_t** HashBuffers)
-{
-	for (size_t i = 0; i < Context->Lanes; i++)
-	{
-		SimdSha1GetHash(Context, HashBuffers[i], i);
-	}
-}
-
-#define GET_HASH(pOut, iLane){ \
-	pOut[(iLane * SHA1_H_COUNT) + 0] = Context->H[0].epi32_u32[(iLane)]; \
-	pOut[(iLane * SHA1_H_COUNT) + 1] = Context->H[1].epi32_u32[(iLane)]; \
-	pOut[(iLane * SHA1_H_COUNT) + 2] = Context->H[2].epi32_u32[(iLane)]; \
-	pOut[(iLane * SHA1_H_COUNT) + 3] = Context->H[3].epi32_u32[(iLane)]; \
-	pOut[(iLane * SHA1_H_COUNT) + 4] = Context->H[4].epi32_u32[(iLane)]; \
-}
-
-void SimdSha1GetHashesUnrolled(
-	SimdShaContext* Context,
-	uint8_t* HashBuffers)
-{
-	uint32_t* out = (uint32_t*)HashBuffers;
-
-	switch (Context->Lanes)
-	{
-		case 8:
-			GET_HASH(out, 7);
-		case 7:
-			GET_HASH(out, 6);
-		case 6:
-			GET_HASH(out, 5);
-		case 5:
-			GET_HASH(out, 4);
-		case 4:
-			GET_HASH(out, 3);
-		case 3:
-			GET_HASH(out, 2);
-		case 2:
-			GET_HASH(out, 1);
-		case 1:
-			GET_HASH(out, 0);
-	}
 }

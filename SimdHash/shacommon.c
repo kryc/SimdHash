@@ -11,7 +11,7 @@
 
 size_t
 SimdShaUpdateBuffer(
-	SimdShaContext* Context,
+	SimdHashContext* Context,
 	const size_t Offset,
 	const size_t Length,
 	const uint8_t* Buffers[],

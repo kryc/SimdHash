@@ -50,8 +50,7 @@ static const uint32_t Md5RoundConstants[] = {
 
 void
 SimdMd5Init(
-	SimdShaContext* Context,
-	const size_t Lanes)
+	SimdHashContext* Context)
 {
 	for (size_t i = 0; i < 4; i++)
 	{
@@ -59,16 +58,16 @@ SimdMd5Init(
 	}
 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
 	Context->HSize = MD5_H_COUNT;
+	Context->HashSize = MD5_SIZE;
 	Context->BufferSize = MD5_BUFFER_SIZE;
+	Context->Lanes = SIMD_COUNT;
 	Context->Length = 0;
 	Context->BitLength = 0;
-	assert(Lanes <= SIMD_COUNT);
-	Context->Lanes = Lanes;
 }
 
 static inline void
 SimdMd5Transform(
-	SimdShaContext* Context)
+	SimdHashContext* Context)
 {
 	simd_t f, g;
 	
@@ -142,7 +141,7 @@ SimdMd5Transform(
 
 void
 SimdMd5Update(
-	SimdShaContext* Context,
+	SimdHashContext* Context,
 	const size_t Length,
 	const uint8_t* Buffers[])
 {
@@ -166,7 +165,7 @@ SimdMd5Update(
 static inline
 void
 SimdMd5AppendSize(
-	SimdShaContext* Context)
+	SimdHashContext* Context)
 /*++
  Appends the 1-bit and the message length to the hash buffer
  Also performs the additional Transform step if required
@@ -199,7 +198,7 @@ SimdMd5AppendSize(
 
 void
 SimdMd5Finalize(
-	SimdShaContext* Context)
+	SimdHashContext* Context)
 {
 	//
 	// Add the message length
@@ -210,62 +209,4 @@ SimdMd5Finalize(
 	// Compute the final transformation
 	//
 	SimdMd5Transform(Context);
-}
-
-void SimdMd5GetHash(
-	SimdShaContext* Context,
-	uint8_t* HashBuffer,
-	const size_t Lane)
-{
-	uint32_t* nextBuffer;
-	
-	nextBuffer = (uint32_t*)HashBuffer;
-	nextBuffer[0] = Context->H[0].epi32_u32[Lane];
-	nextBuffer[1] = Context->H[1].epi32_u32[Lane];
-	nextBuffer[2] = Context->H[2].epi32_u32[Lane];
-	nextBuffer[3] = Context->H[3].epi32_u32[Lane];
-}
-
-void SimdMd5GetHashes(
-	SimdShaContext* Context,
-	uint8_t** HashBuffers)
-{
-	for (size_t i = 0; i < Context->Lanes; i++)
-	{
-		SimdMd5GetHash(Context, HashBuffers[i], i);
-	}
-}
-
-#define GET_HASH(pOut, iLane){ \
-	pOut[(iLane * MD5_H_COUNT) + 0] = Context->H[0].epi32_u32[(iLane)]; \
-	pOut[(iLane * MD5_H_COUNT) + 1] = Context->H[1].epi32_u32[(iLane)]; \
-	pOut[(iLane * MD5_H_COUNT) + 2] = Context->H[2].epi32_u32[(iLane)]; \
-	pOut[(iLane * MD5_H_COUNT) + 3] = Context->H[3].epi32_u32[(iLane)]; \
-}
-
-void SimdMd5GetHashesUnrolled(
-	SimdShaContext* Context,
-	uint8_t* HashBuffers)
-{
-	uint32_t* out = (uint32_t*)HashBuffers;
-
-	switch (Context->Lanes)
-	{
-		case 8:
-			GET_HASH(out, 7);
-		case 7:
-			GET_HASH(out, 6);
-		case 6:
-			GET_HASH(out, 5);
-		case 5:
-			GET_HASH(out, 4);
-		case 4:
-			GET_HASH(out, 3);
-		case 3:
-			GET_HASH(out, 2);
-		case 2:
-			GET_HASH(out, 1);
-		case 1:
-			GET_HASH(out, 0);
-	}
 }

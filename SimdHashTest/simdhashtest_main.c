@@ -23,7 +23,7 @@ typedef struct _TestVector
 	uint8_t  Sha256Digest[SHA256_SIZE];
 	uint8_t  Sha1Digest[SHA1_SIZE];
 	uint8_t  Md5Digest[MD5_SIZE];
-} TestVector, *PTestVector;
+} TestVector;
 
 //
 // Test vectors
@@ -88,7 +88,7 @@ FunctionalityTests(void)
 	that the algorithms are providing correct results	
 --*/
 {
-	SimdShaContext ctx;
+	SimdHashContext ctx;
 	// Sha2Context sha2ctx;
 	uint8_t* buffers[SIMD_COUNT];
 	uint8_t hash[SHA256_SIZE];
@@ -110,10 +110,10 @@ FunctionalityTests(void)
 			buffers[i] = (uint8_t*)g_ShaTestVectors[c].PreImage;
 		}
 		
-		SimdSha256Init(&ctx, SIMD_COUNT);
+		SimdSha256Init(&ctx);
 		SimdSha256Update(&ctx, g_ShaTestVectors[c].Length, (const uint8_t**)buffers);
 		SimdSha256Finalize(&ctx);
-		SimdSha256GetHash(&ctx, hash, 0);
+		SimdHashGetHash(&ctx, hash, 0);
 		
 		ToHex(hex, sizeof(hex), &g_ShaTestVectors[c].Sha256Digest[0], SHA256_SIZE);
 		printf("[+] Expected: %s\n", hex);
@@ -129,10 +129,10 @@ FunctionalityTests(void)
 			printf("[+] SHA256:   %s\n", hex);
 		}
 		
-		SimdSha1Init(&ctx, SIMD_COUNT);
+		SimdSha1Init(&ctx);
 		SimdSha1Update(&ctx, g_ShaTestVectors[c].Length, (const uint8_t**)buffers);
 		SimdSha1Finalize(&ctx);
-		SimdSha1GetHash(&ctx, hash, 0);
+		SimdHashGetHash(&ctx, hash, 0);
 		
 		ToHex(hex, sizeof(hex), &g_ShaTestVectors[c].Sha1Digest[0], SHA1_SIZE);
 		printf("[+] Expected: %s\n", hex);
@@ -149,10 +149,10 @@ FunctionalityTests(void)
 			printf("[+] SHA1:     %s\n", hex);
 		}
 
-		SimdMd5Init(&ctx, SIMD_COUNT);
+		SimdMd5Init(&ctx);
 		SimdMd5Update(&ctx, g_ShaTestVectors[c].Length, (const uint8_t**)buffers);
 		SimdMd5Finalize(&ctx);
-		SimdMd5GetHash(&ctx, hash, 0);
+		SimdHashGetHash(&ctx, hash, 0);
 		
 		ToHex(hex, sizeof(hex), &g_ShaTestVectors[c].Md5Digest[0], MD5_SIZE);
 		printf("[+] Expected: %s\n", hex);
@@ -234,7 +234,7 @@ PerformanceTests(void)
 	per second but does not measure correctness.
 --*/
 {
-	SimdShaContext sha256ctx;
+	SimdHashContext sha256ctx;
 	uint8_t* buffers[SIMD_COUNT];
 	struct timespec begin;
 	long elapsed;
@@ -260,7 +260,7 @@ PerformanceTests(void)
 	for (size_t i = 0; i < numTests; i++)
 	{
 		begin = timer_start();
-		SimdSha256Init(&sha256ctx, SIMD_COUNT);
+		SimdSha256Init(&sha256ctx);
 		SimdSha256Update(&sha256ctx, g_ShaTestVectors[0].Length, (const uint8_t**)buffers);
 		SimdSha256Finalize(&sha256ctx);
 		elapsed = timer_end(begin);
@@ -296,7 +296,7 @@ PerformanceTests(void)
 	for (size_t i = 0; i < numTests; i++)
 	{
 		begin = timer_start();
-		SimdSha1Init(&sha256ctx, SIMD_COUNT);
+		SimdSha1Init(&sha256ctx);
 		SimdSha1Update(&sha256ctx, g_ShaTestVectors[0].Length, (const uint8_t**)buffers);
 		SimdSha1Finalize(&sha256ctx);
 		elapsed = timer_end(begin);
