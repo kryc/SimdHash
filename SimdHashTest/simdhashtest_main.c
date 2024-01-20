@@ -90,7 +90,7 @@ FunctionalityTests(void)
 {
 	SimdHashContext ctx;
 	// Sha2Context sha2ctx;
-	uint8_t* buffers[SIMD_COUNT];
+	uint8_t* buffers[SimdLanes()];
 	uint8_t hash[SHA256_SIZE];
 	char hex[SHA256_SIZE * 2 + 1];
 	bool sha256fail, sha1fail, md5fail;
@@ -105,7 +105,7 @@ FunctionalityTests(void)
 	{
 		printf("[+] Vector %zu\n", c);
 		
-		for (size_t i = 0; i < SIMD_COUNT; i++)
+		for (size_t i = 0; i < SimdLanes(); i++)
 		{
 			buffers[i] = (uint8_t*)g_ShaTestVectors[c].PreImage;
 		}
@@ -235,7 +235,7 @@ PerformanceTests(void)
 --*/
 {
 	SimdHashContext sha256ctx;
-	uint8_t* buffers[SIMD_COUNT];
+	uint8_t* buffers[SimdLanes()];
 	struct timespec begin;
 	long elapsed;
 	size_t hashesPerSec, fastest, slowest, average;
@@ -244,7 +244,7 @@ PerformanceTests(void)
 	//
 	// Initialize the buffers
 	//
-	for (size_t i = 0; i < SIMD_COUNT; i++)
+	for (size_t i = 0; i < SimdLanes(); i++)
 	{
 		buffers[i] = (uint8_t*)g_ShaTestVectors[0].PreImage;
 	}

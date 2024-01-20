@@ -35,7 +35,7 @@ SimdSha1Init(
 	Context->HSize = SHA1_H_COUNT;
 	Context->HashSize = SHA1_SIZE;
 	Context->BufferSize = SHA1_BUFFER_SIZE;
-	Context->Lanes = SIMD_COUNT;
+	Context->Lanes = SimdLanes();
 	Context->Length = 0;
 	Context->BitLength = 0;
 }

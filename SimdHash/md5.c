@@ -60,7 +60,7 @@ SimdMd5Init(
 	Context->HSize = MD5_H_COUNT;
 	Context->HashSize = MD5_SIZE;
 	Context->BufferSize = MD5_BUFFER_SIZE;
-	Context->Lanes = SIMD_COUNT;
+	Context->Lanes = SimdLanes();
 	Context->Length = 0;
 	Context->BitLength = 0;
 }

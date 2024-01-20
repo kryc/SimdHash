@@ -7,6 +7,15 @@
 //
 
 #include "simdhash.h"
+#include "simdcommon.h"
+
+const size_t
+SimdLanes(
+	void
+)
+{
+	return (SIMD_WIDTH / 32);
+}
 
 void
 SimdHashGetHash(

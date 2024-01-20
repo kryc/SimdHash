@@ -15,7 +15,6 @@
 
 #include "simdcommon.h"
 
-#define SIMD_COUNT (SIMD_WIDTH / 32)
 #define MD5_BUFFER_SIZE (64)
 #define MD5_BUFFER_SIZE_DWORDS (MD5_BUFFER_SIZE / 4)
 #define MD5_H_COUNT (4)
@@ -59,6 +58,10 @@ typedef struct _SimdHashContext
 	uint64_t  BitLength;
 	size_t    Lanes;
 } SimdHashContext;
+
+const size_t SimdLanes(
+	void
+);
 
 //
 // MD5

@@ -54,7 +54,7 @@ SimdSha256Init(
 	Context->HSize = SHA256_H_COUNT;
 	Context->HashSize = SHA256_SIZE;
 	Context->BufferSize = SHA256_BUFFER_SIZE;
-	Context->Lanes = SIMD_COUNT;
+	Context->Lanes = SimdLanes();
 	Context->Length = 0;
 	Context->BitLength = 0;
 }

@@ -220,6 +220,14 @@ RunLibraryTests(
 {
     printf("Running library code tests\n");
 
+    printf("\tSimdLanes: ");
+
+#if defined __AVX512BW__
+    SimdLanes() == 16 ? printf("Pass (%zu)\n", SimdLanes()) : printf("Fail (%zu)\n", SimdLanes());
+#elif defined __AVX2__
+    SimdLanes() == 8 ? printf("Pass (%zu)\n", SimdLanes()) : printf("Fail (%zu)\n", SimdLanes());
+#endif
+
     SimdValue res;
 
     printf("\txmul_epu32: ");
