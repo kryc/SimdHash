@@ -1,5 +1,5 @@
 //
-//  shacommon.c
+//  hashcommon.c
 //  SimdHash
 //
 //  Created by Gareth Evans on 21/01/2021.
@@ -7,10 +7,10 @@
 //
 
 #include "simdhash.h"
-#include "shacommon.h"
+#include "hashcommon.h"
 
 size_t
-SimdShaUpdateBuffer(
+SimdHashUpdateBuffer(
 	SimdHashContext* Context,
 	const size_t Offset,
 	const size_t Length,

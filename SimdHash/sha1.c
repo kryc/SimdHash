@@ -13,7 +13,7 @@
 #include <immintrin.h>	// AVX
 #include "simdhash.h"
 #include "simdcommon.h"
-#include "shacommon.h"
+#include "hashcommon.h"
 
 static const uint32_t Sha1InitialValues[] = {
 	0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0
@@ -88,7 +88,7 @@ SimdSha1Transform(
 		if (i < 20)
 		{
 			// f = (b and c) or ((not b) and d)
-			f = SimdShaBitwiseChoiceWithControl(c, d, b);
+			f = SimdBitwiseChoiceWithControl(c, d, b);
 			k = set1_epi32(Sha1RoundConstants[0]);
 		}
 		else if (i < 40)
@@ -100,7 +100,7 @@ SimdSha1Transform(
 		else if (i < 60)
 		{
 			// f = (b and c) or (b and d) or (c and d)
-			f = SimdShaBitwiseMajority(b, c, d);
+			f = SimdBitwiseMajority(b, c, d);
 			k = set1_epi32(Sha1RoundConstants[2]);
 		}
 		else //if (i < 80)
@@ -146,7 +146,7 @@ SimdSha1Update(
 	while (toWrite > 0)
 	{
 		offset = Length - toWrite;
-		toWrite = SimdShaUpdateBuffer(Context, offset, Length, Buffers, 1);
+		toWrite = SimdHashUpdateBuffer(Context, offset, Length, Buffers, 1);
 
 		if (Context->Length == SHA1_BUFFER_SIZE)
 		{

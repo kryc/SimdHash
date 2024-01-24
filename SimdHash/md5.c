@@ -16,7 +16,7 @@
 
 #include "simdhash.h"
 #include "simdcommon.h"
-#include "shacommon.h"
+#include "hashcommon.h"
 
 static const uint32_t Md5InitialValues[] = {
 	0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476
@@ -84,14 +84,14 @@ SimdMd5Transform(
 		if (i < 16)
 		{
 			// F := (B and C) or ((not B) and D)
-			f = SimdShaBitwiseChoiceWithControl(c, d, b);
+			f = SimdBitwiseChoiceWithControl(c, d, b);
 			// g := i
 			g = set1_epi32(i);
 		}
 		else if (i < 32)
 		{
 			// F := (D and B) or ((not D) and C)
-			f = SimdShaBitwiseChoiceWithControl(b, c, d);
+			f = SimdBitwiseChoiceWithControl(b, c, d);
 			// g := (5xi + 1) mod 16
 			g = mod2_epi32(add_epi32(xmul_epu32(set1_epi32(i), set1_epi32(5)), set1_epi32(1)), 16);
 		}
@@ -151,7 +151,7 @@ SimdMd5Update(
 	while (toWrite > 0)
 	{
 		offset = Length - toWrite;
-		toWrite = SimdShaUpdateBuffer(Context, offset, Length, Buffers, 0);
+		toWrite = SimdHashUpdateBuffer(Context, offset, Length, Buffers, 0);
 
 		if (Context->Length == MD5_BUFFER_SIZE)
 		{

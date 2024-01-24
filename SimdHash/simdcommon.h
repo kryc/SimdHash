@@ -62,6 +62,8 @@
 #define not_simd        _mm256_not_mm256
 #endif
 
+#define MAX_LANES (512/32)
+
 //
 // AVX2 Utilities
 //

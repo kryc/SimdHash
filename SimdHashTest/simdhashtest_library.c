@@ -18,7 +18,7 @@
 
 #include "simdhash.h"
 #include "simdcommon.h"
-#include "shacommon.h"
+#include "hashcommon.h"
 
 static inline
 uint32_t
@@ -184,14 +184,14 @@ RunHashTests(
 
     printf("CalculateCh: ");
     u32 = CalculateCh(TestVal, TestVal, TestVal);
-    s0t = SimdShaBitwiseChoiceWithControl(test, test, test);
+    s0t = SimdBitwiseChoiceWithControl(test, test, test);
     store_simd(&res.usimd, s0t);
     ret ^= u32 ^ res.epi32_u32[0];
     TestEqual32(res, u32) == 0 ? printf("Pass\n") : printf("Fail\n");
 
     printf("CalculateMaj: ");
     u32 = CalculateMaj(TestVal, TestVal, TestVal);
-    s0t = SimdShaBitwiseMajority(test, test, test);
+    s0t = SimdBitwiseMajority(test, test, test);
     store_simd(&res.usimd, s0t);
     ret ^= u32 ^ res.epi32_u32[0];
     TestEqual32(res, u32) == 0 ? printf("Pass\n") : printf("Fail\n");

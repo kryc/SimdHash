@@ -1,48 +1,48 @@
 //
-//  shacommon.h
+//  hashcommon.h
 //  SimdHash
 //
 //  Created by Gareth Evans on 20/01/2021.
 //  Copyright © 2021 Gareth Evans. All rights reserved.
 //
 
-#ifndef shacommon_h
-#define shacommon_h
+#ifndef hashcommon_h
+#define hashcommon_h
 
 #include <immintrin.h>
 
 #include "simdcommon.h"
 
-#ifndef SHABITWISECHOICE
-#define SHABITWISECHOICE 0
+#ifndef BITWISECHOICE
+#define BITWISECHOICE 0
 #endif
 
-#ifndef SHABITWISEMAJORITY
-#define SHABITWISEMAJORITY 2
+#ifndef BITWISEMAJORITY
+#define BITWISEMAJORITY 2
 #endif
 
-#if SHABITWISECHOICE == 1
-	#define SimdShaBitwiseChoiceWithControl SimdShaBitwiseChoiceWithControlAlt1
-#elif SHABITWISECHOICE == 2
-	#define SimdShaBitwiseChoiceWithControl SimdShaBitwiseChoiceWithControlAlt2
+#if BITWISECHOICE == 1
+	#define SimdBitwiseChoiceWithControl SimdBitwiseChoiceWithControlAlt1
+#elif BITWISECHOICE == 2
+	#define SimdBitwiseChoiceWithControl SimdBitwiseChoiceWithControlAlt2
 #else
-	#define SimdShaBitwiseChoiceWithControl SimdShaBitwiseChoiceWithControlOriginal
+	#define SimdBitwiseChoiceWithControl SimdBitwiseChoiceWithControlOriginal
 #endif
 
-#if SHABITWISEMAJORITY == 1
-	#define SimdShaBitwiseMajority SimdShaBitwiseMajorityAlt1
-#elif SHABITWISEMAJORITY == 2
-	#define SimdShaBitwiseMajority SimdShaBitwiseMajorityAlt2
-#elif SHABITWISEMAJORITY == 3
-	#define SimdShaBitwiseMajority SimdShaBitwiseMajorityAlt3
-#elif SHABITWISEMAJORITY == 5
-	#define SimdShaBitwiseMajority SimdShaBitwiseMajorityAlt5
+#if BITWISEMAJORITY == 1
+	#define SimdBitwiseMajority SimdBitwiseMajorityAlt1
+#elif BITWISEMAJORITY == 2
+	#define SimdBitwiseMajority SimdBitwiseMajorityAlt2
+#elif BITWISEMAJORITY == 3
+	#define SimdBitwiseMajority SimdBitwiseMajorityAlt3
+#elif BITWISEMAJORITY == 5
+	#define SimdBitwiseMajority SimdBitwiseMajorityAlt5
 #else
-	#define SimdShaBitwiseMajority SimdShaBitwiseMajorityOriginal
+	#define SimdBitwiseMajority SimdBitwiseMajorityOriginal
 #endif
 
 size_t
-SimdShaUpdateBuffer(
+SimdHashUpdateBuffer(
 	SimdHashContext* Context,
 	const size_t Offset,
 	const size_t Length,
@@ -50,7 +50,7 @@ SimdShaUpdateBuffer(
 	const uint8_t BigEndian);
 
 static inline simd_t
-SimdShaBitwiseChoiceWithControlOriginal(
+SimdBitwiseChoiceWithControlOriginal(
 	const simd_t Choice1,
 	const simd_t Choice2,
 	const simd_t Control)
@@ -68,7 +68,7 @@ SimdShaBitwiseChoiceWithControlOriginal(
 }
 
 static inline simd_t
-SimdShaBitwiseChoiceWithControlAlt1(
+SimdBitwiseChoiceWithControlAlt1(
 	const simd_t Choice1,
 	const simd_t Choice2,
 	const simd_t Control)
@@ -86,7 +86,7 @@ SimdShaBitwiseChoiceWithControlAlt1(
 }
 
 static inline simd_t
-SimdShaBitwiseChoiceWithControlAlt2(
+SimdBitwiseChoiceWithControlAlt2(
 	const simd_t Choice1,
 	const simd_t Choice2,
 	const simd_t Control)
@@ -104,7 +104,7 @@ SimdShaBitwiseChoiceWithControlAlt2(
 }
 
 static inline simd_t
-SimdShaBitwiseMajorityOriginal(
+SimdBitwiseMajorityOriginal(
 	const simd_t A,
 	const simd_t B,
 	const simd_t C)
@@ -124,7 +124,7 @@ SimdShaBitwiseMajorityOriginal(
 }
 
 static inline simd_t
-SimdShaBitwiseMajorityAlt1(
+SimdBitwiseMajorityAlt1(
 	const simd_t A,
 	const simd_t B,
 	const simd_t C)
@@ -143,7 +143,7 @@ SimdShaBitwiseMajorityAlt1(
 }
 
 static inline simd_t
-SimdShaBitwiseMajorityAlt2(
+SimdBitwiseMajorityAlt2(
 	const simd_t A,
 	const simd_t B,
 	const simd_t C)
@@ -162,7 +162,7 @@ SimdShaBitwiseMajorityAlt2(
 }
 
 static inline simd_t
-SimdShaBitwiseMajorityAlt3(
+SimdBitwiseMajorityAlt3(
 	const simd_t A,
 	const simd_t B,
 	const simd_t C)
@@ -181,7 +181,7 @@ SimdShaBitwiseMajorityAlt3(
 }
 
 static inline simd_t
-SimdShaBitwiseMajorityAlt5(
+SimdBitwiseMajorityAlt5(
 	const simd_t A,
 	const simd_t B,
 	const simd_t C)
@@ -200,4 +200,4 @@ SimdShaBitwiseMajorityAlt5(
 	return xor_simd(ret, bAndC);
 }
 
-#endif /* shacommon_h */
+#endif /* hashcommon_h */

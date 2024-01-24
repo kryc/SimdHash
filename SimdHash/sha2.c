@@ -14,7 +14,7 @@
 
 #include "simdhash.h"
 #include "simdcommon.h"
-#include "shacommon.h"
+#include "hashcommon.h"
 
 static const uint32_t Sha256InitialValues[8] = {
 	0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
@@ -120,7 +120,7 @@ SimdCalculateTemp2(
 )
 {
 	simd_t s0 = SimdCalculateS0(A);
-	simd_t maj = SimdShaBitwiseMajority(A, B, C);
+	simd_t maj = SimdBitwiseMajority(A, B, C);
 	return add_epi32(s0, maj);
 }
 
@@ -136,7 +136,7 @@ SimdCalculateTemp1(
 )
 {
 	simd_t s1 = SimdCalculateS1(E);
-	simd_t ch = SimdShaBitwiseChoiceWithControl(F, G, E);
+	simd_t ch = SimdBitwiseChoiceWithControl(F, G, E);
 	simd_t ret = add_epi32(H, s1);
 	ret = add_epi32(ret, ch);
 	ret = add_epi32(ret, K);
@@ -232,7 +232,7 @@ SimdSha256Update(
 	while (toWrite > 0)
 	{
 		offset = Length - toWrite;
-		toWrite = SimdShaUpdateBuffer(Context, offset, Length, Buffers, 1);
+		toWrite = SimdHashUpdateBuffer(Context, offset, Length, Buffers, 1);
 
 		if (Context->Length == SHA256_BUFFER_SIZE)
 		{
