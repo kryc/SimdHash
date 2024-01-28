@@ -42,12 +42,21 @@
 #endif
 
 size_t
-SimdHashUpdateBuffer(
+SimdHashUpdateLaneBuffer(
 	SimdHashContext* Context,
+	const size_t Lane,
 	const size_t Offset,
 	const size_t Length,
-	const uint8_t* Buffers[],
+	const uint8_t* Buffers,
 	const uint8_t BigEndian);
+
+// size_t
+// SimdHashUpdateBuffer(
+// 	SimdHashContext* Context,
+// 	const size_t Offset,
+// 	const size_t Length,
+// 	const uint8_t* Buffers[],
+// 	const uint8_t BigEndian);
 
 static inline simd_t
 SimdBitwiseChoiceWithControlOriginal(

@@ -54,8 +54,8 @@ typedef struct _SimdHashContext
 	size_t    HSize;
 	size_t    HashSize;
 	size_t    BufferSize;
-	uint64_t  Length;
-	uint64_t  BitLength;
+	uint64_t  Length[MAX_LANES];
+	uint64_t  BitLength[MAX_LANES];
 	size_t    Lanes;
 } SimdHashContext;
 
@@ -82,6 +82,11 @@ void SimdMd5Finalize(
 //
 void SimdSha1Init(
 	SimdHashContext* Context);
+
+void SimdSha1Update(
+	SimdHashContext* Context,
+	const size_t Lengths[],
+	const uint8_t* Buffers[]);
 
 void SimdSha1Update(
 	SimdHashContext* Context,
