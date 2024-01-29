@@ -57,10 +57,25 @@ typedef struct _SimdHashContext
 	uint64_t  Length[MAX_LANES];
 	uint64_t  BitLength[MAX_LANES];
 	size_t    Lanes;
+	uint32_t  BigEndian;
 } SimdHashContext;
 
 const size_t SimdLanes(
 	void
+);
+
+void
+SimdHashUpdate(
+	SimdHashContext* Context,
+	const size_t Lengths[],
+	const uint8_t* Buffers[]
+);
+
+void
+SimdHashUpdateAll(
+	SimdHashContext* Context,
+	const size_t Length,
+	const uint8_t* Buffers[]
 );
 
 //
@@ -69,10 +84,10 @@ const size_t SimdLanes(
 void SimdMd5Init(
 	SimdHashContext* Context);
 
-void SimdMd5Update(
-	SimdHashContext* Context,
-	const size_t Length,
-	const uint8_t* Buffers[]);
+// void SimdMd5Update(
+// 	SimdHashContext* Context,
+// 	const size_t Length,
+// 	const uint8_t* Buffers[]);
 
 void SimdMd5Finalize(
 	SimdHashContext* Context);
@@ -83,15 +98,10 @@ void SimdMd5Finalize(
 void SimdSha1Init(
 	SimdHashContext* Context);
 
-void SimdSha1Update(
-	SimdHashContext* Context,
-	const size_t Lengths[],
-	const uint8_t* Buffers[]);
-
-void SimdSha1Update(
-	SimdHashContext* Context,
-	const size_t Length,
-	const uint8_t* Buffers[]);
+// void SimdSha1Update(
+// 	SimdHashContext* Context,
+// 	const size_t Lengths[],
+// 	const uint8_t* Buffers[]);
 
 void SimdSha1Finalize(
 	SimdHashContext* Context);
@@ -102,10 +112,10 @@ void SimdSha1Finalize(
 void SimdSha256Init(
 	SimdHashContext* Context);
 
-void SimdSha256Update(
-	SimdHashContext* Context,
-	const size_t Length,
-	const uint8_t* Buffers[]);
+// void SimdSha256Update(
+// 	SimdHashContext* Context,
+// 	const size_t Length,
+// 	const uint8_t* Buffers[]);
 
 void SimdSha256Finalize(
 	SimdHashContext* Context);

@@ -8,6 +8,7 @@
 
 #include "simdhash.h"
 #include "simdcommon.h"
+#include "hashcommon.h"
 
 const size_t
 SimdLanes(
@@ -15,6 +16,52 @@ SimdLanes(
 )
 {
 	return (SIMD_WIDTH / 32);
+}
+
+void
+SimdHashUpdate(
+	SimdHashContext* Context,
+	const size_t Lengths[],
+	const uint8_t* Buffers[]
+)
+{
+	for (size_t lane = 0; lane < Context->Lanes; lane++)
+	{
+		size_t toWrite = Lengths[lane];
+
+		//
+		// For now, this technique has a maximum length
+		// of 55 as this is the maximum number of bytes you
+		// can fit in a single buffer without needing to
+		// perform a sha1 transform.
+		//
+		toWrite = toWrite > 55 ? 55 : toWrite;
+
+		toWrite = SimdHashUpdateLaneBuffer(
+			Context,
+			lane,
+			0,
+			Lengths[lane],
+			Buffers[lane]
+		);
+	}
+}
+
+void
+SimdHashUpdateAll(
+	SimdHashContext* Context,
+	const size_t Length,
+	const uint8_t* Buffers[]
+)
+{
+	size_t lengths[MAX_LANES];
+
+	for (size_t lane = 0; lane < Context->Lanes; lane++)
+	{
+		lengths[lane] = Length;
+	}
+
+	return SimdHashUpdate(Context, lengths, Buffers);
 }
 
 void

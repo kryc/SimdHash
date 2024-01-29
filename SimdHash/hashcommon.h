@@ -47,8 +47,7 @@ SimdHashUpdateLaneBuffer(
 	const size_t Lane,
 	const size_t Offset,
 	const size_t Length,
-	const uint8_t* Buffers,
-	const uint8_t BigEndian);
+	const uint8_t* Buffers);
 
 // size_t
 // SimdHashUpdateBuffer(

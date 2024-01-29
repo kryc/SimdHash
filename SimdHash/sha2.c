@@ -15,6 +15,7 @@
 #include "simdhash.h"
 #include "simdcommon.h"
 #include "hashcommon.h"
+#include "library.h"
 
 static const uint32_t Sha256InitialValues[8] = {
 	0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
@@ -55,8 +56,9 @@ SimdSha256Init(
 	Context->HashSize = SHA256_SIZE;
 	Context->BufferSize = SHA256_BUFFER_SIZE;
 	Context->Lanes = SimdLanes();
-	Context->Length = 0;
-	Context->BitLength = 0;
+	memset(Context->Length, 0, sizeof(Context->Length));
+	memset(Context->BitLength, 0, sizeof(Context->BitLength));
+	Context->BigEndian = 1;
 }
 
 inline
@@ -219,30 +221,6 @@ SimdSha256Transform(
 	store_simd(&Context->H[7].usimd, add_epi32(load_simd(&Context->H[7].usimd), h));
 }
 
-void
-SimdSha256Update(
-	SimdHashContext* Context,
-	const size_t Length,
-	const uint8_t* Buffers[]
-)
-{
-	size_t toWrite = Length;
-	size_t offset;
-	
-	while (toWrite > 0)
-	{
-		offset = Length - toWrite;
-		toWrite = SimdHashUpdateBuffer(Context, offset, Length, Buffers, 1);
-
-		if (Context->Length == SHA256_BUFFER_SIZE)
-		{
-			SimdSha256Transform(Context);
-			memset(Context->Buffer, 0, sizeof(Context->Buffer));
-			Context->Length = 0;
-		}
-	}
-}
-
 static inline
 void
 SimdSha256AppendSize(
@@ -253,29 +231,28 @@ SimdSha256AppendSize(
  Also performs the additional Transform step if required
  --*/
 {
-	//
-	// Write the 1 bit
-	//
-	size_t bufferIndex = Context->Length / 4;
-	size_t bufferOffset = Context->Length % 4;
-	
 	for (size_t lane = 0; lane < Context->Lanes; lane++)
 	{
-		Context->Buffer[bufferIndex].epi32_u8[lane][(sizeof(uint32_t) - 1 - bufferOffset)] = 0x80;
+		//
+		// Write the 1 bit
+		//		
+		Context->Length[lane] = SimdHashWriteBuffer8(Context, lane, 0x80);
+		
+		//
+		// Check if we need to do another round
+		//
+		// if (Context->Length >= 56)
+		// {
+		// 	SimdSha256Transform(Context);
+		// 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
+		// }
+
+		// Bump the used buffer length to add the size to
+		// the last 64 bits
+		Context->Length[lane] = SHA256_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t);
+		Context->Length[lane] = SimdHashWriteBuffer32NoEndian(Context, lane, Context->BitLength[lane] >> 32);
+		Context->Length[lane] = SimdHashWriteBuffer32NoEndian(Context, lane, Context->BitLength[lane] & 0xffffffff);
 	}
-	Context->Length++;
-	
-	if (Context->Length >= 56)
-	{
-		SimdSha256Transform(Context);
-		memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
-	}
-	
-	//
-	// Write the length into the last 64 bits
-	//
-	store_simd(&Context->Buffer[14].usimd, set1_epi32(Context->BitLength >> 32));
-	store_simd(&Context->Buffer[15].usimd, set1_epi32(Context->BitLength & 0xffffffff));
 }
 
 void

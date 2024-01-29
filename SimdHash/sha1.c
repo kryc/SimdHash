@@ -9,11 +9,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
-#include <string.h>		// memset
-#include <immintrin.h>	// AVX
+#include <string.h>
+#include <immintrin.h>
+
 #include "simdhash.h"
 #include "simdcommon.h"
 #include "hashcommon.h"
+#include "library.h"
 
 static const uint32_t Sha1InitialValues[] = {
 	0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0
@@ -36,8 +38,9 @@ SimdSha1Init(
 	Context->HashSize = SHA1_SIZE;
 	Context->BufferSize = SHA1_BUFFER_SIZE;
 	Context->Lanes = SimdLanes();
-	Context->Length = 0;
-	Context->BitLength = 0;
+	memset(Context->Length, 0, sizeof(Context->Length));
+	memset(Context->BitLength, 0, sizeof(Context->BitLength));
+	Context->BigEndian = 1;
 }
 
 static inline void
@@ -133,57 +136,6 @@ SimdSha1Transform(
 	store_simd(&Context->H[4].usimd, add_epi32(load_simd(&Context->H[4].usimd), e));
 }
 
-void
-SimdSha1Update(
-	SimdHashContext* Context,
-	const size_t Lengths[],
-	const uint8_t* Buffers[]
-)
-{
-	//
-	// For now, this technique has a maximum length
-	// of 55 as this is the maximum number of bytes you
-	// can fit in a single buffer without needing to
-	// perform a sha1 transform.
-	//
-	for (size_t lane = 0; lane < Context->Lanes; lane++)
-	{
-		size_t toWrite = Length[lane];
-		toWrite = SimdHashUpdateLaneBuffer(
-			Context,
-			lane,
-			0,
-			Lengths[lane],
-			Buffers[lane],
-			1
-		);
-	}
-}
-
-void
-SimdSha1Update(
-	SimdHashContext* Context,
-	const size_t Length,
-	const uint8_t* Buffers[]
-)
-{
-	size_t toWrite = Length;
-	size_t offset;
-	
-	while (toWrite > 0)
-	{
-		offset = Length - toWrite;
-		toWrite = SimdHashUpdateBuffer(Context, offset, Length, Buffers, 1);
-
-		if (Context->Length == SHA1_BUFFER_SIZE)
-		{
-			SimdSha1Transform(Context);
-			memset(Context->Buffer, 0, sizeof(Context->Buffer));
-			Context->Length = 0;
-		}
-	}
-}
-
 static inline
 void
 SimdSha1AppendSize(
@@ -193,29 +145,28 @@ SimdSha1AppendSize(
  Also performs the additional Transform step if required
  --*/
 {
-	//
-	// Write the 1 bit
-	//
 	for (size_t lane = 0; lane < Context->Lanes; lane++)
 	{
-		size_t bufferIndex = Context->Lengths[lane] / 4;
-		size_t bufferOffset = Context->Length[lane] % 4;
-		Context->Buffer[bufferIndex].epi32_u8[lane][(sizeof(uint32_t) - 1 - bufferOffset)] = 0x80;
+		//
+		// Write the 1 bit
+		//		
+		Context->Length[lane] = SimdHashWriteBuffer8(Context, lane, 0x80);
+		
+		//
+		// Check if we need to do another round
+		//
+		// if (Context->Length >= 56)
+		// {
+		// 	SimdSha1Transform(Context);
+		// 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
+		// }
+
+		// Bump the used buffer length to add the size to
+		// the last 64 bits
+		Context->Length[lane] = SHA1_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t);
+		Context->Length[lane] = SimdHashWriteBuffer32NoEndian(Context, lane, Context->BitLength[lane] >> 32);
+		Context->Length[lane] = SimdHashWriteBuffer32NoEndian(Context, lane, Context->BitLength[lane] & 0xffffffff);
 	}
-	Context->Length[lane]++;
-	
-	// if (Context->Length >= 56)
-	// {
-	// 	SimdSha1Transform(Context);
-	// 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
-	// }
-	
-	//
-	// Write the length into the last 64 bits
-	//
-	//TODOOOOOOO
-	store_simd(&Context->Buffer[14].usimd, set1_epi32(Context->BitLength >> 32));
-	store_simd(&Context->Buffer[15].usimd, set1_epi32(Context->BitLength & 0xffffffff));
 }
 
 void
