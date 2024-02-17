@@ -65,6 +65,7 @@ SimdMd5Init(
 	memset(Context->Length, 0, sizeof(Context->Length));
 	memset(Context->BitLength, 0, sizeof(Context->BitLength));
 	Context->BigEndian = 0;
+	Context->Algorithm = HashMd5;
 }
 
 static inline void

@@ -6,6 +6,8 @@
 //  Copyright © 2024 Gareth Evans. All rights reserved.
 //
 
+#include <string.h>
+
 #include "simdhash.h"
 #include "simdcommon.h"
 #include "hashcommon.h"
@@ -16,6 +18,86 @@ SimdLanes(
 )
 {
 	return (SIMD_WIDTH / 32);
+}
+
+const HashAlgorithm
+ParseHashAlgorithm(
+	const char* AlgorithmString
+)
+{
+	if (strcmp(AlgorithmString, "md5") == 0 ||
+		strcmp(AlgorithmString, "MD5") == 0)
+	{
+		return HashMd5;
+	}
+	else if (strcmp(AlgorithmString, "sha1") == 0 ||
+		strcmp(AlgorithmString, "SHA1") == 0)
+	{
+		return HashSha1;
+	}
+	else if (strcmp(AlgorithmString, "sha256") == 0 ||
+		strcmp(AlgorithmString, "SHA256") == 0)
+	{
+		return HashSha256;
+	}
+	return HashUnknown;
+}
+
+const char*
+HashAlgorithmToString(
+	const HashAlgorithm Algorithm
+)
+{
+	switch (Algorithm)
+	{
+	case HashMd5:
+		return "MD5";
+	case HashSha1:
+		return "SHA1";
+	case HashSha256:
+		return "SHA256";
+	default:
+		return "Unknown";
+	}
+}
+
+const size_t
+GetHashWidth(
+	const HashAlgorithm Algorithm
+)
+{
+	switch (Algorithm)
+	{
+	case HashMd5:
+		return MD5_SIZE;
+	case HashSha1:
+		return SHA1_SIZE;
+	case HashSha256:
+		return SHA1_SIZE;
+	default:
+		return (size_t)-1;
+	}
+}
+
+void SimdHashInit(
+	SimdHashContext* Context,
+	const HashAlgorithm Algorithm
+)
+{
+	switch (Algorithm)
+	{
+	case HashMd5:
+		SimdMd5Init(Context);
+		break;
+	case HashSha1:
+		SimdSha1Init(Context);
+		break;
+	case HashSha256:
+		SimdSha256Init(Context);
+		break;
+	case HashUnknown:
+		break;
+	}
 }
 
 void
@@ -104,5 +186,26 @@ SimdHashGetHashes(
 	for (size_t i = 0; i < Context->Lanes; i++)
 	{
 		SimdHashGetHash(Context, &HashBuffers[(i * hashsize)], i);
+	}
+}
+
+void
+SimdHashFinalize(
+	SimdHashContext* Context
+)
+{
+	switch (Context->Algorithm)
+	{
+	case HashMd5:
+		SimdMd5Finalize(Context);
+		break;
+	case HashSha1:
+		SimdSha1Finalize(Context);
+		break;
+	case HashSha256:
+		SimdSha256Finalize(Context);
+		break;
+	case HashUnknown:
+		break;
 	}
 }

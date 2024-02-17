@@ -59,6 +59,7 @@ SimdSha256Init(
 	memset(Context->Length, 0, sizeof(Context->Length));
 	memset(Context->BitLength, 0, sizeof(Context->BitLength));
 	Context->BigEndian = 1;
+	Context->Algorithm = HashSha256;
 }
 
 inline

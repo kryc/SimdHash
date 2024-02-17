@@ -36,9 +36,13 @@
 #define MAX_BUFFER_SIZE SHA256_BUFFER_SIZE
 #define MAX_BUFFER_SIZE_DWORDS (MAX_BUFFER_SIZE / 4)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef enum _HashAlgorithm
+{
+	HashUnknown,
+	HashMd5,
+	HashSha1,
+	HashSha256
+} HashAlgorithm;
 
 typedef union _SimdValue
 {
@@ -58,10 +62,37 @@ typedef struct _SimdHashContext
 	uint64_t  BitLength[MAX_LANES];
 	size_t    Lanes;
 	uint32_t  BigEndian;
+	HashAlgorithm Algorithm;
 } SimdHashContext;
 
-const size_t SimdLanes(
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+const size_t
+SimdLanes(
 	void
+);
+
+const HashAlgorithm
+ParseHashAlgorithm(
+	const char* AlgorithmString
+);
+
+const char*
+HashAlgorithmToString(
+	const HashAlgorithm
+);
+
+const size_t
+GetHashWidth(
+	const HashAlgorithm
+);
+
+void
+SimdHashInit(
+	SimdHashContext* Context,
+	const HashAlgorithm Algorithm
 );
 
 void
@@ -76,6 +107,11 @@ SimdHashUpdateAll(
 	SimdHashContext* Context,
 	const size_t Length,
 	const uint8_t* Buffers[]
+);
+
+void
+SimdHashFinalize(
+	SimdHashContext* Context
 );
 
 //
