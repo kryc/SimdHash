@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # set compiler flags
 # set(AVXFLAG "-mavx512bw")
 set(AVXFLAG "-mavx2")
-set(STD_COMPILE_FLAGS "-Wall -Werror -Wno-unused-function ${AVXFLAG} -O3 -funroll-loops")
+set(STD_COMPILE_FLAGS "-Wall -Werror -Wno-unused-function ${AVXFLAG} -O3 -g -ggdb -funroll-loops")
 set(STD_LINKER_FLAGS "${AVXFLAG}")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${STD_COMPILE_FLAGS}")
