@@ -22,12 +22,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${STD_COMPILE_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${STD_LINKER_FLAGS}")
 
 # add the library
-file(GLOB LIBSOURCES "./SimdHash/*.c")
+file(GLOB LIBSOURCES "./src/*.c")
 add_library(simdhash ${LIBSOURCES})
 
 # add the test
 add_custom_target(simdhash_tests)
-file(GLOB TESTS "./SimdHashTest/*.c")
+file(GLOB TESTS "./test/*.c")
 foreach(TEST ${TESTS})
     add_definitions( -DTEST )
     get_filename_component(TESTNAME ${TEST} NAME_WE)
