@@ -5,11 +5,6 @@ project(simdhash VERSION 0.1)
 
 # specify clang
 SET(CMAKE_C_COMPILER clang)
-SET(CMAKE_CXX_COMPILER clang++)
-
-# specify the C++ standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # set compiler flags
 if (NOT AVX OR AVX STREQUAL "" OR AVX STREQUAL "256")
@@ -18,12 +13,11 @@ elseif(AVX STREQUAL "512")
     set(AVXFLAG "-mavx512bw" CACHE STRING "" FORCE)
 endif()
 
-set(STD_COMPILE_FLAGS "-Wall -Werror -Wno-unused-function ${AVXFLAG} -O3 -g -ggdb -funroll-loops")
-set(STD_LINKER_FLAGS "${AVXFLAG}")
+set(CMAKE_C_FLAGS "-Wall -Werror -Wno-unused-function ${AVXFLAG}")
+set(CMAKE_EXE_LINKER_FLAGS "${AVXFLAG} -lm")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${STD_COMPILE_FLAGS}")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${STD_COMPILE_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${STD_LINKER_FLAGS}")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -funroll-loops")
+set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0 -fno-omit-frame-pointer -fsanitize=address -DDEBUG")
 
 # add the library
 file(GLOB LIBSOURCES "./src/*.c")
