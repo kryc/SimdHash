@@ -12,8 +12,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # set compiler flags
-# set(AVXFLAG "-mavx512bw")
-set(AVXFLAG "-mavx2")
+if (NOT AVX OR AVX STREQUAL "" OR AVX STREQUAL "256")
+    set(AVXFLAG "-mavx2" CACHE STRING "" FORCE)
+elseif(AVX STREQUAL "512")
+    set(AVXFLAG "-mavx512bw" CACHE STRING "" FORCE)
+endif()
+
 set(STD_COMPILE_FLAGS "-Wall -Werror -Wno-unused-function ${AVXFLAG} -O3 -g -ggdb -funroll-loops")
 set(STD_LINKER_FLAGS "${AVXFLAG}")
 
@@ -34,7 +38,7 @@ foreach(TEST ${TESTS})
     add_executable(${TESTNAME} EXCLUDE_FROM_ALL ${TEST} ${SOURCES})
     target_include_directories(${TESTNAME}
                                 PUBLIC
-                                    ./SimdHash/)
+                                    ./src/)
     target_link_libraries(${TESTNAME} simdhash)
     add_dependencies(simdhash_tests ${TESTNAME})
 endforeach()
