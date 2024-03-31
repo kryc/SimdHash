@@ -48,7 +48,12 @@ typedef union _SimdValue
 {
 	uint8_t  epi32_u8 [SIMD_WIDTH/32][4];	// Access to each lane as a uint8 array
 	uint32_t epi32_u32[SIMD_WIDTH/32];		// Access to each lane as a uint32
-	simd_t   usimd;
+	union
+	{
+		simd_t usimd;
+		uint8_t __padding[64];
+	};
+	
 } SimdValue __attribute__((__aligned__(64)));
 
 typedef struct _SimdHashContext
