@@ -172,7 +172,8 @@ SimdSha256ExpandMessageSchedule(
 
 static inline void
 SimdSha256Transform(
-	SimdHashContext* Context
+	SimdHashContext* Context,
+	const int Finalize
 )
 {
 	//
@@ -211,15 +212,31 @@ SimdSha256Transform(
 	
 	//
 	// Output to the hash state values
+	// If finalizing, swap the endianness
 	//
-	store_simd(&Context->H[0].usimd, add_epi32(load_simd(&Context->H[0].usimd), a));
-	store_simd(&Context->H[1].usimd, add_epi32(load_simd(&Context->H[1].usimd), b));
-	store_simd(&Context->H[2].usimd, add_epi32(load_simd(&Context->H[2].usimd), c));
-	store_simd(&Context->H[3].usimd, add_epi32(load_simd(&Context->H[3].usimd), d));
-	store_simd(&Context->H[4].usimd, add_epi32(load_simd(&Context->H[4].usimd), e));
-	store_simd(&Context->H[5].usimd, add_epi32(load_simd(&Context->H[5].usimd), f));
-	store_simd(&Context->H[6].usimd, add_epi32(load_simd(&Context->H[6].usimd), g));
-	store_simd(&Context->H[7].usimd, add_epi32(load_simd(&Context->H[7].usimd), h));
+	if (Finalize)
+	{
+		store_simd(&Context->H[0].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[0].usimd), a)));
+		store_simd(&Context->H[1].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[1].usimd), b)));
+		store_simd(&Context->H[2].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[2].usimd), c)));
+		store_simd(&Context->H[3].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[3].usimd), d)));
+		store_simd(&Context->H[4].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[4].usimd), e)));
+		store_simd(&Context->H[5].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[5].usimd), f)));
+		store_simd(&Context->H[6].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[6].usimd), g)));
+		store_simd(&Context->H[7].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[7].usimd), h)));
+	}
+	else
+	{
+		store_simd(&Context->H[0].usimd, add_epi32(load_simd(&Context->H[0].usimd), a));
+		store_simd(&Context->H[1].usimd, add_epi32(load_simd(&Context->H[1].usimd), b));
+		store_simd(&Context->H[2].usimd, add_epi32(load_simd(&Context->H[2].usimd), c));
+		store_simd(&Context->H[3].usimd, add_epi32(load_simd(&Context->H[3].usimd), d));
+		store_simd(&Context->H[4].usimd, add_epi32(load_simd(&Context->H[4].usimd), e));
+		store_simd(&Context->H[5].usimd, add_epi32(load_simd(&Context->H[5].usimd), f));
+		store_simd(&Context->H[6].usimd, add_epi32(load_simd(&Context->H[6].usimd), g));
+		store_simd(&Context->H[7].usimd, add_epi32(load_simd(&Context->H[7].usimd), h));
+	}
+	
 }
 
 static inline
@@ -252,9 +269,7 @@ SimdSha256AppendSize(
 		// the last 64 bits
 		Context->Length[lane] = SHA256_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t);
 		// Change endianness to store in the little endian buffer
-		uint64_t bitLength = __builtin_bswap64(Context->BitLength[lane]);
-		Context->Length[lane] = SimdHashWriteBuffer32(Context, lane, bitLength & 0xffffffff);
-		Context->Length[lane] = SimdHashWriteBuffer32(Context, lane, bitLength >> 32);
+		Context->Length[lane] = SimdHashWriteBuffer64(Context, lane, __builtin_bswap64(Context->BitLength[lane]));
 	}
 }
 
@@ -271,26 +286,5 @@ SimdSha256Finalize(
 	//
 	// Compute the final transformation
 	//
-	SimdSha256Transform(Context);
-	
-	//
-	// Change endianness
-	//
-	simd_t a = bswap_epi32(load_simd(&Context->H[0].usimd));
-	simd_t b = bswap_epi32(load_simd(&Context->H[1].usimd));
-	simd_t c = bswap_epi32(load_simd(&Context->H[2].usimd));
-	simd_t d = bswap_epi32(load_simd(&Context->H[3].usimd));
-	simd_t e = bswap_epi32(load_simd(&Context->H[4].usimd));
-	simd_t f = bswap_epi32(load_simd(&Context->H[5].usimd));
-	simd_t g = bswap_epi32(load_simd(&Context->H[6].usimd));
-	simd_t h = bswap_epi32(load_simd(&Context->H[7].usimd));
-	
-	store_simd(&Context->H[0].usimd, a);
-	store_simd(&Context->H[1].usimd, b);
-	store_simd(&Context->H[2].usimd, c);
-	store_simd(&Context->H[3].usimd, d);
-	store_simd(&Context->H[4].usimd, e);
-	store_simd(&Context->H[5].usimd, f);
-	store_simd(&Context->H[6].usimd, g);
-	store_simd(&Context->H[7].usimd, h);
+	SimdSha256Transform(Context, 1);
 }
