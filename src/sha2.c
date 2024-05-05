@@ -58,7 +58,6 @@ SimdSha256Init(
 	Context->Lanes = SimdLanes();
 	memset(Context->Length, 0, sizeof(Context->Length));
 	memset(Context->BitLength, 0, sizeof(Context->BitLength));
-	Context->BigEndian = 1;
 	Context->Algorithm = HashSha256;
 }
 
@@ -153,9 +152,10 @@ SimdSha256ExpandMessageSchedule(
 	SimdValue* MessageSchedule
 )
 {
+	// Load and change endianness from little endian buffer
 	for (size_t i = 0; i < SHA256_BUFFER_SIZE_DWORDS; i++)
 	{
-		simd_t w = load_simd(&Context->Buffer[i].usimd);
+		simd_t w = bswap_epi32(load_simd(&Context->Buffer[i].usimd));
 		store_simd(&MessageSchedule[i].usimd, w);
 	}
 	
@@ -251,8 +251,10 @@ SimdSha256AppendSize(
 		// Bump the used buffer length to add the size to
 		// the last 64 bits
 		Context->Length[lane] = SHA256_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t);
-		Context->Length[lane] = SimdHashWriteBuffer32NoEndian(Context, lane, Context->BitLength[lane] >> 32);
-		Context->Length[lane] = SimdHashWriteBuffer32NoEndian(Context, lane, Context->BitLength[lane] & 0xffffffff);
+		// Change endianness to store in the little endian buffer
+		uint64_t bitLength = __builtin_bswap64(Context->BitLength[lane]);
+		Context->Length[lane] = SimdHashWriteBuffer32(Context, lane, bitLength & 0xffffffff);
+		Context->Length[lane] = SimdHashWriteBuffer32(Context, lane, bitLength >> 32);
 	}
 }
 

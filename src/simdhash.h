@@ -66,7 +66,6 @@ typedef struct _SimdHashContext
 	uint64_t  Length[MAX_LANES];
 	uint64_t  BitLength[MAX_LANES];
 	size_t    Lanes;
-	uint32_t  BigEndian;
 	HashAlgorithm Algorithm;
 } SimdHashContext;
 
