@@ -73,10 +73,11 @@ SimdMd5Transform(
 {
 	simd_t f, g;
 	
-	simd_t a = load_simd(&Context->H[0].usimd);
-	simd_t b = load_simd(&Context->H[1].usimd);
-	simd_t c = load_simd(&Context->H[2].usimd);
-	simd_t d = load_simd(&Context->H[3].usimd);
+	simd_t aO, bO, cO, dO;
+	simd_t a = aO = load_simd(&Context->H[0].usimd);
+	simd_t b = bO = load_simd(&Context->H[1].usimd);
+	simd_t c = cO = load_simd(&Context->H[2].usimd);
+	simd_t d = dO = load_simd(&Context->H[3].usimd);
 
 	//
 	// Md5 compression function
@@ -135,10 +136,10 @@ SimdMd5Transform(
 	//
 	// Output to the hash state values
 	//
-	store_simd(&Context->H[0].usimd, add_epi32(load_simd(&Context->H[0].usimd), a));
-	store_simd(&Context->H[1].usimd, add_epi32(load_simd(&Context->H[1].usimd), b));
-	store_simd(&Context->H[2].usimd, add_epi32(load_simd(&Context->H[2].usimd), c));
-	store_simd(&Context->H[3].usimd, add_epi32(load_simd(&Context->H[3].usimd), d));
+	store_simd(&Context->H[0].usimd, add_epi32(aO, a));
+	store_simd(&Context->H[1].usimd, add_epi32(bO, b));
+	store_simd(&Context->H[2].usimd, add_epi32(cO, c));
+	store_simd(&Context->H[3].usimd, add_epi32(dO, d));
 }
 
 static inline
@@ -169,8 +170,7 @@ SimdMd5AppendSize(
 		// Bump the used buffer length to add the size to
 		// the last 64 bits
 		Context->Length[lane] = MD5_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t);
-		Context->Length[lane] = SimdHashWriteBuffer32(Context, lane, Context->BitLength[lane] & 0xffffffff);
-		Context->Length[lane] = SimdHashWriteBuffer32(Context, lane, Context->BitLength[lane] >> 32);
+		Context->Length[lane] = SimdHashWriteBuffer64(Context, lane, Context->BitLength[lane]);
 	}
 }
 

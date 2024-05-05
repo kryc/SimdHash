@@ -80,11 +80,12 @@ SimdSha1Transform(
 	SimdValue messageSchedule[SHA1_MESSAGE_SCHEDULE_SIZE_DWORDS];
 	SimdSha1ExpandMessageSchedule(Context, messageSchedule);
 	
-	simd_t a = load_simd(&Context->H[0].usimd);
-	simd_t b = load_simd(&Context->H[1].usimd);
-	simd_t c = load_simd(&Context->H[2].usimd);
-	simd_t d = load_simd(&Context->H[3].usimd);
-	simd_t e = load_simd(&Context->H[4].usimd);
+	simd_t aO, bO, cO, dO, eO;
+	simd_t a = aO = load_simd(&Context->H[0].usimd);
+	simd_t b = bO = load_simd(&Context->H[1].usimd);
+	simd_t c = cO = load_simd(&Context->H[2].usimd);
+	simd_t d = dO = load_simd(&Context->H[3].usimd);
+	simd_t e = eO = load_simd(&Context->H[4].usimd);
 
 	//
 	// Sha1 compression function
@@ -135,19 +136,19 @@ SimdSha1Transform(
 	//
 	if (Finalize)
 	{
-		store_simd(&Context->H[0].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[0].usimd), a)));
-		store_simd(&Context->H[1].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[1].usimd), b)));
-		store_simd(&Context->H[2].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[2].usimd), c)));
-		store_simd(&Context->H[3].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[3].usimd), d)));
-		store_simd(&Context->H[4].usimd, bswap_epi32(add_epi32(load_simd(&Context->H[4].usimd), e)));
+		store_simd(&Context->H[0].usimd, bswap_epi32(add_epi32(aO, a)));
+		store_simd(&Context->H[1].usimd, bswap_epi32(add_epi32(bO, b)));
+		store_simd(&Context->H[2].usimd, bswap_epi32(add_epi32(cO, c)));
+		store_simd(&Context->H[3].usimd, bswap_epi32(add_epi32(dO, d)));
+		store_simd(&Context->H[4].usimd, bswap_epi32(add_epi32(eO, e)));
 	}
 	else
 	{
-		store_simd(&Context->H[0].usimd, add_epi32(load_simd(&Context->H[0].usimd), a));
-		store_simd(&Context->H[1].usimd, add_epi32(load_simd(&Context->H[1].usimd), b));
-		store_simd(&Context->H[2].usimd, add_epi32(load_simd(&Context->H[2].usimd), c));
-		store_simd(&Context->H[3].usimd, add_epi32(load_simd(&Context->H[3].usimd), d));
-		store_simd(&Context->H[4].usimd, add_epi32(load_simd(&Context->H[4].usimd), e));
+		store_simd(&Context->H[0].usimd, add_epi32(aO, a));
+		store_simd(&Context->H[1].usimd, add_epi32(bO, b));
+		store_simd(&Context->H[2].usimd, add_epi32(cO, c));
+		store_simd(&Context->H[3].usimd, add_epi32(dO, d));
+		store_simd(&Context->H[4].usimd, add_epi32(eO, e));
 	}
 	
 }
