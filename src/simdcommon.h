@@ -147,15 +147,15 @@ __m512i
 _mm512_bswap_epi32(
 	const __m512i Value)
 {
-	__m512i shuffleMask = _mm512_setr_epi32(
-		0x00010203, 0x04050607,
-		0x08090a0b, 0x0c0d0e0f,
-		0x10111213, 0x14151617,
-		0x18191a1b,	0x1c1d1e1f,
-		0x20212223,	0x24252627,
-		0x28292a2b,	0x2c2d2e2f,
-		0x30313233,	0x34353637,
-		0x38393a3b,	0x3c3d3e3f
+	__m512i shuffleMask = _mm512_setr_epi64(
+		0x0001020304050607,
+		0x08090a0b0c0d0e0f,
+		0x1011121314151617,
+		0x18191a1b1c1d1e1f,
+		0x2021222324252627,
+		0x28292a2b2c2d2e2f,
+		0x3031323334353637,
+		0x38393a3b3c3d3e3f
 	);
 	return _mm512_shuffle_epi8(Value, shuffleMask);
 }
