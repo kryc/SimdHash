@@ -70,6 +70,13 @@ typedef struct _SimdHashContext
 	HashAlgorithm Algorithm;
 } SimdHashContext;
 
+#define SimdHashAlgorithmCount 3
+static const HashAlgorithm SimdHashAlgorithms[SimdHashAlgorithmCount] = {
+	HashMd5,
+	HashSha1,
+	HashSha256
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
