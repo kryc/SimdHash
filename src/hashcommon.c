@@ -35,8 +35,7 @@ SimdHashUpdateLaneBuffer(
 		{
 			// Destination buffer is 8-byte aligned
 			uint64_t buffer64 = *(uint64_t*)(&Buffer[next]);
-			Context->Length[Lane] = SimdHashWriteBuffer32(Context, Lane, buffer64 & 0xffffffff);
-			Context->Length[Lane] = SimdHashWriteBuffer32(Context, Lane, buffer64 >> 32);
+			Context->Length[Lane] = SimdHashWriteBuffer64(Context, Lane, buffer64);
 			toWrite -= sizeof(uint64_t);
 			next += sizeof(uint64_t);
 			written += sizeof(uint64_t);
