@@ -181,13 +181,38 @@ SimdHashGetHashes(
 	uint8_t* HashBuffers
 )
 {
-    size_t hashsize = Context->HashSize;
-
+#ifdef __AVX512F__
+	for (size_t i = 0; i < Context->HSize; i++)
+	{
+		__m512i h = _mm512_load_si512(&Context->H[i].usimd);
+		__m512i index = _mm512_setr_epi32(
+			(Context->HSize * 0) + i,
+			(Context->HSize * 1) + i,
+			(Context->HSize * 2) + i,
+			(Context->HSize * 3) + i,
+			(Context->HSize * 4) + i,
+			(Context->HSize * 5) + i,
+			(Context->HSize * 6) + i,
+			(Context->HSize * 7) + i,
+			(Context->HSize * 8) + i,
+			(Context->HSize * 9) + i,
+			(Context->HSize * 10) + i,
+			(Context->HSize * 11) + i,
+			(Context->HSize * 12) + i,
+			(Context->HSize * 13) + i,
+			(Context->HSize * 14) + i,
+			(Context->HSize * 15) + i
+		);
+		_mm512_i32scatter_epi32(HashBuffers, index, h, 4);
+	}
+#else
 	for (size_t i = 0; i < Context->Lanes; i++)
 	{
-		SimdHashGetHash(Context, &HashBuffers[(i * hashsize)], i);
+		SimdHashGetHash(Context, &HashBuffers[(i * Context->HashSize)], i);
 	}
+#endif
 }
+
 
 void
 SimdHashFinalize(

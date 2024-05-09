@@ -150,6 +150,7 @@ FunctionalityTests(
 	uint8_t* buffers[SimdLanes()];
 	uint8_t hash[SHA256_SIZE];
 	char hex[SHA256_SIZE * 2 + 1];
+	uint8_t hashes[SimdLanes() * MAX_BUFFER_SIZE];
 	bool fail;
 	uint8_t* preimage;
 	size_t preimageSize;
@@ -176,6 +177,17 @@ FunctionalityTests(
 		SimdHashUpdateAll(&context, preimageSize, (const uint8_t**)buffers);
 		SimdHashFinalize(&context);
 		SimdHashGetHash(&context, hash, 0);
+		SimdHashGetHashes(&context, hashes);
+
+		// Test if GetHashes results match
+		for (size_t i = 0; i < SimdLanes(); i++)
+		{
+			if (memcmp(hash, hashes + (i * digestSize), digestSize) != 0)
+			{
+				fail = true;
+				printf("[!] %6s:   SimdGetHashes Fail\n", HashAlgorithmToString(Algorithm));
+			}
+		}
 		
 		ToHex(hex, sizeof(hex), expectedDigest, digestSize);
 		printf("[+] Expected: %s\n", hex);
