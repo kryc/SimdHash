@@ -175,44 +175,87 @@ SimdHashGetHashes2D(
 	}
 }
 
+static inline void
+WriteSimdArrayToLinearBuffer(
+	const SimdValue* Array,
+	const size_t Count,
+	uint8_t* HashBuffers
+)
+{
+#ifdef __AVX512F__
+	for (size_t i = 0; i < Count; i++)
+	{
+		__m512i h = _mm512_load_si512(&Array[i].usimd);
+		__m512i index = _mm512_setr_epi32(
+			(Count * 0) + i,
+			(Count * 1) + i,
+			(Count * 2) + i,
+			(Count * 3) + i,
+			(Count * 4) + i,
+			(Count * 5) + i,
+			(Count * 6) + i,
+			(Count * 7) + i,
+			(Count * 8) + i,
+			(Count * 9) + i,
+			(Count * 10) + i,
+			(Count * 11) + i,
+			(Count * 12) + i,
+			(Count * 13) + i,
+			(Count * 14) + i,
+			(Count * 15) + i
+		);
+		_mm512_i32scatter_epi32(HashBuffers, index, h, 4);
+	}
+#else
+	uint32_t* buffer = (uint32_t*)HashBuffers;
+	for (size_t l = 0; l < SimdLanes(); l++)
+	{
+		for (size_t i = 0; i < Count; i++)
+		{
+			buffer[(l * Count) + i] = Array[i].epi32_u32[l];
+		}
+	}
+#endif
+}
+
 void
 SimdHashGetHashes(
 	SimdHashContext* Context,
 	uint8_t* HashBuffers
 )
 {
-#ifdef __AVX512F__
-	for (size_t i = 0; i < Context->HSize; i++)
-	{
-		__m512i h = _mm512_load_si512(&Context->H[i].usimd);
-		__m512i index = _mm512_setr_epi32(
-			(Context->HSize * 0) + i,
-			(Context->HSize * 1) + i,
-			(Context->HSize * 2) + i,
-			(Context->HSize * 3) + i,
-			(Context->HSize * 4) + i,
-			(Context->HSize * 5) + i,
-			(Context->HSize * 6) + i,
-			(Context->HSize * 7) + i,
-			(Context->HSize * 8) + i,
-			(Context->HSize * 9) + i,
-			(Context->HSize * 10) + i,
-			(Context->HSize * 11) + i,
-			(Context->HSize * 12) + i,
-			(Context->HSize * 13) + i,
-			(Context->HSize * 14) + i,
-			(Context->HSize * 15) + i
-		);
-		_mm512_i32scatter_epi32(HashBuffers, index, h, 4);
-	}
-#else
-	for (size_t i = 0; i < Context->Lanes; i++)
-	{
-		SimdHashGetHash(Context, &HashBuffers[(i * Context->HashSize)], i);
-	}
-#endif
+	WriteSimdArrayToLinearBuffer(Context->H, Context->HSize, HashBuffers);
 }
 
+void
+SimdHashExtendEntropyAndGetHashes(
+	SimdHashContext* Context,
+	uint8_t* HashBuffers,
+	size_t Length
+)
+{
+	assert(Length > Context->HSize);
+	SimdValue buffer[Length];
+
+	for (size_t i = 0; i < Context->HSize; i++)
+	{
+		simd_t w = load_simd(&Context->H[i].usimd);
+		buffer[i].usimd = w;
+	}
+
+	for (size_t i = Context->HSize; i < Length; i++)
+	{
+		// s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
+        // s1 := (w[i-2] rightrotate 17) xor (w[i-2] rightrotate 19) xor (w[i-2] rightshift 10)
+        // w[i] := w[i-16] + s0 + w[i-7] + s1
+		simd_t s0 = xor_simd(xor_simd(rotr_epi32(buffer[i - Context->HSize].usimd, 7), rotr_epi32(buffer[i - Context->HSize].usimd, 18)), srli_epi32(buffer[i - Context->HSize].usimd, 3));
+		simd_t s1 = xor_simd(xor_simd(rotr_epi32(buffer[i - 2].usimd, 17), rotr_epi32(buffer[i - 2].usimd, 19)), srli_epi32(buffer[i - 2].usimd, 10));
+		buffer[i].usimd = add_epi32(s0, s1);
+	}
+
+	// Output to the hash buffers
+	WriteSimdArrayToLinearBuffer(buffer, Length, HashBuffers);
+}
 
 void
 SimdHashFinalize(

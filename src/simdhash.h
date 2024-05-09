@@ -186,6 +186,12 @@ SimdHashGetHashes(
 	SimdHashContext* Context,
 	uint8_t* HashBuffers);
 
+void
+SimdHashExtendEntropyAndGetHashes(
+	SimdHashContext* Context,
+	uint8_t* HashBuffers,
+	size_t Length);
+
 #ifdef TEST
 simd_t SimdCalculateS0(
 	const simd_t A);
