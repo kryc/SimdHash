@@ -182,7 +182,7 @@ WriteSimdArrayToLinearBuffer(
 	uint8_t* HashBuffers
 )
 {
-#ifdef __AVX512F__
+#if defined __AVX512F__ && defined AVXSCATTER
 	for (size_t i = 0; i < Count; i++)
 	{
 		__m512i h = _mm512_load_si512(&Array[i].usimd);
@@ -208,9 +208,9 @@ WriteSimdArrayToLinearBuffer(
 	}
 #else
 	uint32_t* buffer = (uint32_t*)HashBuffers;
-	for (size_t l = 0; l < SimdLanes(); l++)
+	for (size_t i = 0; i < Count; i++)
 	{
-		for (size_t i = 0; i < Count; i++)
+		for (size_t l = 0; l < SimdLanes(); l++)
 		{
 			buffer[(l * Count) + i] = Array[i].epi32_u32[l];
 		}
