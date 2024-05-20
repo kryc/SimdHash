@@ -44,30 +44,6 @@ SimdSha1Init(
 }
 
 static inline void
-SimdSha1ExpandMessageSchedule(
-	SimdHashContext* Context,
-	SimdValue* MessageSchedule)
-{
-	// Load and change endianness from little endian buffer
-	for (size_t i = 0; i < SHA1_BUFFER_SIZE_DWORDS; i++)
-	{
-		simd_t w = bswap_epi32(load_simd(&Context->Buffer[i].usimd));
-		store_simd(&MessageSchedule[i].usimd, w);
-	}
-	
-	for (size_t i = SHA1_BUFFER_SIZE_DWORDS; i < SHA1_MESSAGE_SCHEDULE_SIZE_DWORDS; i++)
-	{
-		// w[i] = (w[i-3] xor w[i-8] xor w[i-14] xor w[i-16]) leftrotate 1
-		simd_t w = load_simd(&MessageSchedule[i-3].usimd);
-		w = xor_simd(w, load_simd(&MessageSchedule[i-8].usimd));
-		w = xor_simd(w, load_simd(&MessageSchedule[i-14].usimd));
-		w = xor_simd(w, load_simd(&MessageSchedule[i-16].usimd));
-		w = rotl_epi32(w, 1);
-		store_simd(&MessageSchedule[i].usimd, w);
-	}
-}
-
-static inline void
 SimdSha1Transform(
 	SimdHashContext* Context,
 	const int Finalize
@@ -77,8 +53,22 @@ SimdSha1Transform(
 	//
 	// Expand the message schedule
 	//
-	SimdValue messageSchedule[SHA1_MESSAGE_SCHEDULE_SIZE_DWORDS];
-	SimdSha1ExpandMessageSchedule(Context, messageSchedule);
+	simd_t messageSchedule[SHA1_MESSAGE_SCHEDULE_SIZE_DWORDS];
+	// Load and change endianness from little endian buffer
+	for (size_t i = 0; i < SHA1_BUFFER_SIZE_DWORDS; i++)
+	{
+		messageSchedule[i] = bswap_epi32(load_simd(&Context->Buffer[i].usimd));
+	}
+	
+	for (size_t i = SHA1_BUFFER_SIZE_DWORDS; i < SHA1_MESSAGE_SCHEDULE_SIZE_DWORDS; i++)
+	{
+		// w[i] = (w[i-3] xor w[i-8] xor w[i-14] xor w[i-16]) leftrotate 1
+		simd_t w = messageSchedule[i-3];
+		w = xor_simd(w, messageSchedule[i-8]);
+		w = xor_simd(w, messageSchedule[i-14]);
+		w = xor_simd(w, messageSchedule[i-16]);
+		messageSchedule[i] = rotl_epi32(w, 1);
+	}
 	
 	simd_t aO, bO, cO, dO, eO;
 	simd_t a = aO = load_simd(&Context->H[0].usimd);
@@ -117,7 +107,7 @@ SimdSha1Transform(
 			k = set1_epi32(Sha1RoundConstants[3]);
 		}
 		
-		simd_t w = load_simd(&messageSchedule[i].usimd);
+		simd_t w = messageSchedule[i];
 		simd_t temp = rotl_epi32(a, 5);
 		temp = add_epi32(temp, f);
 		temp = add_epi32(temp, e);

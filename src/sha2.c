@@ -145,31 +145,6 @@ SimdCalculateTemp1(
 	return add_epi32(ret, W);
 }
 
-static inline
-void
-SimdSha256ExpandMessageSchedule(
-	SimdHashContext* Context,
-	SimdValue* MessageSchedule
-)
-{
-	// Load and change endianness from little endian buffer
-	for (size_t i = 0; i < SHA256_BUFFER_SIZE_DWORDS; i++)
-	{
-		simd_t w = bswap_epi32(load_simd(&Context->Buffer[i].usimd));
-		store_simd(&MessageSchedule[i].usimd, w);
-	}
-	
-	for (size_t i = SHA256_BUFFER_SIZE_DWORDS; i < SHA256_MESSAGE_SCHEDULE_SIZE_DWORDS; i++)
-	{
-		simd_t s0 = SimdCalculateExtendS0(load_simd(&MessageSchedule[i-15].usimd));
-		simd_t s1 = SimdCalculateExtendS1(load_simd(&MessageSchedule[i-2].usimd));
-		simd_t res = add_epi32(load_simd(&MessageSchedule[i-16].usimd), s0);
-		res = add_epi32(res, load_simd(&MessageSchedule[i-7].usimd));
-		res = add_epi32(res, s1);
-		store_simd(&MessageSchedule[i].usimd, res);
-	}
-}
-
 static inline void
 SimdSha256Transform(
 	SimdHashContext* Context,
@@ -179,8 +154,22 @@ SimdSha256Transform(
 	//
 	// Expand the message schedule
 	//
-	SimdValue messageSchedule[SHA256_MESSAGE_SCHEDULE_SIZE_DWORDS];
-	SimdSha256ExpandMessageSchedule(Context, messageSchedule);
+	simd_t messageSchedule[SHA256_MESSAGE_SCHEDULE_SIZE_DWORDS];
+	
+	for (size_t i = 0; i < SHA256_BUFFER_SIZE_DWORDS; i++)
+	{
+		// Load and change endianness from little endian buffer
+		messageSchedule[i] = bswap_epi32(load_simd(&Context->Buffer[i].usimd));
+	}
+	
+	for (size_t i = SHA256_BUFFER_SIZE_DWORDS; i < SHA256_MESSAGE_SCHEDULE_SIZE_DWORDS; i++)
+	{
+		simd_t s0 = SimdCalculateExtendS0(messageSchedule[i-15]);
+		simd_t s1 = SimdCalculateExtendS1(messageSchedule[i-2]);
+		simd_t res = add_epi32(messageSchedule[i-16], s0);
+		res = add_epi32(res, messageSchedule[i-7]);
+		messageSchedule[i] = add_epi32(res, s1);
+	}
 	
 	simd_t aO, bO, cO, dO, eO, fO, gO, hO;
 	simd_t a = aO = load_simd(&Context->H[0].usimd);
@@ -198,7 +187,7 @@ SimdSha256Transform(
 	for (size_t i = 0; i < 64; i++)
 	{
 		simd_t k = set1_epi32(Sha256RoundConstants[i]);
-		simd_t w = load_simd(&messageSchedule[i].usimd);
+		simd_t w = messageSchedule[i];
 		simd_t temp1 = SimdCalculateTemp1(e, f, g, h, k, w);
 		simd_t temp2 = SimdCalculateTemp2(a, b, c);
 		h = g;
