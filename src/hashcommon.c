@@ -20,9 +20,7 @@ SimdHashUpdateLaneBuffer(
 {
 	size_t toWrite;
 	size_t next;
-	size_t written;
 	
-	written = 0;
 	toWrite = Length - Offset;
 	next = Offset;
 	
@@ -38,7 +36,6 @@ SimdHashUpdateLaneBuffer(
 			Context->Length[Lane] = SimdHashWriteBuffer64(Context, Lane, buffer64);
 			toWrite -= sizeof(uint64_t);
 			next += sizeof(uint64_t);
-			written += sizeof(uint64_t);
 		}
 		else if (
 			(Context->Length[Lane] & 0x3) == 0 &&
@@ -50,18 +47,17 @@ SimdHashUpdateLaneBuffer(
 			Context->Length[Lane] = SimdHashWriteBuffer32(Context, Lane, *buffer32);
 			toWrite -= sizeof(uint32_t);
 			next += sizeof(uint32_t);
-			written += sizeof(uint32_t);
 		}
 		else
 		{
 			Context->Length[Lane] = SimdHashWriteBuffer8(Context, Lane, Buffer[next]);
 			toWrite--;
 			next++;
-			written++;
 		}
 	}
 
-	Context->BitLength[Lane] += written * 8;
+	size_t bytesWritten = next - Offset;
+	Context->BitLength[Lane] += bytesWritten * 8;
 	
 	return toWrite;
 }
