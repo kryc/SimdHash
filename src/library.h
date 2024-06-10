@@ -20,7 +20,7 @@ SimdHashWriteBuffer8(
     const uint8_t Value
 )
 {
-    const size_t length = Context->Length[Lane];
+    const size_t length = Context->Offset[Lane];
     const size_t bufferIndex = length / 4;
     const size_t bufferOffset = length % 4;
     Context->Buffer[bufferIndex].epi32_u8[Lane][bufferOffset] = Value;
@@ -34,7 +34,7 @@ SimdHashWriteBuffer32(
     const uint32_t Value
 )
 {
-    const size_t length = Context->Length[Lane];
+    const size_t length = Context->Offset[Lane];
     const size_t bufferIndex = length / 4;
     Context->Buffer[bufferIndex].epi32_u32[Lane] = Value;
     return length + sizeof(uint32_t);
@@ -47,7 +47,7 @@ SimdHashWriteBuffer64(
     const uint64_t Value
 )
 {
-    const size_t length = Context->Length[Lane];
+    const size_t length = Context->Offset[Lane];
     const size_t bufferIndex = length / 4;
     Context->Buffer[bufferIndex].epi32_u32[Lane] = Value & 0xffffffff;
     Context->Buffer[bufferIndex + 1].epi32_u32[Lane] = Value >> 32;

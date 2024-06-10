@@ -24,33 +24,33 @@ SimdHashUpdateLaneBuffer(
 	toWrite = Length - Offset;
 	next = Offset;
 	
-	while (toWrite > 0 && Context->Length[Lane] < Context->BufferSize)
+	while (toWrite > 0 && Context->Offset[Lane] < Context->BufferSize)
 	{
 		if (
-			(Context->Length[Lane] & 0x7) == 0 &&
+			(Context->Offset[Lane] & 0x7) == 0 &&
 			toWrite >= 8
 		)
 		{
 			// Destination buffer is 8-byte aligned
 			uint64_t buffer64 = *(uint64_t*)(&Buffer[next]);
-			Context->Length[Lane] = SimdHashWriteBuffer64(Context, Lane, buffer64);
+			Context->Offset[Lane] = SimdHashWriteBuffer64(Context, Lane, buffer64);
 			toWrite -= sizeof(uint64_t);
 			next += sizeof(uint64_t);
 		}
 		else if (
-			(Context->Length[Lane] & 0x3) == 0 &&
+			(Context->Offset[Lane] & 0x3) == 0 &&
 			toWrite >= 4
 		)
 		{
 			// Destination buffer is 4-byte aligned
 			uint32_t* buffer32 = (uint32_t*)(&Buffer[next]);
-			Context->Length[Lane] = SimdHashWriteBuffer32(Context, Lane, *buffer32);
+			Context->Offset[Lane] = SimdHashWriteBuffer32(Context, Lane, *buffer32);
 			toWrite -= sizeof(uint32_t);
 			next += sizeof(uint32_t);
 		}
 		else
 		{
-			Context->Length[Lane] = SimdHashWriteBuffer8(Context, Lane, Buffer[next]);
+			Context->Offset[Lane] = SimdHashWriteBuffer8(Context, Lane, Buffer[next]);
 			toWrite--;
 			next++;
 		}

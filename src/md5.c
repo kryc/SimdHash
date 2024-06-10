@@ -68,7 +68,7 @@ SimdMd5Init(
 	Context->HashSize = MD5_SIZE;
 	Context->BufferSize = MD5_BUFFER_SIZE;
 	Context->Lanes = SimdLanes();
-	memset(Context->Length, 0, sizeof(Context->Length));
+	memset(Context->Offset, 0, sizeof(Context->Offset));
 	memset(Context->BitLength, 0, sizeof(Context->BitLength));
 	Context->Algorithm = HashMd5;
 }
@@ -162,12 +162,12 @@ SimdMd5AppendSize(
 		//
 		// Write the 1 bit
 		//		
-		Context->Length[lane] = SimdHashWriteBuffer8(Context, lane, 0x80);
+		Context->Offset[lane] = SimdHashWriteBuffer8(Context, lane, 0x80);
 		
 		//
 		// Check if we need to do another round
 		//
-		// if (Context->Length >= 56)
+		// if (Context->Offset >= 56)
 		// {
 		// 	SimdMd5Transform(Context);
 		// 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
@@ -175,8 +175,8 @@ SimdMd5AppendSize(
 
 		// Bump the used buffer length to add the size to
 		// the last 64 bits
-		Context->Length[lane] = MD5_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t);
-		Context->Length[lane] = SimdHashWriteBuffer64(Context, lane, Context->BitLength[lane]);
+		Context->Offset[lane] = MD5_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t);
+		Context->Offset[lane] = SimdHashWriteBuffer64(Context, lane, Context->BitLength[lane]);
 	}
 }
 

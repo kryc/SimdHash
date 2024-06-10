@@ -63,7 +63,7 @@ typedef struct _SimdHashContext
 	size_t    HSize;
 	size_t    HashSize;
 	size_t    BufferSize;
-	uint64_t  Length[MAX_LANES];
+	uint64_t  Offset[MAX_LANES];
 	uint64_t  BitLength[MAX_LANES];
 	size_t    Lanes;
 	HashAlgorithm Algorithm;

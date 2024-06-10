@@ -62,7 +62,7 @@ SimdSha256Init(
 	Context->HashSize = SHA256_SIZE;
 	Context->BufferSize = SHA256_BUFFER_SIZE;
 	Context->Lanes = SimdLanes();
-	memset(Context->Length, 0, sizeof(Context->Length));
+	memset(Context->Offset, 0, sizeof(Context->Offset));
 	memset(Context->BitLength, 0, sizeof(Context->BitLength));
 	Context->Algorithm = HashSha256;
 }
@@ -250,12 +250,12 @@ SimdSha256AppendSize(
 		//
 		// Write the 1 bit
 		//		
-		Context->Length[lane] = SimdHashWriteBuffer8(Context, lane, 0x80);
+		Context->Offset[lane] = SimdHashWriteBuffer8(Context, lane, 0x80);
 		
 		//
 		// Check if we need to do another round
 		//
-		// if (Context->Length >= 56)
+		// if (Context->Offset >= 56)
 		// {
 		// 	SimdSha256Transform(Context);
 		// 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
@@ -263,9 +263,9 @@ SimdSha256AppendSize(
 
 		// Bump the used buffer length to add the size to
 		// the last 64 bits
-		Context->Length[lane] = SHA256_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t);
+		Context->Offset[lane] = SHA256_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t);
 		// Change endianness to store in the little endian buffer
-		Context->Length[lane] = SimdHashWriteBuffer64(Context, lane, __builtin_bswap64(Context->BitLength[lane]));
+		Context->Offset[lane] = SimdHashWriteBuffer64(Context, lane, __builtin_bswap64(Context->BitLength[lane]));
 	}
 }
 
