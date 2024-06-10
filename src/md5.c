@@ -57,7 +57,13 @@ SimdMd5Init(
 	{
 		store_simd(&Context->H[i].usimd, set1_epi32(Md5InitialValues[i]));
 	}
+#ifdef OPTIMIZED
+	// We never need to clear the last two DWORDS as
+	// they will only contain the bit count
+	memset(Context-Buffer, 0x00, sizeof(SimdValue) * (MD5_BUFFER_SIZE_DWORDS - 2));
+#else
 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
+#endif
 	Context->HSize = MD5_H_COUNT;
 	Context->HashSize = MD5_SIZE;
 	Context->BufferSize = MD5_BUFFER_SIZE;

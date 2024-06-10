@@ -33,7 +33,13 @@ SimdSha1Init(
 	{
 		store_simd(&Context->H[i].usimd, set1_epi32(Sha1InitialValues[i]));
 	}
+#ifdef OPTIMIZED
+	// We never need to clear the last two DWORDS as
+	// they will only contain the bit count
+	memset(Context-Buffer, 0x00, sizeof(SimdValue) * (SHA1_BUFFER_SIZE_DWORDS - 2));
+#else
 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
+#endif
 	Context->HSize = SHA1_H_COUNT;
 	Context->HashSize = SHA1_SIZE;
 	Context->BufferSize = SHA1_BUFFER_SIZE;
