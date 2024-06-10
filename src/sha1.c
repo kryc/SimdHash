@@ -163,7 +163,8 @@ SimdSha1AppendSize(
 		//
 		// Write the 1 bit
 		//		
-		Context->Offset[lane] = SimdHashWriteBuffer8(Context, lane, 0x80);
+		const size_t offset = Context->Offset[lane];
+		SimdHashWriteBuffer8(Context, offset, lane, 0x80);
 		
 		//
 		// Check if we need to do another round
@@ -176,9 +177,12 @@ SimdSha1AppendSize(
 
 		// Bump the used buffer length to add the size to
 		// the last 64 bits
-		Context->Offset[lane] = SHA1_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t);
-		// Change endianness to store in the little endian buffer
-		Context->Offset[lane] = SimdHashWriteBuffer64(Context, lane, __builtin_bswap64(Context->BitLength[lane]));
+		SimdHashWriteBuffer64(
+			Context,
+			SHA1_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t),
+			lane,
+			__builtin_bswap64(Context->BitLength[lane]) // Change endianness to store in the little endian buffer
+		);
 	}
 }
 
