@@ -54,7 +54,7 @@ SimdSha256Init(
 #ifdef OPTIMIZED
 	// We never need to clear the last two DWORDS as
 	// they will only contain the bit count
-	memset(Context-Buffer, 0x00, sizeof(SimdValue) * (SHA256_BUFFER_SIZE_DWORDS - 2));
+	memset(Context-Buffer, 0x00, sizeof(SimdValue) * (SHA256_OPTIMIZED_BUFFER_SIZE_DWORDS));
 #else
 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
 #endif
