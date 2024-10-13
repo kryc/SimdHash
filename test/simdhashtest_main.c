@@ -74,6 +74,8 @@ static const TestVector SimdHashTestVectors[] = {
 	}*/
 };
 
+static const size_t VectorCount = sizeof(SimdHashTestVectors)/sizeof(TestVector);
+
 static bool
 ToHex(char* Out, size_t OutLength, const uint8_t* Buffer, size_t BufferLength)
 {
@@ -218,6 +220,7 @@ FunctionalityTests(
 	}
 
 	SimdHashInit(&context, Algorithm);
+	context.Lanes = VectorCount;
 	SimdHashUpdate(&context, lengths, (const uint8_t**)buffers);
 	SimdHashFinalize(&context);
 
