@@ -7,10 +7,13 @@ project(simdhash VERSION 0.1)
 SET(CMAKE_C_COMPILER clang)
 
 # set compiler flags
-if (NOT AVX OR AVX STREQUAL "" OR AVX STREQUAL "256")
-    set(AVXFLAG "-mavx2" CACHE STRING "" FORCE)
-elseif(AVX STREQUAL "512")
-    set(AVXFLAG "-mavx512bw" CACHE STRING "" FORCE)
+message("Detected platform: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+if (NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
+    if (NOT AVX OR AVX STREQUAL "" OR AVX STREQUAL "256")
+        set(AVXFLAG "-mavx2" CACHE STRING "" FORCE)
+    elseif(AVX STREQUAL "512")
+        set(AVXFLAG "-mavx512bw" CACHE STRING "" FORCE)
+    endif()
 endif()
 
 set(CMAKE_C_FLAGS "-Wall -Werror -Wno-unused-function ${AVXFLAG}")

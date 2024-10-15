@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <assert.h>
 #include <string.h>		// memset
-#include <immintrin.h>	// AVX
 
 #include <signal.h>
 

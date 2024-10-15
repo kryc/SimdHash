@@ -11,7 +11,6 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <immintrin.h>	// AVX
 
 #include "simdcommon.h"
 
@@ -57,6 +56,7 @@ typedef union _SimdValue
 {
 	uint8_t  epi32_u8 [SIMD_WIDTH/32][4];	// Access to each lane as a uint8 array
 	uint32_t epi32_u32[SIMD_WIDTH/32];		// Access to each lane as a uint32
+	uint64_t epi64_u64[SIMD_WIDTH/64];		// Access to each lane as a uint64
 	union
 	{
 		simd_t usimd;

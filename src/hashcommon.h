@@ -9,8 +9,6 @@
 #ifndef hashcommon_h
 #define hashcommon_h
 
-#include <immintrin.h>
-
 #include "simdcommon.h"
 
 #ifndef BITWISECHOICE
