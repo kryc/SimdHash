@@ -39,7 +39,6 @@
 #define and_simd        _mm512_and_si512
 #define andnot_simd     _mm512_andnot_si512
 #define cmpeq_epi32     _mm512_cmpeq_epi32
-#define movemask_ps     _mm512_movemask_ps
 // Custom
 #define bswap_epi32     _mm512_bswap_epi32
 #elif defined __arm64__
@@ -78,7 +77,6 @@
 #define and_simd        _mm256_and_si256
 #define andnot_simd     _mm256_andnot_si256
 #define cmpeq_epi32     _mm256_cmpeq_epi32
-#define movemask_ps     _mm256_movemask_ps
 // Custom
 #define bswap_epi32     _mm256_bswap_epi32
 #endif
