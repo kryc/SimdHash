@@ -13,9 +13,9 @@
 #include <math.h>
 #include <stdint.h>
 
-#ifdef __AVX2__
+#if defined(__AVX2__) || defined(__AVX512F__)
 #include <immintrin.h>
-#elif defined __arm64__
+#elif defined(__arm64__)
 #include <arm_neon.h>
 #endif
 
@@ -90,7 +90,7 @@ typedef enum _LOG2VAL
 
 #define MAX_LANES (512/32)
 
-#ifdef __arm64__
+#if defined(__arm64__)
 /*
  * ARM64 doesn't have shift by const value,
  * so we need to mimick the x86 version here
@@ -156,7 +156,7 @@ not_simd(
 	return xor_simd(Value, set1_epi32(-1));
 }
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 static inline
 simd_t
 mul_epu32(
@@ -257,7 +257,7 @@ bswap_epi32(
 	const simd_t Value)
 {
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 	simd_t shuffleMask = _mm512_setr_epi64(
 		0x0001020304050607,
 		0x08090a0b0c0d0e0f,
@@ -269,7 +269,7 @@ bswap_epi32(
 		0x38393a3b3c3d3e3f
 	);
 	return _mm512_shuffle_epi8(Value, shuffleMask);
-#elif defined __arm64__
+#elif defined(__arm64__)
 	return vrev32q_u8(vreinterpretq_u8_u32(Value));
 #else // AVX2
 	simd_t shuffleMask = _mm256_setr_epi32(
