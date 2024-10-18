@@ -186,41 +186,41 @@ SimdHashGetHashes2D(
 static inline void
 WriteSimdArrayToLinearBuffer(
 	const SimdValue* Array,
-	const size_t Count,
+	const size_t CountDwords,
 	uint8_t* HashBuffers
 )
 {
 #if defined __AVX512F__ && defined AVXSCATTER
-	for (size_t i = 0; i < Count; i++)
+	for (size_t i = 0; i < CountDwords; i++)
 	{
 		__m512i h = _mm512_load_si512(&Array[i].usimd);
 		__m512i index = _mm512_setr_epi32(
-			(Count * 0) + i,
-			(Count * 1) + i,
-			(Count * 2) + i,
-			(Count * 3) + i,
-			(Count * 4) + i,
-			(Count * 5) + i,
-			(Count * 6) + i,
-			(Count * 7) + i,
-			(Count * 8) + i,
-			(Count * 9) + i,
-			(Count * 10) + i,
-			(Count * 11) + i,
-			(Count * 12) + i,
-			(Count * 13) + i,
-			(Count * 14) + i,
-			(Count * 15) + i
+			(CountDwords * 0) + i,
+			(CountDwords * 1) + i,
+			(CountDwords * 2) + i,
+			(CountDwords * 3) + i,
+			(CountDwords * 4) + i,
+			(CountDwords * 5) + i,
+			(CountDwords * 6) + i,
+			(CountDwords * 7) + i,
+			(CountDwords * 8) + i,
+			(CountDwords * 9) + i,
+			(CountDwords * 10) + i,
+			(CountDwords * 11) + i,
+			(CountDwords * 12) + i,
+			(CountDwords * 13) + i,
+			(CountDwords * 14) + i,
+			(CountDwords * 15) + i
 		);
 		_mm512_i32scatter_epi32(HashBuffers, index, h, 4);
 	}
 #else
 	uint32_t* buffer = (uint32_t*)HashBuffers;
-	for (size_t i = 0; i < Count; i++)
+	for (size_t i = 0; i < CountDwords; i++)
 	{
 		for (size_t l = 0; l < SimdLanes(); l++)
 		{
-			buffer[(l * Count) + i] = Array[i].epi32_u32[l];
+			buffer[(l * CountDwords) + i] = Array[i].epi32_u32[l];
 		}
 	}
 #endif
@@ -239,19 +239,18 @@ void
 SimdHashExtendEntropyAndGetHashes(
 	SimdHashContext* Context,
 	uint8_t* HashBuffers,
-	size_t Length
+	size_t CountDwords
 )
 {
-	assert(Length > Context->HSize);
-	SimdValue buffer[Length];
+	assert(CountDwords > Context->HSize);
+	SimdValue buffer[CountDwords];
 
 	for (size_t i = 0; i < Context->HSize; i++)
 	{
-		simd_t w = load_simd(&Context->H[i].usimd);
-		buffer[i].usimd = w;
+		buffer[i].usimd = load_simd(&Context->H[i].usimd);
 	}
 
-	for (size_t i = Context->HSize; i < Length; i++)
+	for (size_t i = Context->HSize; i < CountDwords; i++)
 	{
 		// s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
         // s1 := (w[i-2] rightrotate 17) xor (w[i-2] rightrotate 19) xor (w[i-2] rightshift 10)
@@ -262,7 +261,7 @@ SimdHashExtendEntropyAndGetHashes(
 	}
 
 	// Output to the hash buffers
-	WriteSimdArrayToLinearBuffer(buffer, Length, HashBuffers);
+	WriteSimdArrayToLinearBuffer(buffer, CountDwords, HashBuffers);
 }
 
 void

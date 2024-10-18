@@ -52,6 +52,8 @@ typedef enum _HashAlgorithm
 	HashSha256
 } HashAlgorithm;
 
+#define VALUE_ALIGN (SIMD_WIDTH/8)
+
 typedef union _SimdValue
 {
 	uint8_t  epi32_u8 [SIMD_WIDTH/32][4];	// Access to each lane as a uint8 array
@@ -61,10 +63,10 @@ typedef union _SimdValue
 	union
 	{
 		simd_t usimd;
-		uint8_t __padding[64];
+		uint8_t __padding[VALUE_ALIGN];
 	};
 	
-} SimdValue __attribute__((__aligned__(64)));
+} SimdValue __attribute__((__aligned__(VALUE_ALIGN)));
 
 typedef struct _SimdHashContext
 {
