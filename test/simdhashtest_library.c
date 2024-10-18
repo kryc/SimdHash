@@ -267,7 +267,7 @@ RunLibraryTests(
     uint64_t v64;
 
     printf("\txmul_epu32: ");
-    res.usimd = xmul_epu32(set1_epi32(128), set1_epi32(10));
+    res.usimd = mul_epu32(set1_epi32(128), set1_epi32(10));
     TestEqual32(res, 128 * 10);
 
     printf("\tmod2_epi32: ");

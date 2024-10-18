@@ -43,7 +43,6 @@ size_t
 SimdHashUpdateLaneBuffer(
 	SimdHashContext* Context,
 	const size_t Lane,
-	const size_t Offset,
 	const size_t Length,
 	const uint8_t* Buffers);
 

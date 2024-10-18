@@ -101,6 +101,15 @@ void SimdHashInit(
 }
 
 void
+SimdHashSetLaneCount(
+	SimdHashContext* Context,
+	const size_t LaneCount
+)
+{
+	Context->Lanes = LaneCount;
+}
+
+void
 SimdHashUpdate(
 	SimdHashContext* Context,
 	const size_t Lengths[],
@@ -122,7 +131,6 @@ SimdHashUpdate(
 		toWrite = SimdHashUpdateLaneBuffer(
 			Context,
 			lane,
-			0,
 			Lengths[lane],
 			Buffers[lane]
 		);

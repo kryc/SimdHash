@@ -19,9 +19,18 @@
 #include <arm_neon.h>
 #endif
 
+typedef enum _LOG2VAL
+{
+	LOG2_2  = 1,
+	LOG2_4  = 2,
+	LOG2_8  = 3,
+	LOG2_16 = 4,
+	LOG2_MAX = LOG2_16
+} LOG2VAL;
+
 #ifdef __AVX512F__
-#define simd_t __m512i
-#define SIMD_WIDTH   512
+#define simd_t          __m512i
+#define SIMD_WIDTH      512
 #define load_simd       _mm512_load_si512
 #define store_simd      _mm512_store_si512
 #define set1_epi32      _mm512_set1_epi32
@@ -29,7 +38,6 @@
 #define shuffle_epi8    _mm512_shuffle_epi8
 #define add_epi32       _mm512_add_epi32
 #define sub_epi32       _mm512_sub_epi32
-#define mul_epu32       _mm512_mul_epu32
 #define srli_epi32      _mm512_srli_epi32
 #define srli_epi64		_mm512_srli_epi64
 #define slli_epi32      _mm512_slli_epi32
@@ -58,7 +66,7 @@
 #define andnot_simd     andnot_simd_custom
 #define cmpeq_simd      vceq_u32
 #else // AVX2
-#define simd_t __m256i
+#define simd_t          __m256i
 #define SIMD_WIDTH      256
 #define load_simd       _mm256_load_si256
 #define store_simd      _mm256_store_si256
@@ -67,7 +75,6 @@
 #define shuffle_epi8    _mm256_shuffle_epi8
 #define add_epi32       _mm256_add_epi32
 #define sub_epi32       _mm256_sub_epi32
-#define mul_epu32       _mm256_mul_epu32
 #define srli_epi32      _mm256_srli_epi32
 #define srli_epi64      _mm256_srli_epi64
 #define slli_epi32      _mm256_slli_epi32
@@ -148,6 +155,32 @@ not_simd(
 {
 	return xor_simd(Value, set1_epi32(-1));
 }
+
+#ifdef __AVX512__
+static inline
+simd_t
+mul_epu32(
+	const simd_t Value1,
+	const simd_t Value2
+)
+{
+	simd_t res_lo = _mm512_mul_epu32(Value1, Value2);
+	simd_t res_hi = _mm512_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
+	return or_simd(slli_epi64(res_hi, 32), res_lo);
+}
+#else // AV2
+static inline
+simd_t
+mul_epu32(
+	const simd_t Value1,
+	const simd_t Value2
+)
+{
+	simd_t res_lo = _mm256_mul_epu32(Value1, Value2);
+	simd_t res_hi = _mm256_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
+	return or_simd(slli_epi64(res_hi, 32), res_lo);
+}
+#endif
 #endif
 
 static inline
@@ -186,14 +219,20 @@ andnot_simd_custom(
 
 static inline
 simd_t
-xmul_epu32(
+shift_mod2_epi32(
 	const simd_t Value1,
-	const simd_t Value2
+	const uint32_t Shift
 )
+/*
+ * Compute the moduli of a vector of u32s
+ * This works using shifting so the divisor
+ * MUST be a on the log2 scale
+ */
 {
-	simd_t res_lo = mul_epu32(Value1, Value2);
-	simd_t res_hi = mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
-	return or_simd(slli_epi64(res_hi, 32), res_lo);
+	simd_t quotient = srli_epi32(Value1, Shift);	// Division
+	simd_t product = slli_epi32(quotient, Shift);
+	simd_t remainder = sub_epi32(Value1, product);
+	return remainder;
 }
 
 static inline
@@ -202,11 +241,14 @@ mod2_epi32(
 	const simd_t Value1,
 	const uint32_t Mod2
 )
+/*
+ * Compute the moduli of a vector of u32s
+ * This works using shifting so the divisor
+ * MUST be a on the log2 scale
+ */
 {
 	int count = log2(Mod2);
-	simd_t quotient = srli_epi32(Value1, count);	// Division
-	simd_t remainder = sub_epi32(Value1, xmul_epu32(set1_epi32(Mod2), quotient));
-	return remainder;
+	return shift_mod2_epi32(Value1, count);
 }
 
 static inline

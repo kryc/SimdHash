@@ -52,6 +52,13 @@ static const TestVector SimdHashTestVectors[] = {
 		{0xbe, 0xf5, 0x7e, 0xc7, 0xf5, 0x3a, 0x6d, 0x40, 0xbe, 0xb6, 0x40, 0xa7, 0x80, 0xa6, 0x39, 0xc8, 0x3b, 0xc2, 0x9a, 0xc8, 0xa9, 0x81, 0x6f, 0x1f, 0xc6, 0xc5, 0xc6, 0xdc, 0xd9, 0x3c, 0x47, 0x21}
 	},
 	{
+		8,
+		(uint8_t*)"abcdefgh",
+		{0xe8, 0xdc, 0x40, 0x81, 0xb1, 0x34, 0x34, 0xb4, 0x51, 0x89, 0xa7, 0x20, 0xb7, 0x7b, 0x68, 0x18},
+		{0x42, 0x5a, 0xf1, 0x2a, 0x07, 0x43, 0x50, 0x2b, 0x32, 0x2e, 0x93, 0xa0, 0x15, 0xbc, 0xf8, 0x68, 0xe3, 0x24, 0xd5, 0x6a},
+		{0x9c, 0x56, 0xcc, 0x51, 0xb3, 0x74, 0xc3, 0xba, 0x18, 0x92, 0x10, 0xd5, 0xb6, 0xd4, 0xbf, 0x57, 0x79, 0x0d, 0x35, 0x1c, 0x96, 0xc4, 0x7c, 0x02, 0x19, 0x0e, 0xcf, 0x1e, 0x43, 0x06, 0x35, 0xab}
+	},
+	{
 		55,
 		(uint8_t*)"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop",
 		{0x28, 0x07, 0xd6, 0x52, 0xab, 0x02, 0xf7, 0x36, 0x11, 0xc9, 0x94, 0xe5, 0xd5, 0xac, 0x92, 0x21},
@@ -89,7 +96,7 @@ ToHex(char* Out, size_t OutLength, const uint8_t* Buffer, size_t BufferLength)
 	nextOut = Out;
 	for (size_t i = 0; i < BufferLength; i++)
 	{
-		sprintf(nextOut, "%02x", Buffer[i]);
+		snprintf(nextOut, 3, "%02x", Buffer[i]);
 		nextOut += 2;
 	}
 	
@@ -111,7 +118,7 @@ GetTestVector(
 	*Digest = NULL;
 	*DigestLength = 0;
 
-	if (Index >= sizeof(SimdHashTestVectors)/sizeof(TestVector))
+	if (Index >= VectorCount)
 	{
 		return;
 	}
@@ -159,11 +166,13 @@ FunctionalityTests(
 	uint8_t* expectedDigest;
 	size_t digestSize;
 
+	const size_t VectorLanesMax = SimdLanes() > VectorCount ? VectorCount : SimdLanes();
+
 	memset(hex, 0, sizeof(hex));
 
 	fail = false;
 
-	for (size_t c = 0; c < sizeof(SimdHashTestVectors)/sizeof(*SimdHashTestVectors); c++)
+	for (size_t c = 0; c < VectorCount; c++)
 	{
 		// Get the test vector values for the algorithm
 		GetTestVector(c, Algorithm, &preimage, &preimageSize, &expectedDigest, &digestSize);
@@ -210,7 +219,7 @@ FunctionalityTests(
 
 	size_t lengths[SimdLanes()];
 	
-	for (size_t c = 0; c < sizeof(SimdHashTestVectors)/sizeof(*SimdHashTestVectors); c++)
+	for (size_t c = 0; c < VectorLanesMax; c++)
 	{
 		// Get the test vector values for the algorithm
 		GetTestVector(c, Algorithm, &preimage, &preimageSize, &expectedDigest, &digestSize);
@@ -220,14 +229,59 @@ FunctionalityTests(
 	}
 
 	SimdHashInit(&context, Algorithm);
-	context.Lanes = VectorCount;
+	SimdHashSetLaneCount(&context, VectorLanesMax);
 	SimdHashUpdate(&context, lengths, (const uint8_t**)buffers);
 	SimdHashFinalize(&context);
 
-	for (size_t c = 0; c < sizeof(SimdHashTestVectors)/sizeof(*SimdHashTestVectors); c++)
+	for (size_t c = 0; c < VectorLanesMax; c++)
 	{
 		// Get the test vector values for the algorithm
 		GetTestVector(c, Algorithm, &preimage, &preimageSize, &expectedDigest, &digestSize);
+
+		SimdHashGetHash(&context, hash, c);
+		ToHex(hex, sizeof(hex), expectedDigest, digestSize);
+		printf("[+] Expected: %s\n", hex);
+		ToHex(hex, sizeof(hex), hash, digestSize);
+		if (memcmp(&hash[0], expectedDigest, digestSize) != 0)
+		{
+			fail = true;
+			printf("[!] %6s:   %s\n", HashAlgorithmToString(Algorithm), hex);
+		}
+		else
+		{
+			printf("[+] %6s:   %s\n", HashAlgorithmToString(Algorithm), hex);
+		}
+	}
+
+	printf("\n[+] Multiple update tests\n");
+	
+	for (size_t c = 0; c < VectorLanesMax; c++)
+	{
+		// Skip the zero-length vector
+		GetTestVector(c + 1, Algorithm, &preimage, &preimageSize, &expectedDigest, &digestSize);
+		lengths[c] = 1;
+		buffers[c] = preimage;
+	}
+
+	SimdHashInit(&context, Algorithm);
+	SimdHashSetLaneCount(&context, VectorLanesMax);
+	SimdHashUpdate(&context, lengths, (const uint8_t**)buffers);
+
+	// Do remaining bytes
+	for (size_t c = 0; c < VectorLanesMax; c++)
+	{
+		GetTestVector(c + 1, Algorithm, &preimage, &preimageSize, &expectedDigest, &digestSize);
+		lengths[c] = preimageSize - 1;
+		buffers[c] = preimage + 1;
+	}
+
+	SimdHashUpdate(&context, lengths, (const uint8_t**)buffers);
+	SimdHashFinalize(&context);
+
+	for (size_t c = 0; c < VectorLanesMax; c++)
+	{
+		// Get the test vector values for the algorithm
+		GetTestVector(c + 1, Algorithm, &preimage, &preimageSize, &expectedDigest, &digestSize);
 
 		SimdHashGetHash(&context, hash, c);
 		ToHex(hex, sizeof(hex), expectedDigest, digestSize);

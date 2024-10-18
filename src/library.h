@@ -28,6 +28,21 @@ SimdHashWriteBuffer8(
 }
 
 static inline size_t
+SimdHashWriteBuffer16(
+    SimdHashContext* Context,
+    const size_t Offset,
+    const size_t Lane,
+    const uint16_t Value
+)
+{
+    const size_t bufferIndex = Offset / 4;
+    const size_t bufferOffset = Offset % 4;
+    Context->Buffer[bufferIndex].epi32_u8[Lane][bufferOffset] = Value & 0xff;
+    Context->Buffer[bufferIndex].epi32_u8[Lane][bufferOffset + 1] = Value >> 8;
+    return Offset + sizeof(uint16_t);
+}
+
+static inline size_t
 SimdHashWriteBuffer32(
     SimdHashContext* Context,
     const size_t Offset,

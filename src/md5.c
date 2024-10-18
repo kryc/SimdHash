@@ -101,21 +101,21 @@ SimdMd5Transform(
 			// F := (D and B) or ((not D) and C)
 			f = SimdBitwiseChoiceWithControl(b, c, d);
 			// g := (5xi + 1) mod 16
-			g = mod2_epi32(add_epi32(xmul_epu32(set1_epi32(i), set1_epi32(5)), set1_epi32(1)), 16);
+			g = shift_mod2_epi32(add_epi32(mul_epu32(set1_epi32(i), set1_epi32(5)), set1_epi32(1)), LOG2_16);
 		}
 		else if (i < 48)
 		{
 			// F := B xor C xor D
 			f = xor_simd(b, xor_simd(c, d));
 			// g := (3×i + 5) mod 16
-			g = mod2_epi32(add_epi32(xmul_epu32(set1_epi32(i), set1_epi32(3)), set1_epi32(5)), 16);
+			g = shift_mod2_epi32(add_epi32(mul_epu32(set1_epi32(i), set1_epi32(3)), set1_epi32(5)), LOG2_16);
 		}
 		else //if (i < 64)
 		{
 			// F := C xor (B or (not D))
 			f = xor_simd(c, or_simd(b, not_simd(d)));
 			// g := (7×i) mod 16
-			g = mod2_epi32(xmul_epu32(set1_epi32(i), set1_epi32(7)), 16);
+			g = shift_mod2_epi32(mul_epu32(set1_epi32(i), set1_epi32(7)), LOG2_16);
 		}
 		
 		SimdValue G, M;
@@ -125,6 +125,10 @@ SimdMd5Transform(
 		{
 			uint32_t index = G.epi32_u32[j];
 			assert(index < 16);
+			if (index >= 16)
+			{
+				printf("%u\n", index);
+			}
 			M.epi32_u32[j] = Context->Buffer[index].epi32_u32[j];
 		}
 
@@ -177,7 +181,7 @@ SimdMd5AppendSize(
 		// the last 64 bits
 		SimdHashWriteBuffer64(
 			Context,
-			MD5_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t),
+			MD5_BUFFER_SIZE - sizeof(uint64_t),
 			lane,
 			Context->BitLength[lane]
 		);

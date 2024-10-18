@@ -178,7 +178,7 @@ SimdSha1AppendSize(
 		// the last 64 bits
 		SimdHashWriteBuffer64(
 			Context,
-			SHA1_BUFFER_SIZE - sizeof(uint32_t) - sizeof(uint32_t),
+			SHA1_BUFFER_SIZE - sizeof(uint64_t),
 			lane,
 			__builtin_bswap64(Context->BitLength[lane]) // Change endianness to store in the little endian buffer
 		);
