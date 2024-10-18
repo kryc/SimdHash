@@ -71,7 +71,7 @@ typedef enum _LOG2VAL
 #define load_simd       _mm256_load_si256
 #define store_simd      _mm256_store_si256
 #define set1_epi32      _mm256_set1_epi32
-#define set1_epi64      _mm256_set1_epi64
+#define set1_epi64      _mm256_set1_epi64x
 #define shuffle_epi8    _mm256_shuffle_epi8
 #define add_epi32       _mm256_add_epi32
 #define sub_epi32       _mm256_sub_epi32
@@ -156,7 +156,7 @@ not_simd(
 	return xor_simd(Value, set1_epi32(-1));
 }
 
-#ifdef __AVX512__
+#ifdef __AVX512F__
 static inline
 simd_t
 mul_epu32(
@@ -168,7 +168,7 @@ mul_epu32(
 	simd_t res_hi = _mm512_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
 	return or_simd(slli_epi64(res_hi, 32), res_lo);
 }
-#else // AV2
+#else // AVX2
 static inline
 simd_t
 mul_epu32(
@@ -257,7 +257,7 @@ bswap_epi32(
 	const simd_t Value)
 {
 
-#ifdef __AVX512__
+#ifdef __AVX512F__
 	simd_t shuffleMask = _mm512_setr_epi64(
 		0x0001020304050607,
 		0x08090a0b0c0d0e0f,

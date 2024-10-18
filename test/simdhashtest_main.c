@@ -264,7 +264,7 @@ FunctionalityTests(
 	}
 
 	SimdHashInit(&context, Algorithm);
-	SimdHashSetLaneCount(&context, VectorLanesMax);
+	SimdHashSetLaneCount(&context, VectorLanesMax - 1);
 	SimdHashUpdate(&context, lengths, (const uint8_t**)buffers);
 
 	// Do remaining bytes

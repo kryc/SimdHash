@@ -162,7 +162,7 @@ TestEqual64(
     {
         if (Simd.epi64_u64[i] != Value)
         {
-            printf("Fail. (%016llx != %016llx)\n", Simd.epi64_u64[0], Value);
+            printf("Fail. (%" PRIx64 " != %" PRIx64")\n", Simd.epi64_u64[0], Value);
             return 1;
         }
     }
