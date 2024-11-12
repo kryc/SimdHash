@@ -66,6 +66,11 @@ public:
     uint8_t** Buffers(void) { return &m_BufferPointers[0]; };
     const uint8_t** ConstBuffers(void) { return (const uint8_t**) &m_BufferPointers[0]; };
     const size_t* GetLengths(void) const { return &m_Lengths[0]; };
+    const void Set(const size_t Index, const std::string& Value) {
+        const size_t copylen = std::min<size_t>(Value.size(), Width);
+        memcpy(m_BufferPointers[Index], &Value[0], copylen);
+        m_Lengths[Index] = copylen;
+    }
     void SetLength(const size_t Index, const size_t Length) { m_Lengths[Index] = Length; };
     const size_t GetLength(const size_t Index) { return m_Lengths[Index]; };
 private:

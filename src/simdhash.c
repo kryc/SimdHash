@@ -28,19 +28,19 @@ ParseHashAlgorithm(
 	if (strcmp(AlgorithmString, "md5") == 0 ||
 		strcmp(AlgorithmString, "MD5") == 0)
 	{
-		return HashMd5;
+		return HashAlgorithmMD5;
 	}
 	else if (strcmp(AlgorithmString, "sha1") == 0 ||
 		strcmp(AlgorithmString, "SHA1") == 0)
 	{
-		return HashSha1;
+		return HashAlgorithmSHA1;
 	}
 	else if (strcmp(AlgorithmString, "sha256") == 0 ||
 		strcmp(AlgorithmString, "SHA256") == 0)
 	{
-		return HashSha256;
+		return HashAlgorithmSHA256;
 	}
-	return HashUnknown;
+	return HashAlgorithmUndefined;
 }
 
 const char*
@@ -50,11 +50,11 @@ HashAlgorithmToString(
 {
 	switch (Algorithm)
 	{
-	case HashMd5:
+	case HashAlgorithmMD5:
 		return "MD5";
-	case HashSha1:
+	case HashAlgorithmSHA1:
 		return "SHA1";
-	case HashSha256:
+	case HashAlgorithmSHA256:
 		return "SHA256";
 	default:
 		return "Unknown";
@@ -68,14 +68,32 @@ GetHashWidth(
 {
 	switch (Algorithm)
 	{
-	case HashMd5:
+	case HashAlgorithmMD5:
 		return MD5_SIZE;
-	case HashSha1:
+	case HashAlgorithmSHA1:
 		return SHA1_SIZE;
-	case HashSha256:
+	case HashAlgorithmSHA256:
 		return SHA1_SIZE;
 	default:
 		return (size_t)-1;
+	}
+}
+
+const HashAlgorithm
+DetectHashAlgorithm(
+    const size_t HashLength
+)
+{
+	switch(HashLength)
+	{
+	case MD5_SIZE:
+		return HashAlgorithmMD5;
+	case SHA1_SIZE:
+		return HashAlgorithmSHA1;
+	case SHA256_SIZE:
+		return HashAlgorithmSHA256;
+	default:
+		return HashAlgorithmUndefined;
 	}
 }
 
@@ -86,16 +104,16 @@ void SimdHashInit(
 {
 	switch (Algorithm)
 	{
-	case HashMd5:
+	case HashAlgorithmMD5:
 		SimdMd5Init(Context);
 		break;
-	case HashSha1:
+	case HashAlgorithmSHA1:
 		SimdSha1Init(Context);
 		break;
-	case HashSha256:
+	case HashAlgorithmSHA256:
 		SimdSha256Init(Context);
 		break;
-	case HashUnknown:
+	case HashAlgorithmUndefined:
 		break;
 	}
 }
@@ -271,16 +289,31 @@ SimdHashFinalize(
 {
 	switch (Context->Algorithm)
 	{
-	case HashMd5:
+	case HashAlgorithmMD5:
 		SimdMd5Finalize(Context);
 		break;
-	case HashSha1:
+	case HashAlgorithmSHA1:
 		SimdSha1Finalize(Context);
 		break;
-	case HashSha256:
+	case HashAlgorithmSHA256:
 		SimdSha256Finalize(Context);
 		break;
-	case HashUnknown:
+	case HashAlgorithmUndefined:
 		break;
 	}
+}
+
+void
+SimdHash(
+	HashAlgorithm Algorithm,
+	const size_t Lengths[],
+	const uint8_t* Buffers[],
+	uint8_t* HashBuffers
+)
+{
+	SimdHashContext ctx;
+	SimdHashInit(&ctx, Algorithm);
+	SimdHashUpdate(&ctx, Lengths, Buffers);
+	SimdHashFinalize(&ctx);
+	SimdHashGetHashes(&ctx, HashBuffers);
 }

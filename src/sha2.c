@@ -63,7 +63,7 @@ SimdSha256Init(
 	Context->Lanes = SimdLanes();
 	memset(Context->Offset, 0, sizeof(Context->Offset));
 	memset(Context->BitLength, 0, sizeof(Context->BitLength));
-	Context->Algorithm = HashSha256;
+	Context->Algorithm = HashAlgorithmSHA256;
 }
 
 inline

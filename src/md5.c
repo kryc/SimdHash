@@ -69,7 +69,7 @@ SimdMd5Init(
 	Context->Lanes = SimdLanes();
 	memset(Context->Offset, 0, sizeof(Context->Offset));
 	memset(Context->BitLength, 0, sizeof(Context->BitLength));
-	Context->Algorithm = HashMd5;
+	Context->Algorithm = HashAlgorithmMD5;
 }
 
 static inline void

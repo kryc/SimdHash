@@ -45,7 +45,7 @@ SimdSha1Init(
 	Context->Lanes = SimdLanes();
 	memset(Context->Offset, 0, sizeof(Context->Offset));
 	memset(Context->BitLength, 0, sizeof(Context->BitLength));
-	Context->Algorithm = HashSha1;
+	Context->Algorithm = HashAlgorithmSHA1;
 }
 
 static inline void

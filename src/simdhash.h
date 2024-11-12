@@ -46,10 +46,11 @@
 
 typedef enum _HashAlgorithm
 {
-	HashUnknown,
-	HashMd5,
-	HashSha1,
-	HashSha256
+    HashAlgorithmUndefined = 0,
+    HashAlgorithmMD5,
+    HashAlgorithmSHA1,
+    HashAlgorithmSHA256,
+	HashAlgorithmMax = HashAlgorithmSHA256
 } HashAlgorithm;
 
 #define VALUE_ALIGN (SIMD_WIDTH/8)
@@ -82,10 +83,11 @@ typedef struct _SimdHashContext
 } SimdHashContext;
 
 #define SimdHashAlgorithmCount 3
-static const HashAlgorithm SimdHashAlgorithms[SimdHashAlgorithmCount] = {
-	HashMd5,
-	HashSha1,
-	HashSha256
+static const HashAlgorithm
+SimdHashAlgorithms[SimdHashAlgorithmCount] = {
+    HashAlgorithmMD5,
+    HashAlgorithmSHA1,
+    HashAlgorithmSHA256,
 };
 
 #ifdef __cplusplus
@@ -106,6 +108,19 @@ const char*
 HashAlgorithmToString(
 	const HashAlgorithm
 );
+
+const HashAlgorithm
+DetectHashAlgorithm(
+    const size_t HashLength
+);
+
+inline const HashAlgorithm
+DetectHashAlgorithmHex(
+    const size_t HashLengthHex
+)
+{
+	return DetectHashAlgorithm(HashLengthHex / 2);
+}
 
 const size_t
 GetHashWidth(
@@ -141,6 +156,14 @@ SimdHashUpdateAll(
 void
 SimdHashFinalize(
 	SimdHashContext* Context
+);
+
+void
+SimdHash(
+	HashAlgorithm Algorithm,
+	const size_t Lengths[],
+	const uint8_t* Buffers[],
+	uint8_t* HashBuffers
 );
 
 //
