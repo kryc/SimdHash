@@ -32,13 +32,19 @@ public:
     const size_t GetWidth(void) const { return m_Width; };
     const size_t GetCount(void) const { return m_Count; };
     uint8_t* Buffer(void) { return &m_Buffer[0]; };
-    uint8_t* Buffer(const size_t Index) { return m_BufferPointers[Index]; };
-    uint8_t* operator[](const size_t Index) { return m_BufferPointers[Index]; };
+    uint8_t* Buffer(const size_t Index) const { return m_BufferPointers[Index]; };
+    uint8_t* operator[](const size_t Index) const { return m_BufferPointers[Index]; };
     uint8_t** Buffers(void) { return &m_BufferPointers[0]; };
-    const uint8_t** ConstBuffers(void) { return (const uint8_t**) &m_BufferPointers[0]; };
+    const uint8_t** ConstBuffers(void) const { return (const uint8_t**) &m_BufferPointers[0]; };
     const size_t* GetLengths(void) const { return &m_Lengths[0]; };
+    const void Set(const size_t Index, const std::string& Value) {
+        const size_t copylen = std::min<size_t>(Value.size(), m_Width);
+        memcpy(m_BufferPointers[Index], &Value[0], copylen);
+        m_Lengths[Index] = copylen;
+    }
     void SetLength(const size_t Index, const size_t Length) { m_Lengths[Index] = Length; };
-    const size_t GetLength(const size_t Index) { return m_Lengths[Index]; };
+    const size_t GetLength(const size_t Index) const { return m_Lengths[Index]; };
+    const std::string GetString(const size_t Index) const { return std::string(Buffer(Index), Buffer(Index) + GetLength(Index)); }
 private:
     const size_t m_Width;
     const size_t m_Count;
@@ -60,11 +66,11 @@ public:
     }
     const size_t GetWidth(void) const { return Width; };
     const size_t GetCount(void) const { return Count; };
-    uint8_t* Buffer(void) { return &m_Buffer[0]; };
-    uint8_t* Buffer(const size_t Index) { return m_BufferPointers[Index]; };
-    uint8_t* operator[](const size_t Index) { return m_BufferPointers[Index]; };
-    uint8_t** Buffers(void) { return &m_BufferPointers[0]; };
-    const uint8_t** ConstBuffers(void) { return (const uint8_t**) &m_BufferPointers[0]; };
+    uint8_t* Buffer(void) const { return &m_Buffer[0]; };
+    uint8_t* Buffer(const size_t Index) const { return m_BufferPointers[Index]; };
+    uint8_t* operator[](const size_t Index) const { return m_BufferPointers[Index]; };
+    uint8_t** Buffers(void) const { return &m_BufferPointers[0]; };
+    const uint8_t** ConstBuffers(void) const { return (const uint8_t**) &m_BufferPointers[0]; };
     const size_t* GetLengths(void) const { return &m_Lengths[0]; };
     const void Set(const size_t Index, const std::string& Value) {
         const size_t copylen = std::min<size_t>(Value.size(), Width);
@@ -72,7 +78,8 @@ public:
         m_Lengths[Index] = copylen;
     }
     void SetLength(const size_t Index, const size_t Length) { m_Lengths[Index] = Length; };
-    const size_t GetLength(const size_t Index) { return m_Lengths[Index]; };
+    const size_t GetLength(const size_t Index) const { return m_Lengths[Index]; };
+    const std::string GetString(const size_t Index) const { return std::string(Buffer(Index), Buffer(Index) + GetLength(Index)); }
 private:
     std::array<uint8_t, Count * Width> m_Buffer;
     std::array<size_t, Count> m_Lengths;
