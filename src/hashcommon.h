@@ -46,14 +46,6 @@ SimdHashUpdateLaneBuffer(
 	const size_t Length,
 	const uint8_t* Buffers);
 
-// size_t
-// SimdHashUpdateBuffer(
-// 	SimdHashContext* Context,
-// 	const size_t Offset,
-// 	const size_t Length,
-// 	const uint8_t* Buffers[],
-// 	const uint8_t BigEndian);
-
 static inline simd_t
 SimdBitwiseChoiceWithControlOriginal(
 	const simd_t Choice1,

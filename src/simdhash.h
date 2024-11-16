@@ -14,6 +14,12 @@
 
 #include "simdcommon.h"
 
+#define MD4_BUFFER_SIZE (64)
+#define MD4_BUFFER_SIZE_DWORDS (MD4_BUFFER_SIZE / 4)
+#define MD4_OPTIMIZED_BUFFER_SIZE (MD4_BUFFER_SIZE - 8)
+#define MD4_OPTIMIZED_BUFFER_SIZE_DWORDS (MD4_OPTIMIZED_BUFFER_SIZE / 4)
+#define MD4_H_COUNT (4)
+#define MD4_SIZE (MD4_H_COUNT * 4)
 #define MD5_BUFFER_SIZE (64)
 #define MD5_BUFFER_SIZE_DWORDS (MD5_BUFFER_SIZE / 4)
 #define MD5_OPTIMIZED_BUFFER_SIZE (MD5_BUFFER_SIZE - 8)
@@ -47,6 +53,7 @@
 typedef enum _HashAlgorithm
 {
     HashAlgorithmUndefined = 0,
+	HashAlgorithmMD4,
     HashAlgorithmMD5,
     HashAlgorithmSHA1,
     HashAlgorithmSHA256,
@@ -82,10 +89,11 @@ typedef struct _SimdHashContext
 	HashAlgorithm Algorithm;
 } SimdHashContext;
 
-#define SimdHashAlgorithmCount 3
+#define SimdHashAlgorithmCount 4
 static const HashAlgorithm
 SimdHashAlgorithms[SimdHashAlgorithmCount] = {
-    HashAlgorithmMD5,
+    HashAlgorithmMD4,
+	HashAlgorithmMD5,
     HashAlgorithmSHA1,
     HashAlgorithmSHA256,
 };
@@ -167,15 +175,19 @@ SimdHash(
 );
 
 //
+// MD4
+//
+void SimdMd4Init(
+	SimdHashContext* Context);
+
+void SimdMd4Finalize(
+	SimdHashContext* Context);
+
+//
 // MD5
 //
 void SimdMd5Init(
 	SimdHashContext* Context);
-
-// void SimdMd5Update(
-// 	SimdHashContext* Context,
-// 	const size_t Length,
-// 	const uint8_t* Buffers[]);
 
 void SimdMd5Finalize(
 	SimdHashContext* Context);
@@ -186,11 +198,6 @@ void SimdMd5Finalize(
 void SimdSha1Init(
 	SimdHashContext* Context);
 
-// void SimdSha1Update(
-// 	SimdHashContext* Context,
-// 	const size_t Lengths[],
-// 	const uint8_t* Buffers[]);
-
 void SimdSha1Finalize(
 	SimdHashContext* Context);
 
@@ -199,11 +206,6 @@ void SimdSha1Finalize(
 //
 void SimdSha256Init(
 	SimdHashContext* Context);
-
-// void SimdSha256Update(
-// 	SimdHashContext* Context,
-// 	const size_t Length,
-// 	const uint8_t* Buffers[]);
 
 void SimdSha256Finalize(
 	SimdHashContext* Context);

@@ -25,7 +25,12 @@ ParseHashAlgorithm(
 	const char* AlgorithmString
 )
 {
-	if (strcmp(AlgorithmString, "md5") == 0 ||
+	if (strcmp(AlgorithmString, "md4") == 0 ||
+		strcmp(AlgorithmString, "MD4") == 0)
+	{
+		return HashAlgorithmMD4;
+	}
+	else if (strcmp(AlgorithmString, "md5") == 0 ||
 		strcmp(AlgorithmString, "MD5") == 0)
 	{
 		return HashAlgorithmMD5;
@@ -50,6 +55,8 @@ HashAlgorithmToString(
 {
 	switch (Algorithm)
 	{
+	case HashAlgorithmMD4:
+		return "MD4";
 	case HashAlgorithmMD5:
 		return "MD5";
 	case HashAlgorithmSHA1:
@@ -68,6 +75,8 @@ GetHashWidth(
 {
 	switch (Algorithm)
 	{
+	case HashAlgorithmMD4:
+		return MD4_SIZE;
 	case HashAlgorithmMD5:
 		return MD5_SIZE;
 	case HashAlgorithmSHA1:
@@ -104,6 +113,9 @@ void SimdHashInit(
 {
 	switch (Algorithm)
 	{
+	case HashAlgorithmMD4:
+		SimdMd4Init(Context);
+		break;
 	case HashAlgorithmMD5:
 		SimdMd5Init(Context);
 		break;
@@ -289,6 +301,9 @@ SimdHashFinalize(
 {
 	switch (Context->Algorithm)
 	{
+	case HashAlgorithmMD4:
+		SimdMd4Finalize(Context);
+		break;
 	case HashAlgorithmMD5:
 		SimdMd5Finalize(Context);
 		break;

@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
     else
     {
         algorithm = ParseHashAlgorithm(argv[1]);
-        if (algorithm == HashUnknown)
+        if (algorithm == HashAlgorithmUndefined)
         {
             fprintf(stderr, "Invalid hash algorithm\n");
             return(1);
