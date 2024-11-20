@@ -50,13 +50,7 @@ SimdSha256Init(
 	{
 		store_simd(&Context->H[i].usimd, set1_epi32(Sha256InitialValues[i]));
 	}
-#ifdef OPTIMIZED
-	// We never need to clear the last two DWORDS as
-	// they will only contain the bit count
-	memset(Context-Buffer, 0x00, sizeof(SimdValue) * (SHA256_OPTIMIZED_BUFFER_SIZE_DWORDS));
-#else
 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
-#endif
 	Context->HSize = SHA256_H_COUNT;
 	Context->HashSize = SHA256_SIZE;
 	Context->BufferSize = SHA256_BUFFER_SIZE;

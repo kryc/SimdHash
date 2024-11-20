@@ -28,13 +28,7 @@ void SimdMd4Init(
     {
         store_simd(&Context->H[i].usimd, set1_epi32(Md4InitialValues[i]));
     }
-#ifdef OPTIMIZED
-    // We never need to clear the last two DWORDS as
-    // they will only contain the bit count
-    memset(Context - Buffer, 0x00, sizeof(SimdValue) * (MD5_OPTIMIZED_BUFFER_SIZE_DWORDS));
-#else
     memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
-#endif
     Context->HSize = MD4_H_COUNT;
     Context->HashSize = MD4_SIZE;
     Context->BufferSize = MD4_BUFFER_SIZE;
