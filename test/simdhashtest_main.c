@@ -175,10 +175,10 @@ FunctionalityTests(
 --*/
 {
 	SimdHashContext context;
-	uint8_t* buffers[SimdLanes()];
-	uint8_t hash[SHA256_SIZE];
-	char hex[SHA256_SIZE * 2 + 1];
-	uint8_t hashes[SimdLanes() * MAX_BUFFER_SIZE];
+	uint8_t* buffers[MAX_LANES];
+	size_t   lengths[MAX_LANES];
+	uint8_t  hashes[MAX_LANES * MAX_BUFFER_SIZE];
+	char hex[MAX_HASH_SIZE * 2 + 1];
 	bool fail;
 	uint8_t* preimage;
 	size_t preimageSize;
@@ -200,19 +200,16 @@ FunctionalityTests(
 		for (size_t i = 0; i < SimdLanes(); i++)
 		{
 			buffers[i] = preimage;
+			lengths[i] = preimageSize;
 		}
 		
 		// Perform the hash
-		SimdHashInit(&context, Algorithm);
-		SimdHashUpdateAll(&context, preimageSize, (const uint8_t**)buffers);
-		SimdHashFinalize(&context);
-		SimdHashGetHash(&context, hash, 0);
-		SimdHashGetHashes(&context, hashes);
+		SimdHash(Algorithm, lengths, (const uint8_t**)buffers, hashes);
 
 		// Test if GetHashes results match
-		for (size_t i = 0; i < SimdLanes(); i++)
+		for (size_t i = 1; i < SimdLanes(); i++)
 		{
-			if (memcmp(hash, hashes + (i * digestSize), digestSize) != 0)
+			if (memcmp(hashes, hashes + (i * digestSize), digestSize) != 0)
 			{
 				fail = true;
 				printf("[!] %6s:   SimdGetHashes Fail\n", HashAlgorithmToString(Algorithm));
@@ -222,8 +219,8 @@ FunctionalityTests(
 		ToHex(hex, sizeof(hex), expectedDigest, digestSize);
 		printf("[+] Expected: %s\n", hex);
 
-		ToHex(hex, sizeof(hex), hash, digestSize);
-		if (memcmp(&hash[0], expectedDigest, digestSize) != 0)
+		ToHex(hex, sizeof(hex), hashes, digestSize);
+		if (memcmp(hashes, expectedDigest, digestSize) != 0)
 		{
 			fail = true;
 			printf("[!] %6s:   %s\n", HashAlgorithmToString(Algorithm), hex);
@@ -235,8 +232,6 @@ FunctionalityTests(
 	}
 	
 	printf("\n[+] Mixed length tests\n");
-
-	size_t lengths[SimdLanes()];
 	
 	for (size_t c = 0; c < VectorLanesMax; c++)
 	{
@@ -247,21 +242,19 @@ FunctionalityTests(
 		buffers[c] = preimage;
 	}
 
-	SimdHashInit(&context, Algorithm);
-	SimdHashSetLaneCount(&context, VectorLanesMax);
-	SimdHashUpdate(&context, lengths, (const uint8_t**)buffers);
-	SimdHashFinalize(&context);
+	SimdHash(Algorithm, lengths, (const uint8_t**)buffers, hashes);
 
 	for (size_t c = 0; c < VectorLanesMax; c++)
 	{
 		// Get the test vector values for the algorithm
 		GetTestVector(c, Algorithm, &preimage, &preimageSize, &expectedDigest, &digestSize);
 
-		SimdHashGetHash(&context, hash, c);
+		const uint8_t* hash = &hashes[c * digestSize];
+
 		ToHex(hex, sizeof(hex), expectedDigest, digestSize);
 		printf("[+] Expected: %s\n", hex);
-		ToHex(hex, sizeof(hex), hash, digestSize);
-		if (memcmp(&hash[0], expectedDigest, digestSize) != 0)
+		ToHex(hex, sizeof(hex), hashes, digestSize);
+		if (memcmp(hash, expectedDigest, digestSize) != 0)
 		{
 			fail = true;
 			printf("[!] %6s:   %s\n", HashAlgorithmToString(Algorithm), hex);
@@ -296,13 +289,14 @@ FunctionalityTests(
 
 	SimdHashUpdate(&context, lengths, (const uint8_t**)buffers);
 	SimdHashFinalize(&context);
+	SimdHashGetHashes(&context, hashes);
 
 	for (size_t c = 0; c < VectorLanesMax; c++)
 	{
 		// Get the test vector values for the algorithm
 		GetTestVector(c + 1, Algorithm, &preimage, &preimageSize, &expectedDigest, &digestSize);
+		const uint8_t* hash = &hashes[c * digestSize];
 
-		SimdHashGetHash(&context, hash, c);
 		ToHex(hex, sizeof(hex), expectedDigest, digestSize);
 		printf("[+] Expected: %s\n", hex);
 		ToHex(hex, sizeof(hex), hash, digestSize);
