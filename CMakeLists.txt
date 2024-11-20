@@ -17,7 +17,7 @@ if (NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
 endif()
 
 set(CMAKE_C_FLAGS "-Wall -Werror -Wno-unused-function ${AVXFLAG}")
-set(CMAKE_EXE_LINKER_FLAGS "${AVXFLAG} -lm")
+set(CMAKE_EXE_LINKER_FLAGS "${AVXFLAG} -lm -licuuc")
 
 set(CMAKE_C_FLAGS_RELEASE "-O3 -funroll-loops")
 set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0 -fno-omit-frame-pointer -fsanitize=address -DDEBUG")

@@ -57,7 +57,8 @@ typedef enum _HashAlgorithm
     HashAlgorithmMD5,
     HashAlgorithmSHA1,
     HashAlgorithmSHA256,
-	HashAlgorithmMax = HashAlgorithmSHA256
+	HashAlgorithmNTLM,
+	HashAlgorithmMax = HashAlgorithmNTLM
 } HashAlgorithm;
 
 #define VALUE_ALIGN (SIMD_WIDTH/8)
@@ -95,7 +96,7 @@ SimdHashAlgorithms[SimdHashAlgorithmCount] = {
     HashAlgorithmMD4,
 	HashAlgorithmMD5,
     HashAlgorithmSHA1,
-    HashAlgorithmSHA256,
+    HashAlgorithmSHA256
 };
 
 #ifdef __cplusplus
@@ -209,6 +210,14 @@ void SimdSha256Init(
 
 void SimdSha256Finalize(
 	SimdHashContext* Context);
+
+//
+// NTLM
+//
+void SimdHashNTLM(
+	const size_t Lengths[],
+	const uint8_t* Buffers[],
+	uint8_t* HashBuffers);
 
 //
 // SimdHash Utility

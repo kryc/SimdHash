@@ -44,22 +44,6 @@ void SimdMd4Init(
     Context->Algorithm = HashAlgorithmMD4;
 }
 
-void
-print(
-    simd_t A,
-    simd_t B,
-    simd_t C,
-    simd_t D
-)
-{
-    uint32_t a[4], b[4], c[4], d[4];
-    vst1q_u32(a, A);
-    vst1q_u32(b, B);
-    vst1q_u32(c, C);
-    vst1q_u32(d, D);
-    printf("a: %08x b: %08x c: %08x d: %08x\n", a[0], b[0], c[0], d[0]);
-}
-
 static inline simd_t
 FF(
     simd_t A,

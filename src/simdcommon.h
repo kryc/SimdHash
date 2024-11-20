@@ -28,9 +28,16 @@ typedef enum _LOG2VAL
 	LOG2_MAX = LOG2_16
 } LOG2VAL;
 
+#define SIMD_WIDTH_512	512
+#define SIMD_WIDTH_256	256
+#define SIMD_WIDTH_128	128
+#define SIMD_WIDTH_MAX	SIMD_WIDTH_512
+#define MAX_LANES_32 	(SIMD_WIDTH_MAX/32)
+#define MAX_LANES		MAX_LANES_32
+
 #ifdef __AVX512F__
 #define simd_t          __m512i
-#define SIMD_WIDTH      512
+#define SIMD_WIDTH      SIMD_WIDTH_512
 #define load_simd       _mm512_load_si512
 #define store_simd      _mm512_store_si512
 #define set1_epi32      _mm512_set1_epi32
@@ -51,7 +58,7 @@ typedef enum _LOG2VAL
 #define bswap_epi32     _mm512_bswap_epi32
 #elif defined __arm64__
 #define simd_t          uint32x4_t
-#define SIMD_WIDTH      128
+#define SIMD_WIDTH      SIMD_WIDTH_128
 #define load_simd(x)    vld1q_u32((uint32_t*)(x))
 #define store_simd(x,v) vst1q_u32((uint32_t*)(x), (v))
 #define set1_epi32      vdupq_n_u32
@@ -67,7 +74,7 @@ typedef enum _LOG2VAL
 #define cmpeq_simd      vceq_u32
 #else // AVX2
 #define simd_t          __m256i
-#define SIMD_WIDTH      256
+#define SIMD_WIDTH      SIMD_WIDTH_256
 #define load_simd       _mm256_load_si256
 #define store_simd      _mm256_store_si256
 #define set1_epi32      _mm256_set1_epi32
@@ -87,8 +94,6 @@ typedef enum _LOG2VAL
 // Custom
 #define bswap_epi32     _mm256_bswap_epi32
 #endif
-
-#define MAX_LANES (512/32)
 
 #if defined(__arm64__)
 /*

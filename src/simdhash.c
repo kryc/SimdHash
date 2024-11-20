@@ -7,6 +7,8 @@
 //
 
 #include <string.h>
+#include <unicode/ucnv.h>
+#include <unicode/ustring.h>
 
 #include "simdhash.h"
 #include "simdcommon.h"
@@ -45,6 +47,11 @@ ParseHashAlgorithm(
 	{
 		return HashAlgorithmSHA256;
 	}
+	else if (strcmp(AlgorithmString, "ntlm") == 0 ||
+		strcmp(AlgorithmString, "NTLM") == 0)
+	{
+		return HashAlgorithmNTLM;
+	}
 	return HashAlgorithmUndefined;
 }
 
@@ -63,6 +70,8 @@ HashAlgorithmToString(
 		return "SHA1";
 	case HashAlgorithmSHA256:
 		return "SHA256";
+	case HashAlgorithmNTLM:
+		return "NTLM";
 	default:
 		return "Unknown";
 	}
@@ -76,6 +85,7 @@ GetHashWidth(
 	switch (Algorithm)
 	{
 	case HashAlgorithmMD4:
+	case HashAlgorithmNTLM:
 		return MD4_SIZE;
 	case HashAlgorithmMD5:
 		return MD5_SIZE;
@@ -127,6 +137,10 @@ void SimdHashInit(
 		break;
 	case HashAlgorithmUndefined:
 		break;
+	case HashAlgorithmNTLM:
+		SimdMd4Init(Context);
+		Context->Algorithm = HashAlgorithmNTLM;
+		break;
 	}
 }
 
@@ -139,8 +153,8 @@ SimdHashSetLaneCount(
 	Context->Lanes = LaneCount;
 }
 
-void
-SimdHashUpdate(
+static void
+SimdHashUpdateInternal(
 	SimdHashContext* Context,
 	const size_t Lengths[],
 	const uint8_t* Buffers[]
@@ -163,6 +177,88 @@ SimdHashUpdate(
 			lane,
 			Lengths[lane],
 			Buffers[lane]
+		);
+	}
+}
+
+static void
+SimdHashUpdateNTLM(
+	SimdHashContext* Context,
+	const size_t Lengths[],
+	const uint8_t* Buffers[]
+)
+{
+	size_t newLengths[MAX_LANES];
+	uint8_t* newBuffers[MAX_LANES];
+
+	UErrorCode status = U_ZERO_ERROR;
+
+	for (size_t i = 0; i < Context->Lanes; i++)
+	{
+		int32_t newLength;
+		u_strFromUTF8Lenient(NULL, 0, &newLength, (const char*)Buffers[i], Lengths[i], &status);
+		if (status != U_BUFFER_OVERFLOW_ERROR && status != U_STRING_NOT_TERMINATED_WARNING)
+		{ 
+			fprintf(stderr, "Error: %s\n", u_errorName(status));
+			// Fallback to hash the provided input
+			newBuffers[i] = (uint8_t*)Buffers[i];
+			newLengths[i] = Lengths[i];
+			continue;
+		}
+
+		// Reset the status and allocate memory
+		status = U_ZERO_ERROR;
+		newBuffers[i] = (uint8_t*)alloca((newLength + 1) * sizeof(UChar));
+		if (newBuffers[i] == NULL) {
+			fprintf(stderr, "Memory allocation error\n");
+			// Fallback to hash the provided input
+			newBuffers[i] = (uint8_t*)Buffers[i];
+			newLengths[i] = Lengths[i];
+			continue;
+		}
+
+		// Convert UTF-8 to UTF-16
+		u_strFromUTF8Lenient((UChar*)newBuffers[i], newLength + 1, NULL, (const char*)Buffers[i], Lengths[i], &status);
+		if (U_FAILURE(status)) {
+			fprintf(stderr, "Conversion error: %s\n", u_errorName(status));
+			// Fallback to hash the provided input
+			newBuffers[i] = (uint8_t*)Buffers[i];
+			newLengths[i] = Lengths[i];
+			continue;
+		}
+
+		newLengths[i] = (size_t)newLength * sizeof(UChar);
+	}
+
+	// Call the internal SimdHash update function
+	SimdHashUpdateInternal(
+		Context,
+		newLengths,
+		(const uint8_t**)newBuffers
+	);
+}
+
+void
+SimdHashUpdate(
+	SimdHashContext* Context,
+	const size_t Lengths[],
+	const uint8_t* Buffers[]
+)
+{
+	if (Context->Algorithm != HashAlgorithmNTLM)
+	{
+		SimdHashUpdateInternal(
+			Context,
+			Lengths,
+			Buffers
+		);
+	}
+	else
+	{
+		SimdHashUpdateNTLM(
+			Context,
+			Lengths,
+			Buffers
 		);
 	}
 }
@@ -302,6 +398,7 @@ SimdHashFinalize(
 	switch (Context->Algorithm)
 	{
 	case HashAlgorithmMD4:
+	case HashAlgorithmNTLM:
 		SimdMd4Finalize(Context);
 		break;
 	case HashAlgorithmMD5:
