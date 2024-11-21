@@ -7,7 +7,9 @@
 //
 
 #include <cinttypes>
+#include <string>
 #include <vector>
+#include <string.h>
 
 #include "simdhash.h"
 

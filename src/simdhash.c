@@ -16,86 +16,86 @@
 
 const size_t
 SimdLanes(
-	void
+    void
 )
 {
-	return (SIMD_WIDTH / 32);
+    return (SIMD_WIDTH / 32);
 }
 
 const HashAlgorithm
 ParseHashAlgorithm(
-	const char* AlgorithmString
+    const char* AlgorithmString
 )
 {
-	if (strcmp(AlgorithmString, "md4") == 0 ||
-		strcmp(AlgorithmString, "MD4") == 0)
-	{
-		return HashAlgorithmMD4;
-	}
-	else if (strcmp(AlgorithmString, "md5") == 0 ||
-		strcmp(AlgorithmString, "MD5") == 0)
-	{
-		return HashAlgorithmMD5;
-	}
-	else if (strcmp(AlgorithmString, "sha1") == 0 ||
-		strcmp(AlgorithmString, "SHA1") == 0)
-	{
-		return HashAlgorithmSHA1;
-	}
-	else if (strcmp(AlgorithmString, "sha256") == 0 ||
-		strcmp(AlgorithmString, "SHA256") == 0)
-	{
-		return HashAlgorithmSHA256;
-	}
-	else if (strcmp(AlgorithmString, "ntlm") == 0 ||
-		strcmp(AlgorithmString, "NTLM") == 0)
-	{
-		return HashAlgorithmNTLM;
-	}
-	return HashAlgorithmUndefined;
+    if (strcmp(AlgorithmString, "md4") == 0 ||
+        strcmp(AlgorithmString, "MD4") == 0)
+    {
+        return HashAlgorithmMD4;
+    }
+    else if (strcmp(AlgorithmString, "md5") == 0 ||
+        strcmp(AlgorithmString, "MD5") == 0)
+    {
+        return HashAlgorithmMD5;
+    }
+    else if (strcmp(AlgorithmString, "sha1") == 0 ||
+        strcmp(AlgorithmString, "SHA1") == 0)
+    {
+        return HashAlgorithmSHA1;
+    }
+    else if (strcmp(AlgorithmString, "sha256") == 0 ||
+        strcmp(AlgorithmString, "SHA256") == 0)
+    {
+        return HashAlgorithmSHA256;
+    }
+    else if (strcmp(AlgorithmString, "ntlm") == 0 ||
+        strcmp(AlgorithmString, "NTLM") == 0)
+    {
+        return HashAlgorithmNTLM;
+    }
+    return HashAlgorithmUndefined;
 }
 
 const char*
 HashAlgorithmToString(
-	const HashAlgorithm Algorithm
+    const HashAlgorithm Algorithm
 )
 {
-	switch (Algorithm)
-	{
-	case HashAlgorithmMD4:
-		return "MD4";
-	case HashAlgorithmMD5:
-		return "MD5";
-	case HashAlgorithmSHA1:
-		return "SHA1";
-	case HashAlgorithmSHA256:
-		return "SHA256";
-	case HashAlgorithmNTLM:
-		return "NTLM";
-	default:
-		return "Unknown";
-	}
+    switch (Algorithm)
+    {
+    case HashAlgorithmMD4:
+        return "MD4";
+    case HashAlgorithmMD5:
+        return "MD5";
+    case HashAlgorithmSHA1:
+        return "SHA1";
+    case HashAlgorithmSHA256:
+        return "SHA256";
+    case HashAlgorithmNTLM:
+        return "NTLM";
+    default:
+        return "Unknown";
+    }
 }
 
 const size_t
 GetHashWidth(
-	const HashAlgorithm Algorithm
+    const HashAlgorithm Algorithm
 )
 {
-	switch (Algorithm)
-	{
-	case HashAlgorithmMD4:
-	case HashAlgorithmNTLM:
-		return MD4_SIZE;
-	case HashAlgorithmMD5:
-		return MD5_SIZE;
-	case HashAlgorithmSHA1:
-		return SHA1_SIZE;
-	case HashAlgorithmSHA256:
-		return SHA1_SIZE;
-	default:
-		return (size_t)-1;
-	}
+    switch (Algorithm)
+    {
+    case HashAlgorithmMD4:
+    case HashAlgorithmNTLM:
+        return MD4_SIZE;
+    case HashAlgorithmMD5:
+        return MD5_SIZE;
+    case HashAlgorithmSHA1:
+        return SHA1_SIZE;
+    case HashAlgorithmSHA256:
+        return SHA256_SIZE;
+    default:
+        return (size_t)-1;
+    }
 }
 
 const HashAlgorithm
@@ -103,272 +103,272 @@ DetectHashAlgorithm(
     const size_t HashLength
 )
 {
-	switch(HashLength)
-	{
-	case MD5_SIZE:
-		return HashAlgorithmMD5;
-	case SHA1_SIZE:
-		return HashAlgorithmSHA1;
-	case SHA256_SIZE:
-		return HashAlgorithmSHA256;
-	default:
-		return HashAlgorithmUndefined;
-	}
+    switch(HashLength)
+    {
+    case MD5_SIZE:
+        return HashAlgorithmMD5;
+    case SHA1_SIZE:
+        return HashAlgorithmSHA1;
+    case SHA256_SIZE:
+        return HashAlgorithmSHA256;
+    default:
+        return HashAlgorithmUndefined;
+    }
 }
 
 void SimdHashInit(
-	SimdHashContext* Context,
-	const HashAlgorithm Algorithm
+    SimdHashContext* Context,
+    const HashAlgorithm Algorithm
 )
 {
-	switch (Algorithm)
-	{
-	case HashAlgorithmMD4:
-		SimdMd4Init(Context);
-		break;
-	case HashAlgorithmMD5:
-		SimdMd5Init(Context);
-		break;
-	case HashAlgorithmSHA1:
-		SimdSha1Init(Context);
-		break;
-	case HashAlgorithmSHA256:
-		SimdSha256Init(Context);
-		break;
-	case HashAlgorithmUndefined:
-		break;
-	case HashAlgorithmNTLM:
-		SimdMd4Init(Context);
-		Context->Algorithm = HashAlgorithmNTLM;
-		break;
-	}
+    switch (Algorithm)
+    {
+    case HashAlgorithmMD4:
+        SimdMd4Init(Context);
+        break;
+    case HashAlgorithmMD5:
+        SimdMd5Init(Context);
+        break;
+    case HashAlgorithmSHA1:
+        SimdSha1Init(Context);
+        break;
+    case HashAlgorithmSHA256:
+        SimdSha256Init(Context);
+        break;
+    case HashAlgorithmUndefined:
+        break;
+    case HashAlgorithmNTLM:
+        SimdMd4Init(Context);
+        Context->Algorithm = HashAlgorithmNTLM;
+        break;
+    }
 }
 
 void SimdHashTransform(
-	SimdHashContext* Context
+    SimdHashContext* Context
 )
 {
-	switch (Context->Algorithm)
-	{
-	case HashAlgorithmMD4:
-	case HashAlgorithmNTLM:
-		SimdMd4Transform(Context);
-		break;
-	case HashAlgorithmMD5:
-		SimdMd5Transform(Context);
-		break;
-	case HashAlgorithmSHA1:
-		SimdSha1Transform(Context, false);
-		break;
-	case HashAlgorithmSHA256:
-		SimdSha256Transform(Context, false);
-		break;
-	case HashAlgorithmUndefined:
-		break;
-	}
+    switch (Context->Algorithm)
+    {
+    case HashAlgorithmMD4:
+    case HashAlgorithmNTLM:
+        SimdMd4Transform(Context);
+        break;
+    case HashAlgorithmMD5:
+        SimdMd5Transform(Context);
+        break;
+    case HashAlgorithmSHA1:
+        SimdSha1Transform(Context, false);
+        break;
+    case HashAlgorithmSHA256:
+        SimdSha256Transform(Context, false);
+        break;
+    case HashAlgorithmUndefined:
+        break;
+    }
 }
 
 void
 CopyContextLane(
-	SimdHashContext* Destination,
-	const SimdHashContext* Source,
-	const size_t Lane
+    SimdHashContext* Destination,
+    const SimdHashContext* Source,
+    const size_t Lane
 )
 {
-	assert(Destination->Algorithm == Source->Algorithm);
-	assert(Destination->BufferSize == Source->BufferSize);
-	assert(Destination->Lanes == Source->Lanes);
-	// Copy contents of H buffer
-	for (size_t i = 0; i < Source->HSize; i++)
-	{
-		Destination->H[i].epi32_u32[Lane] = Source->H[i].epi32_u32[Lane];
-	}
-	// Copy the buffer contents
-	for (size_t i = 0; i < Source->BufferSize / sizeof(uint32_t); i++)
-	{
-		Destination->Buffer[i].epi32_u32[Lane] = Source->Buffer[i].epi32_u32[Lane];
-	}
-	// Reset counters
-	Destination->Offset[Lane] = Source->Offset[Lane];
-	Destination->BitLength[Lane] = Source->BitLength[Lane];
+    assert(Destination->Algorithm == Source->Algorithm);
+    assert(Destination->BufferSize == Source->BufferSize);
+    assert(Destination->Lanes == Source->Lanes);
+    // Copy contents of H buffer
+    for (size_t i = 0; i < Source->HSize; i++)
+    {
+        Destination->H[i].epi32_u32[Lane] = Source->H[i].epi32_u32[Lane];
+    }
+    // Copy the buffer contents
+    for (size_t i = 0; i < Source->BufferSize / sizeof(uint32_t); i++)
+    {
+        Destination->Buffer[i].epi32_u32[Lane] = Source->Buffer[i].epi32_u32[Lane];
+    }
+    // Reset counters
+    Destination->Offset[Lane] = Source->Offset[Lane];
+    Destination->BitLength[Lane] = Source->BitLength[Lane];
 }
 
 void
 SimdHashUpdateInternal(
-	SimdHashContext* Context,
-	const size_t Lengths[],
-	const uint8_t* Buffers[]
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* Buffers[]
 )
 {
-	size_t remainder[MAX_LANES];
-	size_t haveRemainder = 0;
-	SimdHashContext contextcopy;
+    size_t remainder[MAX_LANES];
+    size_t haveRemainder = 0;
+    SimdHashContext contextcopy;
 
-	// Set the remainder values
-	for (size_t lane = 0; lane < Context->Lanes; lane++)
-	{
-		remainder[lane] = Lengths[lane];
-	}
+    // Set the remainder values
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        remainder[lane] = Lengths[lane];
+    }
 
-	do
-	{
-		haveRemainder = 0;
+    do
+    {
+        haveRemainder = 0;
 
-		for (size_t lane = 0; lane < Context->Lanes; lane++)
-		{
-			if (remainder[lane])
-			{
-				const size_t offset = Lengths[lane] - remainder[lane];
-				size_t toWrite = SimdHashUpdateLaneBuffer(
-					Context,
-					lane,
-					remainder[lane],
-					Buffers[lane] + offset
-				);
+        for (size_t lane = 0; lane < Context->Lanes; lane++)
+        {
+            if (remainder[lane])
+            {
+                const size_t offset = Lengths[lane] - remainder[lane];
+                size_t toWrite = SimdHashUpdateLaneBuffer(
+                    Context,
+                    lane,
+                    remainder[lane],
+                    Buffers[lane] + offset
+                );
 
-				remainder[lane] = toWrite;
-				if (toWrite != 0)
-				{
-					haveRemainder++;
-				}
-			}
-		}
+                remainder[lane] = toWrite;
+                if (toWrite != 0)
+                {
+                    haveRemainder++;
+                }
+            }
+        }
 
-		if (haveRemainder)
-		{
-			if (haveRemainder == Context->Lanes)
-			{
-				// Perform a transform across all lanes
-				SimdHashTransform(Context);	
-			}
-			else
-			{
-				// Take a copy of the original context
-				contextcopy = *Context;
-				// Perform a transform across all lanes
-				SimdHashTransform(&contextcopy);
-				// Copy the new states for remainder lanes
-				for (size_t lane = 0; lane < Context->Lanes; lane++)
-				{
-					if (remainder[lane])
-					{
-						CopyContextLane(Context, &contextcopy, lane);
-					}
-				}
-			}
-		}
-	}while (haveRemainder);
+        if (haveRemainder)
+        {
+            if (haveRemainder == Context->Lanes)
+            {
+                // Perform a transform across all lanes
+                SimdHashTransform(Context);	
+            }
+            else
+            {
+                // Take a copy of the original context
+                contextcopy = *Context;
+                // Perform a transform across all lanes
+                SimdHashTransform(&contextcopy);
+                // Copy the new states for remainder lanes
+                for (size_t lane = 0; lane < Context->Lanes; lane++)
+                {
+                    if (remainder[lane])
+                    {
+                        CopyContextLane(Context, &contextcopy, lane);
+                    }
+                }
+            }
+        }
+    }while (haveRemainder);
 }
 
 static void
 SimdHashUpdateNTLM(
-	SimdHashContext* Context,
-	const size_t Lengths[],
-	const uint8_t* Buffers[]
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* Buffers[]
 )
 {
-	size_t newLengths[MAX_LANES];
-	uint8_t* newBuffers[MAX_LANES];
+    size_t newLengths[MAX_LANES];
+    uint8_t* newBuffers[MAX_LANES];
 
-	UErrorCode status = U_ZERO_ERROR;
+    UErrorCode status = U_ZERO_ERROR;
 
-	for (size_t i = 0; i < Context->Lanes; i++)
-	{
-		int32_t newLength;
-		u_strFromUTF8Lenient(NULL, 0, &newLength, (const char*)Buffers[i], Lengths[i], &status);
-		if (status != U_BUFFER_OVERFLOW_ERROR && status != U_STRING_NOT_TERMINATED_WARNING)
-		{ 
-			fprintf(stderr, "Error: %s\n", u_errorName(status));
-			// Fallback to hash the provided input
-			newBuffers[i] = (uint8_t*)Buffers[i];
-			newLengths[i] = Lengths[i];
-			continue;
-		}
+    for (size_t i = 0; i < Context->Lanes; i++)
+    {
+        int32_t newLength;
+        u_strFromUTF8Lenient(NULL, 0, &newLength, (const char*)Buffers[i], Lengths[i], &status);
+        if (status != U_BUFFER_OVERFLOW_ERROR && status != U_STRING_NOT_TERMINATED_WARNING)
+        { 
+            fprintf(stderr, "Error: %s\n", u_errorName(status));
+            // Fallback to hash the provided input
+            newBuffers[i] = (uint8_t*)Buffers[i];
+            newLengths[i] = Lengths[i];
+            continue;
+        }
 
-		// Reset the status and allocate memory
-		status = U_ZERO_ERROR;
-		newBuffers[i] = (uint8_t*)alloca((newLength + 1) * sizeof(UChar));
-		if (newBuffers[i] == NULL) {
-			fprintf(stderr, "Memory allocation error\n");
-			// Fallback to hash the provided input
-			newBuffers[i] = (uint8_t*)Buffers[i];
-			newLengths[i] = Lengths[i];
-			continue;
-		}
+        // Reset the status and allocate memory
+        status = U_ZERO_ERROR;
+        newBuffers[i] = (uint8_t*)alloca((newLength + 1) * sizeof(UChar));
+        if (newBuffers[i] == NULL) {
+            fprintf(stderr, "Memory allocation error\n");
+            // Fallback to hash the provided input
+            newBuffers[i] = (uint8_t*)Buffers[i];
+            newLengths[i] = Lengths[i];
+            continue;
+        }
 
-		// Convert UTF-8 to UTF-16
-		u_strFromUTF8Lenient((UChar*)newBuffers[i], newLength + 1, NULL, (const char*)Buffers[i], Lengths[i], &status);
-		if (U_FAILURE(status)) {
-			fprintf(stderr, "Conversion error: %s\n", u_errorName(status));
-			// Fallback to hash the provided input
-			newBuffers[i] = (uint8_t*)Buffers[i];
-			newLengths[i] = Lengths[i];
-			continue;
-		}
+        // Convert UTF-8 to UTF-16
+        u_strFromUTF8Lenient((UChar*)newBuffers[i], newLength + 1, NULL, (const char*)Buffers[i], Lengths[i], &status);
+        if (U_FAILURE(status)) {
+            fprintf(stderr, "Conversion error: %s\n", u_errorName(status));
+            // Fallback to hash the provided input
+            newBuffers[i] = (uint8_t*)Buffers[i];
+            newLengths[i] = Lengths[i];
+            continue;
+        }
 
-		newLengths[i] = (size_t)newLength * sizeof(UChar);
-	}
+        newLengths[i] = (size_t)newLength * sizeof(UChar);
+    }
 
-	// Call the internal SimdHash update function
-	SimdHashUpdateInternal(
-		Context,
-		newLengths,
-		(const uint8_t**)newBuffers
-	);
+    // Call the internal SimdHash update function
+    SimdHashUpdateInternal(
+        Context,
+        newLengths,
+        (const uint8_t**)newBuffers
+    );
 }
 
 void
 SimdHashUpdate(
-	SimdHashContext* Context,
-	const size_t Lengths[],
-	const uint8_t* Buffers[]
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* Buffers[]
 )
 {
-	if (Context->Algorithm != HashAlgorithmNTLM)
-	{
-		SimdHashUpdateInternal(
-			Context,
-			Lengths,
-			Buffers
-		);
-	}
-	else
-	{
-		SimdHashUpdateNTLM(
-			Context,
-			Lengths,
-			Buffers
-		);
-	}
+    if (Context->Algorithm != HashAlgorithmNTLM)
+    {
+        SimdHashUpdateInternal(
+            Context,
+            Lengths,
+            Buffers
+        );
+    }
+    else
+    {
+        SimdHashUpdateNTLM(
+            Context,
+            Lengths,
+            Buffers
+        );
+    }
 }
 
 void
 SimdHashUpdateAll(
-	SimdHashContext* Context,
-	const size_t Length,
-	const uint8_t* Buffers[]
+    SimdHashContext* Context,
+    const size_t Length,
+    const uint8_t* Buffers[]
 )
 {
-	size_t lengths[MAX_LANES];
+    size_t lengths[MAX_LANES];
 
-	for (size_t lane = 0; lane < Context->Lanes; lane++)
-	{
-		lengths[lane] = Length;
-	}
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        lengths[lane] = Length;
+    }
 
-	return SimdHashUpdate(Context, lengths, Buffers);
+    return SimdHashUpdate(Context, lengths, Buffers);
 }
 
 void
 SimdHashGetHash(
-	SimdHashContext* Context,
-	uint8_t* HashBuffer,
-	const size_t Lane
+    SimdHashContext* Context,
+    uint8_t* HashBuffer,
+    const size_t Lane
 )
 {
-	uint32_t* nextBuffer;
-	
-	nextBuffer = (uint32_t*)HashBuffer;
+    uint32_t* nextBuffer;
+    
+    nextBuffer = (uint32_t*)HashBuffer;
 
     for (size_t i = 0; i < Context->HSize; i++)
     {
@@ -378,133 +378,133 @@ SimdHashGetHash(
 
 void
 SimdHashGetHashes2D(
-	SimdHashContext* Context,
-	uint8_t** HashBuffers
+    SimdHashContext* Context,
+    uint8_t** HashBuffers
 )
 {
-	for (size_t i = 0; i < Context->Lanes; i++)
-	{
-		SimdHashGetHash(Context, HashBuffers[i], i);
-	}
+    for (size_t i = 0; i < Context->Lanes; i++)
+    {
+        SimdHashGetHash(Context, HashBuffers[i], i);
+    }
 }
 
 static inline void
 WriteSimdArrayToLinearBuffer(
-	const SimdValue* Array,
-	const size_t CountDwords,
-	uint8_t* HashBuffers
+    const SimdValue* Array,
+    const size_t CountDwords,
+    uint8_t* HashBuffers
 )
 {
 #if defined __AVX512F__ && defined AVXSCATTER
-	for (size_t i = 0; i < CountDwords; i++)
-	{
-		__m512i h = _mm512_load_si512(&Array[i].usimd);
-		__m512i index = _mm512_setr_epi32(
-			(CountDwords * 0) + i,
-			(CountDwords * 1) + i,
-			(CountDwords * 2) + i,
-			(CountDwords * 3) + i,
-			(CountDwords * 4) + i,
-			(CountDwords * 5) + i,
-			(CountDwords * 6) + i,
-			(CountDwords * 7) + i,
-			(CountDwords * 8) + i,
-			(CountDwords * 9) + i,
-			(CountDwords * 10) + i,
-			(CountDwords * 11) + i,
-			(CountDwords * 12) + i,
-			(CountDwords * 13) + i,
-			(CountDwords * 14) + i,
-			(CountDwords * 15) + i
-		);
-		_mm512_i32scatter_epi32(HashBuffers, index, h, 4);
-	}
+    for (size_t i = 0; i < CountDwords; i++)
+    {
+        __m512i h = _mm512_load_si512(&Array[i].usimd);
+        __m512i index = _mm512_setr_epi32(
+            (CountDwords * 0) + i,
+            (CountDwords * 1) + i,
+            (CountDwords * 2) + i,
+            (CountDwords * 3) + i,
+            (CountDwords * 4) + i,
+            (CountDwords * 5) + i,
+            (CountDwords * 6) + i,
+            (CountDwords * 7) + i,
+            (CountDwords * 8) + i,
+            (CountDwords * 9) + i,
+            (CountDwords * 10) + i,
+            (CountDwords * 11) + i,
+            (CountDwords * 12) + i,
+            (CountDwords * 13) + i,
+            (CountDwords * 14) + i,
+            (CountDwords * 15) + i
+        );
+        _mm512_i32scatter_epi32(HashBuffers, index, h, 4);
+    }
 #else
-	uint32_t* buffer = (uint32_t*)HashBuffers;
-	for (size_t i = 0; i < CountDwords; i++)
-	{
-		for (size_t l = 0; l < SimdLanes(); l++)
-		{
-			buffer[(l * CountDwords) + i] = Array[i].epi32_u32[l];
-		}
-	}
+    uint32_t* buffer = (uint32_t*)HashBuffers;
+    for (size_t i = 0; i < CountDwords; i++)
+    {
+        for (size_t l = 0; l < SimdLanes(); l++)
+        {
+            buffer[(l * CountDwords) + i] = Array[i].epi32_u32[l];
+        }
+    }
 #endif
 }
 
 void
 SimdHashGetHashes(
-	SimdHashContext* Context,
-	uint8_t* HashBuffers
+    SimdHashContext* Context,
+    uint8_t* HashBuffers
 )
 {
-	WriteSimdArrayToLinearBuffer(Context->H, Context->HSize, HashBuffers);
+    WriteSimdArrayToLinearBuffer(Context->H, Context->HSize, HashBuffers);
 }
 
 void
 SimdHashExtendEntropyAndGetHashes(
-	SimdHashContext* Context,
-	uint8_t* HashBuffers,
-	size_t CountDwords
+    SimdHashContext* Context,
+    uint8_t* HashBuffers,
+    size_t CountDwords
 )
 {
-	assert(CountDwords > Context->HSize);
-	SimdValue buffer[CountDwords];
+    assert(CountDwords > Context->HSize);
+    SimdValue buffer[CountDwords];
 
-	for (size_t i = 0; i < Context->HSize; i++)
-	{
-		buffer[i].usimd = load_simd(&Context->H[i].usimd);
-	}
+    for (size_t i = 0; i < Context->HSize; i++)
+    {
+        buffer[i].usimd = load_simd(&Context->H[i].usimd);
+    }
 
-	for (size_t i = Context->HSize; i < CountDwords; i++)
-	{
-		// s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
+    for (size_t i = Context->HSize; i < CountDwords; i++)
+    {
+        // s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
         // s1 := (w[i-2] rightrotate 17) xor (w[i-2] rightrotate 19) xor (w[i-2] rightshift 10)
         // w[i] := w[i-16] + s0 + w[i-7] + s1
-		simd_t s0 = xor_simd(xor_simd(rotr_epi32(buffer[i - Context->HSize].usimd, 7), rotr_epi32(buffer[i - Context->HSize].usimd, 18)), srli_epi32(buffer[i - Context->HSize].usimd, 3));
-		simd_t s1 = xor_simd(xor_simd(rotr_epi32(buffer[i - 2].usimd, 17), rotr_epi32(buffer[i - 2].usimd, 19)), srli_epi32(buffer[i - 2].usimd, 10));
-		buffer[i].usimd = add_epi32(s0, s1);
-	}
+        simd_t s0 = xor_simd(xor_simd(rotr_epi32(buffer[i - Context->HSize].usimd, 7), rotr_epi32(buffer[i - Context->HSize].usimd, 18)), srli_epi32(buffer[i - Context->HSize].usimd, 3));
+        simd_t s1 = xor_simd(xor_simd(rotr_epi32(buffer[i - 2].usimd, 17), rotr_epi32(buffer[i - 2].usimd, 19)), srli_epi32(buffer[i - 2].usimd, 10));
+        buffer[i].usimd = add_epi32(s0, s1);
+    }
 
-	// Output to the hash buffers
-	WriteSimdArrayToLinearBuffer(buffer, CountDwords, HashBuffers);
+    // Output to the hash buffers
+    WriteSimdArrayToLinearBuffer(buffer, CountDwords, HashBuffers);
 }
 
 void
 SimdHashFinalize(
-	SimdHashContext* Context
+    SimdHashContext* Context
 )
 {
-	switch (Context->Algorithm)
-	{
-	case HashAlgorithmMD4:
-	case HashAlgorithmNTLM:
-		SimdMd4Finalize(Context);
-		break;
-	case HashAlgorithmMD5:
-		SimdMd5Finalize(Context);
-		break;
-	case HashAlgorithmSHA1:
-		SimdSha1Finalize(Context);
-		break;
-	case HashAlgorithmSHA256:
-		SimdSha256Finalize(Context);
-		break;
-	case HashAlgorithmUndefined:
-		break;
-	}
+    switch (Context->Algorithm)
+    {
+    case HashAlgorithmMD4:
+    case HashAlgorithmNTLM:
+        SimdMd4Finalize(Context);
+        break;
+    case HashAlgorithmMD5:
+        SimdMd5Finalize(Context);
+        break;
+    case HashAlgorithmSHA1:
+        SimdSha1Finalize(Context);
+        break;
+    case HashAlgorithmSHA256:
+        SimdSha256Finalize(Context);
+        break;
+    case HashAlgorithmUndefined:
+        break;
+    }
 }
 
 void
 SimdHash(
-	HashAlgorithm Algorithm,
-	const size_t Lengths[],
-	const uint8_t* Buffers[],
-	uint8_t* HashBuffers
+    HashAlgorithm Algorithm,
+    const size_t Lengths[],
+    const uint8_t* Buffers[],
+    uint8_t* HashBuffers
 )
 {
-	SimdHashContext ctx;
-	SimdHashInit(&ctx, Algorithm);
-	SimdHashUpdate(&ctx, Lengths, Buffers);
-	SimdHashFinalize(&ctx);
-	SimdHashGetHashes(&ctx, HashBuffers);
+    SimdHashContext ctx;
+    SimdHashInit(&ctx, Algorithm);
+    SimdHashUpdate(&ctx, Lengths, Buffers);
+    SimdHashFinalize(&ctx);
+    SimdHashGetHashes(&ctx, HashBuffers);
 }

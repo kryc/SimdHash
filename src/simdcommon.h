@@ -21,11 +21,11 @@
 
 typedef enum _LOG2VAL
 {
-	LOG2_2  = 1,
-	LOG2_4  = 2,
-	LOG2_8  = 3,
-	LOG2_16 = 4,
-	LOG2_MAX = LOG2_16
+    LOG2_2  = 1,
+    LOG2_4  = 2,
+    LOG2_8  = 3,
+    LOG2_16 = 4,
+    LOG2_MAX = LOG2_16
 } LOG2VAL;
 
 #define SIMD_WIDTH_512	512
@@ -103,49 +103,49 @@ typedef enum _LOG2VAL
 static inline
 simd_t
 srli_epi32(
-	const simd_t Value,
-	const uint8_t Distance
+    const simd_t Value,
+    const uint8_t Distance
 )
 {
-	assert(Distance < 32);
-	const simd_t d = set1_epi32(Distance);
-	return vshlq_u32(Value, vnegq_s32(vreinterpretq_s32_u32(d)));;
+    assert(Distance < 32);
+    const simd_t d = set1_epi32(Distance);
+    return vshlq_u32(Value, vnegq_s32(vreinterpretq_s32_u32(d)));;
 }
 
 static inline
 simd_t
 srli_epi64(
-	const simd_t Value,
-	const uint8_t Distance
+    const simd_t Value,
+    const uint8_t Distance
 )
 {
-	assert(Distance < 64);
-	const simd_t d = set1_epi64(Distance);
-	return vshlq_u64(Value, vnegq_s64(vreinterpretq_s64_u64(d)));;
+    assert(Distance < 64);
+    const simd_t d = set1_epi64(Distance);
+    return vshlq_u64(Value, vnegq_s64(vreinterpretq_s64_u64(d)));;
 }
 
 static inline
 simd_t
 slli_epi32(
-	const simd_t Value,
-	const uint8_t Distance
+    const simd_t Value,
+    const uint8_t Distance
 )
 {
-	assert(Distance < 32);
-	const simd_t d = set1_epi32(Distance);
-	return vshlq_u32(Value, d);
+    assert(Distance < 32);
+    const simd_t d = set1_epi32(Distance);
+    return vshlq_u32(Value, d);
 }
 
 static inline
 simd_t
 slli_epi64(
-	const simd_t Value,
-	const uint8_t Distance
+    const simd_t Value,
+    const uint8_t Distance
 )
 {
-	assert(Distance < 64);
-	const simd_t d = set1_epi64(Distance);
-	return vshlq_u64(Value, d);
+    assert(Distance < 64);
+    const simd_t d = set1_epi64(Distance);
+    return vshlq_u64(Value, d);
 }
 #else
 /*
@@ -155,35 +155,35 @@ slli_epi64(
 static inline
 simd_t
 not_simd(
-	const simd_t Value
+    const simd_t Value
 )
 {
-	return xor_simd(Value, set1_epi32(-1));
+    return xor_simd(Value, set1_epi32(-1));
 }
 
 #if defined(__AVX512F__)
 static inline
 simd_t
 mul_epu32(
-	const simd_t Value1,
-	const simd_t Value2
+    const simd_t Value1,
+    const simd_t Value2
 )
 {
-	simd_t res_lo = _mm512_mul_epu32(Value1, Value2);
-	simd_t res_hi = _mm512_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
-	return or_simd(slli_epi64(res_hi, 32), res_lo);
+    simd_t res_lo = _mm512_mul_epu32(Value1, Value2);
+    simd_t res_hi = _mm512_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
+    return or_simd(slli_epi64(res_hi, 32), res_lo);
 }
 #else // AVX2
 static inline
 simd_t
 mul_epu32(
-	const simd_t Value1,
-	const simd_t Value2
+    const simd_t Value1,
+    const simd_t Value2
 )
 {
-	simd_t res_lo = _mm256_mul_epu32(Value1, Value2);
-	simd_t res_hi = _mm256_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
-	return or_simd(slli_epi64(res_hi, 32), res_lo);
+    simd_t res_lo = _mm256_mul_epu32(Value1, Value2);
+    simd_t res_hi = _mm256_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
+    return or_simd(slli_epi64(res_hi, 32), res_lo);
 }
 #endif
 #endif
@@ -191,42 +191,42 @@ mul_epu32(
 static inline
 simd_t
 rotl_epi32(
-	const simd_t Value,
-	const int Distance)
+    const simd_t Value,
+    const int Distance)
 {
-	assert(Distance < 32);
-	simd_t shl = slli_epi32(Value, Distance);
-	simd_t shr = srli_epi32(Value, 32 - Distance);
-	return or_simd(shl, shr);
+    assert(Distance < 32);
+    simd_t shl = slli_epi32(Value, Distance);
+    simd_t shr = srli_epi32(Value, 32 - Distance);
+    return or_simd(shl, shr);
 }
 
 static inline
 simd_t
 rotr_epi32(
-	const simd_t Value,
-	const int Distance)
+    const simd_t Value,
+    const int Distance)
 {
-	assert(Distance < 32);
-	simd_t shr = srli_epi32(Value, Distance);
-	simd_t shl = slli_epi32(Value, 32 - Distance);
-	return or_simd(shl, shr);
+    assert(Distance < 32);
+    simd_t shr = srli_epi32(Value, Distance);
+    simd_t shl = slli_epi32(Value, 32 - Distance);
+    return or_simd(shl, shr);
 }
 
 static inline
 simd_t
 andnot_simd_custom(
-	const simd_t Value1,
-	const simd_t Value2
+    const simd_t Value1,
+    const simd_t Value2
 )
 {
-	return and_simd(not_simd(Value1), Value2);
+    return and_simd(not_simd(Value1), Value2);
 }
 
 static inline
 simd_t
 shift_mod2_epi32(
-	const simd_t Value1,
-	const uint32_t Shift
+    const simd_t Value1,
+    const uint32_t Shift
 )
 /*
  * Compute the moduli of a vector of u32s
@@ -234,17 +234,17 @@ shift_mod2_epi32(
  * MUST be a on the log2 scale
  */
 {
-	simd_t quotient = srli_epi32(Value1, Shift);	// Division
-	simd_t product = slli_epi32(quotient, Shift);
-	simd_t remainder = sub_epi32(Value1, product);
-	return remainder;
+    simd_t quotient = srli_epi32(Value1, Shift);	// Division
+    simd_t product = slli_epi32(quotient, Shift);
+    simd_t remainder = sub_epi32(Value1, product);
+    return remainder;
 }
 
 static inline
 simd_t
 mod2_epi32(
-	const simd_t Value1,
-	const uint32_t Mod2
+    const simd_t Value1,
+    const uint32_t Mod2
 )
 /*
  * Compute the moduli of a vector of u32s
@@ -252,38 +252,38 @@ mod2_epi32(
  * MUST be a on the log2 scale
  */
 {
-	int count = log2(Mod2);
-	return shift_mod2_epi32(Value1, count);
+    int count = log2(Mod2);
+    return shift_mod2_epi32(Value1, count);
 }
 
 static inline
 simd_t
 bswap_epi32(
-	const simd_t Value)
+    const simd_t Value)
 {
 
 #if defined(__AVX512F__)
-	simd_t shuffleMask = _mm512_setr_epi64(
-		0x0001020304050607,
-		0x08090a0b0c0d0e0f,
-		0x1011121314151617,
-		0x18191a1b1c1d1e1f,
-		0x2021222324252627,
-		0x28292a2b2c2d2e2f,
-		0x3031323334353637,
-		0x38393a3b3c3d3e3f
-	);
-	return _mm512_shuffle_epi8(Value, shuffleMask);
+    simd_t shuffleMask = _mm512_setr_epi64(
+        0x0001020304050607,
+        0x08090a0b0c0d0e0f,
+        0x1011121314151617,
+        0x18191a1b1c1d1e1f,
+        0x2021222324252627,
+        0x28292a2b2c2d2e2f,
+        0x3031323334353637,
+        0x38393a3b3c3d3e3f
+    );
+    return _mm512_shuffle_epi8(Value, shuffleMask);
 #elif defined(__arm64__)
-	return vrev32q_u8(vreinterpretq_u8_u32(Value));
+    return vrev32q_u8(vreinterpretq_u8_u32(Value));
 #else // AVX2
-	simd_t shuffleMask = _mm256_setr_epi32(
-		0x00010203,	0x04050607,
-		0x08090a0b,	0x0c0d0e0f,
-		0x10111213,	0x14151617,
-		0x18191a1b,	0x1c1d1e1f
-	);
-	return _mm256_shuffle_epi8(Value, shuffleMask);
+    simd_t shuffleMask = _mm256_setr_epi32(
+        0x00010203,	0x04050607,
+        0x08090a0b,	0x0c0d0e0f,
+        0x10111213,	0x14151617,
+        0x18191a1b,	0x1c1d1e1f
+    );
+    return _mm256_shuffle_epi8(Value, shuffleMask);
 #endif
 }
 
