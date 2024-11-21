@@ -169,15 +169,6 @@ void SimdHashTransform(
 }
 
 void
-SimdHashSetLaneCount(
-	SimdHashContext* Context,
-	const size_t LaneCount
-)
-{
-	Context->Lanes = LaneCount;
-}
-
-void
 CopyContextLane(
 	SimdHashContext* Destination,
 	const SimdHashContext* Source,

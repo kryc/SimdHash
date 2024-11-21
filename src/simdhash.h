@@ -114,7 +114,7 @@ DetectHashAlgorithm(
     const size_t HashLength
 );
 
-inline const HashAlgorithm
+static inline const HashAlgorithm
 DetectHashAlgorithmHex(
     const size_t HashLengthHex
 )
@@ -127,29 +127,39 @@ GetHashWidth(
 	const HashAlgorithm
 );
 
+static inline void
+SimdHashSetLanes(
+	SimdHashContext* Context,
+	const size_t LaneCount
+)
+{
+	Context->Lanes = LaneCount;
+}
+
+static inline const size_t
+SimdHashGetLanes(
+	SimdHashContext* Context
+)
+{
+	return Context->Lanes;
+}
+
+static inline const HashAlgorithm
+SimdHashGetAlgorithm(
+	SimdHashContext* Context
+)
+{
+	return Context->Algorithm;
+}
+
+//
+// Generic init/update/finalize
+//
 void
 SimdHashInit(
 	SimdHashContext* Context,
 	const HashAlgorithm Algorithm
 );
-
-void
-SimdHashSetLaneCount(
-	SimdHashContext* Context,
-	const size_t LaneCount
-);
-
-void
-CopyContextLane(
-	SimdHashContext* Destination,
-	const SimdHashContext* Source,
-	const size_t Lane);
-
-void
-SimdHashUpdateInternal(
-	SimdHashContext* Context,
-	const size_t Lengths[],
-	const uint8_t* Buffers[]);
 
 void
 SimdHashUpdate(
@@ -169,6 +179,9 @@ SimdHashFinalize(
 	SimdHashContext* Context
 );
 
+//
+// Generic single hash function
+//
 void
 SimdHash(
 	HashAlgorithm Algorithm,
@@ -259,6 +272,21 @@ SimdHashExtendEntropyAndGetHashes(
 	SimdHashContext* Context,
 	uint8_t* HashBuffers,
 	size_t Length);
+
+//
+// SimdHash Internal
+//
+void
+CopyContextLane(
+	SimdHashContext* Destination,
+	const SimdHashContext* Source,
+	const size_t Lane);
+
+void
+SimdHashUpdateInternal(
+	SimdHashContext* Context,
+	const size_t Lengths[],
+	const uint8_t* Buffers[]);
 
 #ifdef TEST
 simd_t SimdCalculateS0(
