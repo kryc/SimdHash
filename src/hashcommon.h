@@ -39,6 +39,17 @@
 	#define SimdBitwiseMajority SimdBitwiseMajorityOriginal
 #endif
 
+static const uint8_t OneBit = 0x80;
+
+static const uint8_t* OneBits[MAX_LANES] = {
+	&OneBit, &OneBit, &OneBit, &OneBit, &OneBit, &OneBit, &OneBit, &OneBit, 
+	&OneBit, &OneBit, &OneBit, &OneBit, &OneBit, &OneBit, &OneBit, &OneBit
+};
+
+static const size_t OneBitLengths[MAX_LANES] = {
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+};
+
 size_t
 SimdHashUpdateLaneBuffer(
 	SimdHashContext* Context,

@@ -144,6 +144,30 @@ void SimdHashInit(
 	}
 }
 
+void SimdHashTransform(
+	SimdHashContext* Context
+)
+{
+	switch (Context->Algorithm)
+	{
+	case HashAlgorithmMD4:
+	case HashAlgorithmNTLM:
+		SimdMd4Transform(Context);
+		break;
+	case HashAlgorithmMD5:
+		SimdMd5Transform(Context);
+		break;
+	case HashAlgorithmSHA1:
+		SimdSha1Transform(Context, false);
+		break;
+	case HashAlgorithmSHA256:
+		SimdSha256Transform(Context, false);
+		break;
+	case HashAlgorithmUndefined:
+		break;
+	}
+}
+
 void
 SimdHashSetLaneCount(
 	SimdHashContext* Context,
@@ -153,32 +177,96 @@ SimdHashSetLaneCount(
 	Context->Lanes = LaneCount;
 }
 
-static void
+void
+CopyContextLane(
+	SimdHashContext* Destination,
+	const SimdHashContext* Source,
+	const size_t Lane
+)
+{
+	assert(Destination->Algorithm == Source->Algorithm);
+	assert(Destination->BufferSize == Source->BufferSize);
+	assert(Destination->Lanes == Source->Lanes);
+	// Copy contents of H buffer
+	for (size_t i = 0; i < Source->HSize; i++)
+	{
+		Destination->H[i].epi32_u32[Lane] = Source->H[i].epi32_u32[Lane];
+	}
+	// Copy the buffer contents
+	for (size_t i = 0; i < Source->BufferSize / sizeof(uint32_t); i++)
+	{
+		Destination->Buffer[i].epi32_u32[Lane] = Source->Buffer[i].epi32_u32[Lane];
+	}
+	// Reset counters
+	Destination->Offset[Lane] = Source->Offset[Lane];
+	Destination->BitLength[Lane] = Source->BitLength[Lane];
+}
+
+void
 SimdHashUpdateInternal(
 	SimdHashContext* Context,
 	const size_t Lengths[],
 	const uint8_t* Buffers[]
 )
 {
+	size_t remainder[MAX_LANES];
+	size_t haveRemainder = 0;
+	SimdHashContext contextcopy;
+
+	// Set the remainder values
 	for (size_t lane = 0; lane < Context->Lanes; lane++)
 	{
-		size_t toWrite = Lengths[lane];
-
-		//
-		// For now, this technique has a maximum length
-		// of 55 as this is the maximum number of bytes you
-		// can fit in a single buffer without needing to
-		// perform a sha1 transform.
-		//
-		toWrite = toWrite > 55 ? 55 : toWrite;
-
-		toWrite = SimdHashUpdateLaneBuffer(
-			Context,
-			lane,
-			Lengths[lane],
-			Buffers[lane]
-		);
+		remainder[lane] = Lengths[lane];
 	}
+
+	do
+	{
+		haveRemainder = 0;
+
+		for (size_t lane = 0; lane < Context->Lanes; lane++)
+		{
+			if (remainder[lane])
+			{
+				const size_t offset = Lengths[lane] - remainder[lane];
+				size_t toWrite = SimdHashUpdateLaneBuffer(
+					Context,
+					lane,
+					remainder[lane],
+					Buffers[lane] + offset
+				);
+
+				remainder[lane] = toWrite;
+				if (toWrite != 0)
+				{
+					haveRemainder++;
+				}
+			}
+		}
+
+		if (haveRemainder)
+		{
+			if (haveRemainder == Context->Lanes)
+			{
+				// Perform a transform across all lanes
+				SimdHashTransform(Context);	
+			}
+			else
+			{
+				// Take a copy of the original context
+				contextcopy = *Context;
+				// Perform a transform across all lanes
+				SimdHashTransform(&contextcopy);
+				// Copy the new states for remainder lanes
+				for (size_t lane = 0; lane < Context->Lanes; lane++)
+				{
+					if (remainder[lane])
+					{
+						CopyContextLane(Context, &contextcopy, lane);
+					}
+				}
+			}
+		}
+	}while (haveRemainder);
 }
 
 static void

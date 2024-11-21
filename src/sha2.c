@@ -144,10 +144,10 @@ SimdCalculateTemp1(
 	return add_epi32(ret, W);
 }
 
-static inline void
+void
 SimdSha256Transform(
 	SimdHashContext* Context,
-	const int Finalize
+	const bool Finalize
 )
 {
 	//
@@ -225,7 +225,12 @@ SimdSha256Transform(
 		store_simd(&Context->H[6].usimd, add_epi32(gO, g));
 		store_simd(&Context->H[7].usimd, add_epi32(hO, h));
 	}
-	
+
+	//
+    // Reset the offset and buffer
+    //
+    memset(Context->Offset, 0, sizeof(Context->Offset));
+    memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
 }
 
 static inline
@@ -238,25 +243,60 @@ SimdSha256AppendSize(
  Also performs the additional Transform step if required
  --*/
 {
-	for (size_t lane = 0; lane < Context->Lanes; lane++)
-	{
-		//
-		// Write the 1 bit
-		//		
-		const size_t offset = Context->Offset[lane];
-		SimdHashWriteBuffer8(Context, offset, lane, 0x80);
-		
-		//
-		// Check if we need to do another round
-		//
-		// if (Context->Offset >= 56)
-		// {
-		// 	SimdSha256Transform(Context);
-		// 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
-		// }
+	// Append the 1-bit to the buffer
+    SimdHashUpdateInternal(
+        Context,
+        OneBitLengths,
+        OneBits
+    );
 
-		// Bump the used buffer length to add the size to
-		// the last 64 bits
+    // Remove the length of the bit from the total
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        Context->BitLength[lane] -= 8;
+    }
+
+    // Check if we have enough space for the
+    // 64-bit length in all of the lanes
+    bool needTransformLane[MAX_LANES];
+	size_t needTransform = 0;
+
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        if (Context->Offset[lane] >= 56 + 1)
+        {
+            needTransformLane[lane] = true;
+            needTransform++;
+        }
+    }
+
+    if (needTransform)
+    {   
+        if (needTransform == Context->Lanes)
+        {
+            // If all lanes need to be transformed we just
+            // do them all, easy!
+            SimdSha256Transform(Context, false);
+        }
+        else
+        {
+            // Otherwise we need to trnasform and copy
+            SimdHashContext contextcopy = *Context;
+            SimdSha256Transform(&contextcopy, false);
+
+            for (size_t lane = 0; lane < Context->Lanes; lane++)
+            {
+                if (needTransformLane[lane])
+                {
+                    CopyContextLane(Context, &contextcopy, lane);
+                }
+            }
+        }
+    }
+
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+		// Add the size to the last 64 bits
 		SimdHashWriteBuffer64(
 			Context,
 			SHA256_BUFFER_SIZE - sizeof(uint64_t),
@@ -279,5 +319,5 @@ SimdSha256Finalize(
 	//
 	// Compute the final transformation
 	//
-	SimdSha256Transform(Context, 1);
+	SimdSha256Transform(Context, true);
 }

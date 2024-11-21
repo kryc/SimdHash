@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <assert.h>
 #include <string.h> // memset
 
@@ -93,7 +94,7 @@ HH(
     return rotl_epi32(hh3, S);
 }
 
-static inline void
+void
 SimdMd4Transform(
     SimdHashContext *Context)
 {
@@ -225,6 +226,12 @@ SimdMd4Transform(
     store_simd(&Context->H[1].usimd, add_epi32(bO, b));
     store_simd(&Context->H[2].usimd, add_epi32(cO, c));
     store_simd(&Context->H[3].usimd, add_epi32(dO, d));
+
+    //
+    // Reset the offset and buffer
+    //
+    memset(Context->Offset, 0, sizeof(Context->Offset));
+    memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
 }
 
 static inline void
@@ -235,25 +242,60 @@ SimdMd4AppendSize(
  Also performs the additional Transform step if required
  --*/
 {
+    // Append the 1-bit to the buffer
+    SimdHashUpdateInternal(
+        Context,
+        OneBitLengths,
+        OneBits
+    );
+
+    // Remove the length of the bit from the total
     for (size_t lane = 0; lane < Context->Lanes; lane++)
     {
-        //
-        // Write the 1 bit
-        //
-        const size_t offset = Context->Offset[lane];
-        SimdHashWriteBuffer8(Context, offset, lane, 0x80);
+        Context->BitLength[lane] -= 8;
+    }
 
-        //
-        // Check if we need to do another round
-        //
-        // if (Context->Offset >= 56)
-        // {
-        // 	SimdMd4Transform(Context);
-        // 	memset(Context->Buffer, 0x00, sizeof(Context->Buffer));
-        // }
+    // Check if we have enough space for the
+    // 64-bit length in all of the lanes
+    bool needTransformLane[MAX_LANES];
+	size_t needTransform = 0;
 
-        // Bump the used buffer length to add the size to
-        // the last 64 bits
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        if (Context->Offset[lane] >= 56 + 1)
+        {
+            needTransformLane[lane] = true;
+            needTransform++;
+        }
+    }
+
+    if (needTransform)
+    {   
+        if (needTransform == Context->Lanes)
+        {
+            // If all lanes need to be transformed we just
+            // do them all, easy!
+            SimdMd4Transform(Context);
+        }
+        else
+        {
+            // Otherwise we need to trnasform and copy
+            SimdHashContext contextcopy = *Context;
+            SimdMd4Transform(&contextcopy);
+
+            for (size_t lane = 0; lane < Context->Lanes; lane++)
+            {
+                if (needTransformLane[lane])
+                {
+                    CopyContextLane(Context, &contextcopy, lane);
+                }
+            }
+        }
+    }
+
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        // Add the size to the last 64 bits
         SimdHashWriteBuffer64(
             Context,
             MD4_BUFFER_SIZE - sizeof(uint64_t),

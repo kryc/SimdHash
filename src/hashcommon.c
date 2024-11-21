@@ -57,6 +57,8 @@ SimdHashUpdateLaneBuffer(
 		}
 	}
 
+	assert(bufferOffset <= Context->BufferSize);
+
 	const size_t bytesWritten = next - Buffer;
 	Context->Offset[Lane] = bufferOffset;
 	Context->BitLength[Lane] += bytesWritten * 8;

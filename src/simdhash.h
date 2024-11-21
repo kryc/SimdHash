@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "simdcommon.h"
 
@@ -139,11 +140,22 @@ SimdHashSetLaneCount(
 );
 
 void
+CopyContextLane(
+	SimdHashContext* Destination,
+	const SimdHashContext* Source,
+	const size_t Lane);
+
+void
+SimdHashUpdateInternal(
+	SimdHashContext* Context,
+	const size_t Lengths[],
+	const uint8_t* Buffers[]);
+
+void
 SimdHashUpdate(
 	SimdHashContext* Context,
 	const size_t Lengths[],
-	const uint8_t* Buffers[]
-);
+	const uint8_t* Buffers[]);
 
 void
 SimdHashUpdateAll(
@@ -171,6 +183,9 @@ SimdHash(
 void SimdMd4Init(
 	SimdHashContext* Context);
 
+void SimdMd4Transform(
+	SimdHashContext* Context);
+
 void SimdMd4Finalize(
 	SimdHashContext* Context);
 
@@ -178,6 +193,9 @@ void SimdMd4Finalize(
 // MD5
 //
 void SimdMd5Init(
+	SimdHashContext* Context);
+
+void SimdMd5Transform(
 	SimdHashContext* Context);
 
 void SimdMd5Finalize(
@@ -189,6 +207,10 @@ void SimdMd5Finalize(
 void SimdSha1Init(
 	SimdHashContext* Context);
 
+void SimdSha1Transform(
+	SimdHashContext* Context,
+	const bool Finalize);
+
 void SimdSha1Finalize(
 	SimdHashContext* Context);
 
@@ -197,6 +219,10 @@ void SimdSha1Finalize(
 //
 void SimdSha256Init(
 	SimdHashContext* Context);
+
+void SimdSha256Transform(
+	SimdHashContext* Context,
+	const bool Finalize);
 
 void SimdSha256Finalize(
 	SimdHashContext* Context);
