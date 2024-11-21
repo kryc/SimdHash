@@ -159,6 +159,7 @@ GetTestVector(
 	case HashAlgorithmSHA256:
 		*Digest = (uint8_t*)SimdHashTestVectors[Index].Sha256Digest;
 		*DigestLength = SHA256_SIZE;
+		break;
 	case HashAlgorithmNTLM:
 		*Digest = (uint8_t*)SimdHashTestVectors[Index].NtlmDigest;
 		*DigestLength = MD4_SIZE;
