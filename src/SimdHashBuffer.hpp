@@ -47,6 +47,7 @@ public:
     void SetLength(const size_t Index, const size_t Length) { m_Lengths[Index] = Length; };
     const size_t GetLength(const size_t Index) const { return m_Lengths[Index]; };
     const std::string GetString(const size_t Index) const { return std::string(Buffer(Index), Buffer(Index) + GetLength(Index)); }
+    void Clear(void) { memset(&m_Buffer[0], 0, m_Buffer.size()); memset(&m_Lengths[0], 0, m_Lengths.size() * sizeof(size_t)); }
 private:
     const size_t m_Width;
     const size_t m_Count;
@@ -82,6 +83,7 @@ public:
     void SetLength(const size_t Index, const size_t Length) { m_Lengths[Index] = Length; };
     const size_t GetLength(const size_t Index) const { return m_Lengths[Index]; };
     const std::string GetString(const size_t Index) const { return std::string(Buffer(Index), Buffer(Index) + GetLength(Index)); }
+    void Clear(void) { m_Buffer.fill(0); m_Lengths.fill(0); }
 private:
     std::array<uint8_t, Count * Width> m_Buffer;
     std::array<size_t, Count> m_Lengths;
