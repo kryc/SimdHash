@@ -257,7 +257,7 @@ SimdMd4AppendSize(
 
     // Check if we have enough space for the
     // 64-bit length in all of the lanes
-    bool needTransformLane[MAX_LANES];
+    bool needTransformLane[MAX_LANES] = {};
     size_t needTransform = 0;
 
     for (size_t lane = 0; lane < Context->Lanes; lane++)

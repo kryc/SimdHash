@@ -179,6 +179,8 @@ CopyContextLane(
     assert(Destination->Algorithm == Source->Algorithm);
     assert(Destination->BufferSize == Source->BufferSize);
     assert(Destination->Lanes == Source->Lanes);
+    assert(Destination->HSize == Source->HSize);
+    assert(Destination->HashSize == Source->HashSize);
     // Copy contents of H buffer
     for (size_t i = 0; i < Source->HSize; i++)
     {
