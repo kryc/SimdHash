@@ -6,6 +6,7 @@
 //  Copyright © 2024 Gareth Evans. All rights reserved.
 //
 
+#include <alloca.h>
 #include <string.h>
 #include <unicode/ucnv.h>
 #include <unicode/ustring.h>
