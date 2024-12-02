@@ -16,6 +16,18 @@ if (NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
     endif()
 endif()
 
+if(APPLE)
+    execute_process(COMMAND brew --prefix OUTPUT_VARIABLE HOMEBREW_PREFIX OUTPUT_STRIP_TRAILING_WHITESPACE)
+    message("Homebrew prefix: ${HOMEBREW_PREFIX}")
+    include_directories(${HOMEBREW_PREFIX}/include)
+    link_directories(${HOMEBREW_PREFIX}/lib)
+    # Need to specify homebrew icu paths
+    execute_process(COMMAND brew --prefix icu4c OUTPUT_VARIABLE HOMEBREW_ICU_PREFIX OUTPUT_STRIP_TRAILING_WHITESPACE)
+    message("Homebrew ICU prefix: ${HOMEBREW_ICU_PREFIX}")
+    include_directories(${HOMEBREW_ICU_PREFIX}/include)
+    link_directories(${HOMEBREW_ICU_PREFIX}/lib)
+endif()
+
 set(CMAKE_C_FLAGS "-Wall -Werror -Wno-unused-function ${AVXFLAG}")
 set(CMAKE_EXE_LINKER_FLAGS "${AVXFLAG} -lm -licuuc")
 
@@ -36,6 +48,6 @@ foreach(TEST ${TESTS})
     target_include_directories(${TESTNAME}
                                 PUBLIC
                                     ./src/)
-    target_link_libraries(${TESTNAME} simdhash)
+    target_link_libraries(${TESTNAME} crypto simdhash)
     add_dependencies(simdhash_tests ${TESTNAME})
 endforeach()
