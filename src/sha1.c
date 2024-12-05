@@ -172,21 +172,20 @@ SimdSha1AppendSize(
 
     // Check if we have enough space for the
     // 64-bit length in all of the lanes
-    bool needTransformLane[MAX_LANES] = {};
-    size_t needTransform = 0;
+    const uint64_t needTransformMask = (1 << Context->Lanes) - 1;
+    uint64_t needTransformLanes = 0;
 
     for (size_t lane = 0; lane < Context->Lanes; lane++)
     {
         if (Context->Offset[lane] >= 56 + 1)
         {
-            needTransformLane[lane] = true;
-            needTransform++;
+            needTransformLanes |= (1 << lane);
         }
     }
 
-    if (needTransform)
+    if (needTransformLanes)
     {
-        if (needTransform == Context->Lanes)
+        if (needTransformLanes == needTransformMask)
         {
             // If all lanes need to be transformed we just
             // do them all, easy!
@@ -198,9 +197,9 @@ SimdSha1AppendSize(
             SimdHashContext contextcopy = *Context;
             SimdSha1Transform(&contextcopy, false);
 
-            for (size_t lane = 0; lane < Context->Lanes; lane++)
+            for (size_t lane = 0, lanemask = 1; lane < Context->Lanes; lane++, lanemask <<= 1)
             {
-                if (needTransformLane[lane])
+                if (needTransformLanes & lanemask)
                 {
                     CopyContextLane(Context, &contextcopy, lane);
                 }
