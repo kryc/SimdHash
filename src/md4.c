@@ -306,13 +306,36 @@ SimdMd4AppendSize(
 void SimdMd4Finalize(
     SimdHashContext *Context)
 {
-    //
     // Add the message length
-    //
     SimdMd4AppendSize(Context);
 
-    //
     // Compute the final transformation
-    //
+    SimdMd4Transform(Context);
+}
+
+void
+SimdMd4FinalizeOptimized(
+    SimdHashContext* Context)
+{
+    // Append the 1-bit to the buffer
+    SimdHashUpdateInternal(
+        Context,
+        OneBitLengths,
+        OneBits
+    );
+
+    // Add the message length
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        // Add the size to the last 64 bits
+        SimdHashWriteBuffer64(
+            Context,
+            MD4_BUFFER_SIZE - sizeof(uint64_t),
+            lane,
+            Context->BitLength[lane] - 8
+        );
+    }
+
+    // Perform the final transformation
     SimdMd4Transform(Context);
 }

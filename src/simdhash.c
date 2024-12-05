@@ -99,6 +99,27 @@ GetHashWidth(
     }
 }
 
+const size_t
+GetOptimizedLength(
+	const HashAlgorithm Algorithm
+)
+{
+    switch (Algorithm)
+    {
+    case HashAlgorithmMD4:
+    // case HashAlgorithmNTLM:
+        return MD4_OPTIMIZED_BUFFER_SIZE;
+    case HashAlgorithmMD5:
+        return MD5_OPTIMIZED_BUFFER_SIZE;
+    case HashAlgorithmSHA1:
+        return SHA1_OPTIMIZED_BUFFER_SIZE;
+    case HashAlgorithmSHA256:
+        return SHA256_OPTIMIZED_BUFFER_SIZE;
+    default:
+        return (size_t)-1;
+    }
+}
+
 const HashAlgorithm
 DetectHashAlgorithm(
     const size_t HashLength
@@ -263,6 +284,26 @@ SimdHashUpdateInternal(
     }while (haveRemainder);
 }
 
+void
+SimdHashUpdateOptimized(
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* Buffers[]
+)
+{
+    assert(Context->Algorithm != HashAlgorithmNTLM);
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        assert(Lengths[lane] <= GetOptimizedLength(Context->Algorithm));
+        (void) SimdHashUpdateLaneBuffer(
+            Context,
+            lane,
+            Lengths[lane],
+            Buffers[lane]
+        );
+    }
+}
+
 static void
 SimdHashUpdateNTLM(
     SimdHashContext* Context,
@@ -360,6 +401,23 @@ SimdHashUpdateAll(
     }
 
     return SimdHashUpdate(Context, lengths, Buffers);
+}
+
+void
+SimdHashUpdateAllOptimized(
+    SimdHashContext* Context,
+    const size_t Length,
+    const uint8_t* Buffers[]
+)
+{
+    size_t lengths[MAX_LANES];
+
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        lengths[lane] = Length;
+    }
+
+    return SimdHashUpdateOptimized(Context, lengths, Buffers);
 }
 
 void
@@ -509,5 +567,37 @@ SimdHash(
     SimdHashInit(&ctx, Algorithm);
     SimdHashUpdate(&ctx, Lengths, Buffers);
     SimdHashFinalize(&ctx);
+    SimdHashGetHashes(&ctx, HashBuffers);
+}
+
+void
+SimdHashOptimized(
+    HashAlgorithm Algorithm,
+    const size_t Lengths[],
+    const uint8_t* Buffers[],
+    uint8_t* HashBuffers
+)
+{
+    SimdHashContext ctx;
+    SimdHashInit(&ctx, Algorithm);
+    SimdHashUpdateOptimized(&ctx, Lengths, Buffers);
+    switch(Algorithm)
+    {
+    case HashAlgorithmMD4:
+        SimdMd4FinalizeOptimized(&ctx);
+        break;
+    case HashAlgorithmMD5:
+        SimdMd5FinalizeOptimized(&ctx);
+        break;
+    case HashAlgorithmSHA1:
+        SimdSha1FinalizeOptimized(&ctx);
+        break;
+    case HashAlgorithmSHA256:
+        SimdSha256FinalizeOptimized(&ctx);
+        break;
+    default:
+        SimdHashFinalize(&ctx);
+        break;
+    }
     SimdHashGetHashes(&ctx, HashBuffers);
 }

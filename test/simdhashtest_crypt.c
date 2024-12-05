@@ -6,7 +6,7 @@
 
 #include "simdhash.h"
 
-#define MAXLEN 128
+#define MAXLEN 50
 
 void
 print_hex(
@@ -56,7 +56,7 @@ main(
             }
         }
 
-        SimdHash(
+        SimdHashOptimized(
             HashAlgorithmSHA1,
             lengths,
             bufferptrs,

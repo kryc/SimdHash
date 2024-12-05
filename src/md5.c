@@ -226,13 +226,36 @@ void
 SimdMd5Finalize(
     SimdHashContext* Context)
 {
-    //
     // Add the message length
-    //
     SimdMd5AppendSize(Context);
 
-    //
     // Compute the final transformation
-    //
+    SimdMd5Transform(Context);
+}
+
+void
+SimdMd5FinalizeOptimized(
+    SimdHashContext* Context)
+{
+    // Append the 1-bit to the buffer
+    SimdHashUpdateInternal(
+        Context,
+        OneBitLengths,
+        OneBits
+    );
+
+    // Add the message length
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        // Add the size to the last 64 bits
+        SimdHashWriteBuffer64(
+            Context,
+            MD5_BUFFER_SIZE - sizeof(uint64_t),
+            lane,
+            Context->BitLength[lane] - 8
+        );
+    }
+
+    // Perform the final transformation
     SimdMd5Transform(Context);
 }

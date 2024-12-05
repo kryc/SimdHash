@@ -223,13 +223,36 @@ void
 SimdSha1Finalize(
     SimdHashContext* Context)
 {
-    //
     // Add the message length
-    //
     SimdSha1AppendSize(Context);
 
-    //
     // Compute the final transformation
-    //
+    SimdSha1Transform(Context, true);
+}
+
+void
+SimdSha1FinalizeOptimized(
+    SimdHashContext* Context)
+{
+    // Append the 1-bit to the buffer
+    SimdHashUpdateInternal(
+        Context,
+        OneBitLengths,
+        OneBits
+    );
+
+    // Add the message length
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        // Add the size to the last 64 bits
+        SimdHashWriteBuffer64(
+            Context,
+            SHA1_BUFFER_SIZE - sizeof(uint64_t),
+            lane,
+            __builtin_bswap64(Context->BitLength[lane] - 8) // Change endianness to store in the little endian buffer
+        );
+    }
+
+    // Perform the final transformation
     SimdSha1Transform(Context, true);
 }

@@ -17,20 +17,24 @@
 
 #define MD4_BUFFER_SIZE (64)
 #define MD4_BUFFER_SIZE_DWORDS (MD4_BUFFER_SIZE / 4)
+#define MD4_OPTIMIZED_BUFFER_SIZE ((MD4_BUFFER_SIZE - sizeof(uint64_t)) - 1)
 #define MD4_H_COUNT (4)
 #define MD4_SIZE (MD4_H_COUNT * 4)
 #define MD5_BUFFER_SIZE (64)
 #define MD5_BUFFER_SIZE_DWORDS (MD5_BUFFER_SIZE / 4)
+#define MD5_OPTIMIZED_BUFFER_SIZE ((MD5_BUFFER_SIZE - sizeof(uint64_t)) - 1)
 #define MD5_H_COUNT (4)
 #define MD5_SIZE (MD5_H_COUNT * 4)
 #define SHA1_BUFFER_SIZE (64)
 #define SHA1_BUFFER_SIZE_DWORDS (SHA1_BUFFER_SIZE / 4)
+#define SHA1_OPTIMIZED_BUFFER_SIZE ((SHA1_BUFFER_SIZE - sizeof(uint64_t)) - 1)
 #define SHA1_H_COUNT (5)
 #define SHA1_SIZE (SHA1_H_COUNT * 4)
 #define SHA1_MESSAGE_SCHEDULE_SIZE (320)
 #define SHA1_MESSAGE_SCHEDULE_SIZE_DWORDS (SHA1_MESSAGE_SCHEDULE_SIZE / 4)
 #define SHA256_BUFFER_SIZE (64)
 #define SHA256_BUFFER_SIZE_DWORDS (SHA256_BUFFER_SIZE / 4)
+#define SHA256_OPTIMIZED_BUFFER_SIZE ((SHA256_BUFFER_SIZE - sizeof(uint64_t)) - 1)
 #define SHA256_H_COUNT (8)
 #define SHA256_SIZE (SHA256_H_COUNT * 4)
 #define SHA256_MESSAGE_SCHEDULE_SIZE (256)
@@ -40,6 +44,7 @@
 #define MAX_HASH_SIZE (MAX_H_COUNT * 4)
 #define MAX_BUFFER_SIZE (SHA256_BUFFER_SIZE)
 #define MAX_BUFFER_SIZE_DWORDS (MAX_BUFFER_SIZE / 4)
+#define MAX_OPTIMIZED_BUFFER_SIZE (SHA256_OPTIMIZED_BUFFER_SIZE)
 
 typedef enum _HashAlgorithm
 {
@@ -147,6 +152,10 @@ SimdHashGetAlgorithm(
     return Context->Algorithm;
 }
 
+const size_t
+GetOptimizedLength(
+	const HashAlgorithm Algorithm);
+
 //
 // Generic init/update/finalize
 //
@@ -162,7 +171,19 @@ SimdHashUpdate(
     const uint8_t* Buffers[]);
 
 void
+SimdHashUpdateOptimized(
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* Buffers[]);
+
+void
 SimdHashUpdateAll(
+    SimdHashContext* Context,
+    const size_t Length,
+    const uint8_t* Buffers[]);
+
+void
+SimdHashUpdateAllOptimized(
     SimdHashContext* Context,
     const size_t Length,
     const uint8_t* Buffers[]);
@@ -181,6 +202,13 @@ SimdHash(
     const uint8_t* Buffers[],
     uint8_t* HashBuffers);
 
+void
+SimdHashOptimized(
+    HashAlgorithm Algorithm,
+    const size_t Lengths[],
+    const uint8_t* Buffers[],
+    uint8_t* HashBuffers);
+
 //
 // MD4
 //
@@ -193,6 +221,9 @@ void SimdMd4Transform(
 void SimdMd4Finalize(
     SimdHashContext* Context);
 
+void SimdMd4FinalizeOptimized(
+    SimdHashContext* Context);
+
 //
 // MD5
 //
@@ -203,6 +234,9 @@ void SimdMd5Transform(
     SimdHashContext* Context);
 
 void SimdMd5Finalize(
+    SimdHashContext* Context);
+
+void SimdMd5FinalizeOptimized(
     SimdHashContext* Context);
 
 //
@@ -218,6 +252,9 @@ void SimdSha1Transform(
 void SimdSha1Finalize(
     SimdHashContext* Context);
 
+void SimdSha1FinalizeOptimized(
+    SimdHashContext* Context);
+
 //
 // SHA256
 //
@@ -229,6 +266,9 @@ void SimdSha256Transform(
     const bool Finalize);
 
 void SimdSha256Finalize(
+    SimdHashContext* Context);
+
+void SimdSha256FinalizeOptimized(
     SimdHashContext* Context);
 
 //
