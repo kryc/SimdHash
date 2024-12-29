@@ -225,8 +225,8 @@ void
 SimdHashOptimized(
     HashAlgorithm Algorithm,
     const size_t Lengths[],
-    const uint8_t* Buffers[],
-    uint8_t* HashBuffers);
+    const uint8_t* const Buffers[],
+    const uint8_t* HashBuffers);
 
 //
 // MD4

@@ -120,6 +120,27 @@ GetHashWidth(
     }
 }
 
+const size_t
+GetOptimizedLength(
+	const HashAlgorithm Algorithm
+)
+{
+    switch (Algorithm)
+    {
+    case HashAlgorithmMD4:
+    // case HashAlgorithmNTLM:
+        return MD4_OPTIMIZED_BUFFER_SIZE;
+    case HashAlgorithmMD5:
+        return MD5_OPTIMIZED_BUFFER_SIZE;
+    case HashAlgorithmSHA1:
+        return SHA1_OPTIMIZED_BUFFER_SIZE;
+    case HashAlgorithmSHA256:
+        return SHA256_OPTIMIZED_BUFFER_SIZE;
+    default:
+        return (size_t)-1;
+    }
+}
+
 const HashAlgorithm
 DetectHashAlgorithm(
     const size_t HashLength
@@ -633,84 +654,6 @@ SimdHash(
                 SimdHashSingle(Algorithm, Lengths[i], Buffers[i], hash);
             }
         }
-        break;
-    case HashAlgorithmUndefined:
-        break;
-    }
-}
-
-void
-NTLMSingle(
-    const uint8_t* const Buffer,
-    const size_t Length,
-    const uint8_t* HashBuffer
-)
-{
-    UErrorCode status = U_ZERO_ERROR;
-    int32_t newLength;
-    uint8_t* buffer;
-
-    u_strFromUTF8Lenient(NULL, 0, &newLength, (const char*)Buffer, Length, &status);
-    if (status != U_BUFFER_OVERFLOW_ERROR && status != U_STRING_NOT_TERMINATED_WARNING)
-    { 
-        fprintf(stderr, "Error: %s\n", u_errorName(status));
-        // Fallback to hash the provided input
-        MD4(Buffer, Length, (uint8_t*) Buffer);
-        return;
-    }
-
-    // Reset the status and allocate memory
-    status = U_ZERO_ERROR;
-    buffer = (uint8_t*)alloca((newLength + 1) * sizeof(UChar));
-    if (buffer == NULL) {
-        fprintf(stderr, "Memory allocation error\n");
-        // Fallback to hash the provided input
-        MD4(Buffer, Length, (uint8_t*) HashBuffer);
-        return;
-    }
-
-    // Convert UTF-8 to UTF-16
-    u_strFromUTF8Lenient((UChar*)buffer, newLength + 1, NULL, (const char*)Buffer, Length, &status);
-    if (U_FAILURE(status)) {
-        fprintf(stderr, "Conversion error: %s\n", u_errorName(status));
-        // Fallback to hash the provided input
-        MD4(Buffer, Length, (uint8_t*) HashBuffer);
-        return;
-    }
-
-    MD4(buffer, newLength, (uint8_t*) HashBuffer);
-}
-
-void
-SimdHashSingle(
-    HashAlgorithm Algorithm,
-    const size_t Length,
-    const uint8_t* const Buffer,
-    const uint8_t* HashBuffer
-)
-{
-    switch(Algorithm)
-    {
-    case HashAlgorithmMD4:
-        MD4(Buffer, Length, (uint8_t*) HashBuffer);
-        break;
-    case HashAlgorithmMD5:
-        MD5(Buffer, Length, (uint8_t*) HashBuffer);
-        break;
-    case HashAlgorithmSHA1:
-        SHA1(Buffer, Length, (uint8_t*) HashBuffer);
-        break;
-    case HashAlgorithmSHA256:
-        SHA256(Buffer, Length, (uint8_t*) HashBuffer);
-        break;
-    case HashAlgorithmSHA384:
-        SHA384(Buffer, Length, (uint8_t*) HashBuffer);
-        break;
-    case HashAlgorithmSHA512:
-        SHA512(Buffer, Length, (uint8_t*) HashBuffer);
-        break;
-    case HashAlgorithmNTLM:
-        NTLMSingle(Buffer, Length, (uint8_t*) HashBuffer);
         break;
     case HashAlgorithmUndefined:
         break;

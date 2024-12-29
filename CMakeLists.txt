@@ -29,6 +29,9 @@ file(GLOB LIBSOURCES "./src/*.c")
 
 add_library(simdhash ${LIBSOURCES})
 
+# Allow deprecated algorithms (MD4)
+target_compile_options(simdhash PRIVATE -Wno-deprecated-declarations)
+
 # Set AVX flags for X86
 message("Detected platform: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 if (NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
