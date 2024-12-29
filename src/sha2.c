@@ -343,3 +343,87 @@ SimdSha256FinalizeOptimized(
     // Perform the final transformation
     SimdSha256Transform(Context, true);
 }
+
+//
+// SHA384
+//
+void SimdSha384Init(
+    SimdHashContext* Context
+)
+{
+    Context->Algorithm = HashAlgorithmSHA384;
+    Context->HSize = SHA384_H_COUNT;
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        SHA384_Init(&Context->ShaCtx[lane]);
+    }
+}
+
+void SimdSha384Update(
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* const Buffers[]
+)
+{
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        SHA384_Update(&Context->ShaCtx[lane], (const uint8_t*)Buffers[lane], Lengths[lane]);
+    }
+}
+
+void SimdSha384Finalize(
+    SimdHashContext* Context
+)
+{
+    uint32_t hash[SHA384_H_COUNT];
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        SHA384_Final((uint8_t*) hash, &Context->ShaCtx[lane]);
+        for (size_t i = 0; i < SHA384_H_COUNT; i++)
+        {
+            Context->H[i].epi32_u32[lane] = hash[i];
+        }
+    }
+}
+
+//
+// SHA512
+//
+void SimdSha512Init(
+    SimdHashContext* Context
+)
+{
+    Context->Algorithm = HashAlgorithmSHA512;
+    Context->HSize = SHA512_H_COUNT;
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        SHA512_Init(&Context->ShaCtx[lane]);
+    }
+}
+
+void SimdSha512Update(
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* const Buffers[]
+)
+{
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        SHA512_Update(&Context->ShaCtx[lane], (const uint8_t*)Buffers[lane], Lengths[lane]);
+    }
+}
+
+void SimdSha512Finalize(
+    SimdHashContext* Context
+)
+{
+    uint32_t hash[SHA512_H_COUNT];
+    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    {
+        SHA512_Final((uint8_t*) hash, &Context->ShaCtx[lane]);
+        for (size_t i = 0; i < SHA512_H_COUNT; i++)
+        {
+            Context->H[i].epi32_u32[lane] = hash[i];
+        }
+    }
+}

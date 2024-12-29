@@ -15,7 +15,7 @@ SimdHashUpdateLaneBuffer(
     SimdHashContext* Context,
     const size_t Lane,
     const size_t Length,
-    const uint8_t* Buffer)
+    const uint8_t* const Buffer)
 {
     // Get the current write offset
     size_t bufferOffset = Context->Offset[Lane];

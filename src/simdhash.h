@@ -13,6 +13,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <openssl/sha.h>
+
 #include "simdcommon.h"
 
 #define MD4_BUFFER_SIZE (64)
@@ -39,8 +41,13 @@
 #define SHA256_SIZE (SHA256_H_COUNT * 4)
 #define SHA256_MESSAGE_SCHEDULE_SIZE (256)
 #define SHA256_MESSAGE_SCHEDULE_SIZE_DWORDS (SHA256_MESSAGE_SCHEDULE_SIZE / 4)
+// Singles
+#define SHA384_H_COUNT (12)
+#define SHA384_SIZE (SHA384_H_COUNT * 4)
+#define SHA512_H_COUNT (16)
+#define SHA512_SIZE (SHA512_H_COUNT * 4)
 
-#define MAX_H_COUNT (SHA256_H_COUNT)
+#define MAX_H_COUNT (SHA512_H_COUNT)
 #define MAX_HASH_SIZE (MAX_H_COUNT * 4)
 #define MAX_BUFFER_SIZE (SHA256_BUFFER_SIZE)
 #define MAX_BUFFER_SIZE_DWORDS (MAX_BUFFER_SIZE / 4)
@@ -53,6 +60,8 @@ typedef enum _HashAlgorithm
     HashAlgorithmMD5,
     HashAlgorithmSHA1,
     HashAlgorithmSHA256,
+    HashAlgorithmSHA384,
+    HashAlgorithmSHA512,
     HashAlgorithmNTLM,
     HashAlgorithmMax = HashAlgorithmNTLM
 } HashAlgorithm;
@@ -84,15 +93,18 @@ typedef struct _SimdHashContext
     uint64_t  BitLength[MAX_LANES];
     size_t    Lanes;
     HashAlgorithm Algorithm;
+    SHA512_CTX    ShaCtx[MAX_LANES];  // For SHA384 and SHA512
 } SimdHashContext;
 
-#define SimdHashAlgorithmCount 4
+#define SimdHashAlgorithmCount 6
 static const HashAlgorithm
 SimdHashAlgorithms[SimdHashAlgorithmCount] = {
     HashAlgorithmMD4,
     HashAlgorithmMD5,
     HashAlgorithmSHA1,
-    HashAlgorithmSHA256
+    HashAlgorithmSHA256,
+    HashAlgorithmSHA384,
+    HashAlgorithmSHA512
 };
 
 #ifdef __cplusplus
@@ -168,7 +180,7 @@ void
 SimdHashUpdate(
     SimdHashContext* Context,
     const size_t Lengths[],
-    const uint8_t* Buffers[]);
+    const uint8_t* const Buffers[]);
 
 void
 SimdHashUpdateOptimized(
@@ -180,7 +192,7 @@ void
 SimdHashUpdateAll(
     SimdHashContext* Context,
     const size_t Length,
-    const uint8_t* Buffers[]);
+    const uint8_t* const Buffers[]);
 
 void
 SimdHashUpdateAllOptimized(
@@ -199,8 +211,15 @@ void
 SimdHash(
     HashAlgorithm Algorithm,
     const size_t Lengths[],
-    const uint8_t* Buffers[],
-    uint8_t* HashBuffers);
+    const uint8_t* const Buffers[],
+    const uint8_t* HashBuffers);
+
+void
+SimdHashSingle(
+    HashAlgorithm Algorithm,
+    const size_t Length,
+    const uint8_t* const Buffer,
+    const uint8_t* HashBuffer);
 
 void
 SimdHashOptimized(
@@ -272,6 +291,34 @@ void SimdSha256FinalizeOptimized(
     SimdHashContext* Context);
 
 //
+// SHA384
+//
+void SimdSha384Init(
+    SimdHashContext* Context);
+
+void SimdSha384Update(
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* const Buffers[]);
+
+void SimdSha384Finalize(
+    SimdHashContext* Context);
+
+//
+// SHA512
+//
+void SimdSha512Init(
+    SimdHashContext* Context);
+
+void SimdSha512Update(
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* const Buffers[]);
+
+void SimdSha512Finalize(
+    SimdHashContext* Context);
+
+//
 // SimdHash Utility
 //
 void
@@ -288,7 +335,7 @@ SimdHashGetHashes2D(
 void
 SimdHashGetHashes(
     SimdHashContext* Context,
-    uint8_t* HashBuffers);
+    const uint8_t* HashBuffers);
 
 void
 SimdHashExtendEntropyAndGetHashes(
@@ -309,7 +356,7 @@ void
 SimdHashUpdateInternal(
     SimdHashContext* Context,
     const size_t Lengths[],
-    const uint8_t* Buffers[]);
+    const uint8_t* const Buffers[]);
 
 #ifdef TEST
 simd_t SimdCalculateS0(

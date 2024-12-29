@@ -8,6 +8,9 @@
 
 #include <alloca.h>
 #include <string.h>
+#include <openssl/md4.h>
+#include <openssl/md5.h>
+#include <openssl/sha.h>
 #include <unicode/ucnv.h>
 #include <unicode/ustring.h>
 
@@ -48,6 +51,16 @@ ParseHashAlgorithm(
     {
         return HashAlgorithmSHA256;
     }
+    else if (strcmp(AlgorithmString, "sha384") == 0 ||
+        strcmp(AlgorithmString, "SHA384") == 0)
+    {
+        return HashAlgorithmSHA384;
+    }
+    else if (strcmp(AlgorithmString, "sha512") == 0 ||
+        strcmp(AlgorithmString, "SHA512") == 0)
+    {
+        return HashAlgorithmSHA512;
+    }
     else if (strcmp(AlgorithmString, "ntlm") == 0 ||
         strcmp(AlgorithmString, "NTLM") == 0)
     {
@@ -71,6 +84,10 @@ HashAlgorithmToString(
         return "SHA1";
     case HashAlgorithmSHA256:
         return "SHA256";
+    case HashAlgorithmSHA384:
+        return "SHA384";
+    case HashAlgorithmSHA512:
+        return "SHA512";
     case HashAlgorithmNTLM:
         return "NTLM";
     default:
@@ -94,27 +111,10 @@ GetHashWidth(
         return SHA1_SIZE;
     case HashAlgorithmSHA256:
         return SHA256_SIZE;
-    default:
-        return (size_t)-1;
-    }
-}
-
-const size_t
-GetOptimizedLength(
-	const HashAlgorithm Algorithm
-)
-{
-    switch (Algorithm)
-    {
-    case HashAlgorithmMD4:
-    // case HashAlgorithmNTLM:
-        return MD4_OPTIMIZED_BUFFER_SIZE;
-    case HashAlgorithmMD5:
-        return MD5_OPTIMIZED_BUFFER_SIZE;
-    case HashAlgorithmSHA1:
-        return SHA1_OPTIMIZED_BUFFER_SIZE;
-    case HashAlgorithmSHA256:
-        return SHA256_OPTIMIZED_BUFFER_SIZE;
+    case HashAlgorithmSHA384:
+        return SHA384_SIZE;
+    case HashAlgorithmSHA512:
+        return SHA512_SIZE;
     default:
         return (size_t)-1;
     }
@@ -133,6 +133,10 @@ DetectHashAlgorithm(
         return HashAlgorithmSHA1;
     case SHA256_SIZE:
         return HashAlgorithmSHA256;
+    case SHA384_SIZE:
+        return HashAlgorithmSHA384;
+    case SHA512_SIZE:
+        return HashAlgorithmSHA512;
     default:
         return HashAlgorithmUndefined;
     }
@@ -157,11 +161,20 @@ void SimdHashInit(
     case HashAlgorithmSHA256:
         SimdSha256Init(Context);
         break;
+    case HashAlgorithmSHA384:
+        SimdSha384Init(Context);
+        break;
+    case HashAlgorithmSHA512:
+        SimdSha512Init(Context);
+        break;
     case HashAlgorithmUndefined:
         break;
     case HashAlgorithmNTLM:
         SimdMd4Init(Context);
         Context->Algorithm = HashAlgorithmNTLM;
+        break;
+    default:
+        assert(false);
         break;
     }
 }
@@ -186,6 +199,9 @@ void SimdHashTransform(
         SimdSha256Transform(Context, false);
         break;
     case HashAlgorithmUndefined:
+        break;
+    default:
+        assert(false);
         break;
     }
 }
@@ -221,7 +237,7 @@ void
 SimdHashUpdateInternal(
     SimdHashContext* Context,
     const size_t Lengths[],
-    const uint8_t* Buffers[]
+    const uint8_t* const Buffers[]
 )
 {
     size_t remainder[MAX_LANES];
@@ -308,7 +324,7 @@ static void
 SimdHashUpdateNTLM(
     SimdHashContext* Context,
     const size_t Lengths[],
-    const uint8_t* Buffers[]
+    const uint8_t* const Buffers[]
 )
 {
     size_t newLengths[MAX_LANES];
@@ -365,24 +381,44 @@ void
 SimdHashUpdate(
     SimdHashContext* Context,
     const size_t Lengths[],
-    const uint8_t* Buffers[]
+    const uint8_t* const Buffers[]
 )
 {
-    if (Context->Algorithm != HashAlgorithmNTLM)
+    switch (Context->Algorithm)
     {
+    case HashAlgorithmMD4:
+    case HashAlgorithmMD5:
+    case HashAlgorithmSHA1:
+    case HashAlgorithmSHA256:
         SimdHashUpdateInternal(
             Context,
             Lengths,
             Buffers
         );
-    }
-    else
-    {
+        break;
+    case HashAlgorithmNTLM:
         SimdHashUpdateNTLM(
             Context,
             Lengths,
             Buffers
         );
+        break;
+    case HashAlgorithmSHA384:
+        SimdSha384Update(
+            Context,
+            Lengths,
+            Buffers
+        );
+        break;
+    case HashAlgorithmSHA512:
+        SimdSha512Update(
+            Context,
+            Lengths,
+            Buffers
+        );
+        break;
+    case HashAlgorithmUndefined:
+        break;
     }
 }
 
@@ -390,7 +426,7 @@ void
 SimdHashUpdateAll(
     SimdHashContext* Context,
     const size_t Length,
-    const uint8_t* Buffers[]
+    const uint8_t* const Buffers[]
 )
 {
     size_t lengths[MAX_LANES];
@@ -453,7 +489,7 @@ static inline void
 WriteSimdArrayToLinearBuffer(
     const SimdValue* Array,
     const size_t CountDwords,
-    uint8_t* HashBuffers
+    const uint8_t* HashBuffers
 )
 {
 #if defined __AVX512F__ && defined AVXSCATTER
@@ -481,7 +517,7 @@ WriteSimdArrayToLinearBuffer(
         _mm512_i32scatter_epi32(HashBuffers, index, h, 4);
     }
 #else
-    uint32_t* buffer = (uint32_t*)HashBuffers;
+    uint32_t* buffer = (uint32_t*) HashBuffers;
     for (size_t i = 0; i < CountDwords; i++)
     {
         for (size_t l = 0; l < SimdLanes(); l++)
@@ -495,7 +531,7 @@ WriteSimdArrayToLinearBuffer(
 void
 SimdHashGetHashes(
     SimdHashContext* Context,
-    uint8_t* HashBuffers
+    const uint8_t* HashBuffers
 )
 {
     WriteSimdArrayToLinearBuffer(Context->H, Context->HSize, HashBuffers);
@@ -550,7 +586,16 @@ SimdHashFinalize(
     case HashAlgorithmSHA256:
         SimdSha256Finalize(Context);
         break;
+    case HashAlgorithmSHA384:
+        SimdSha384Finalize(Context);
+        break;
+    case HashAlgorithmSHA512:
+        SimdSha512Finalize(Context);
+        break;
     case HashAlgorithmUndefined:
+        break;
+    default:
+        assert(false);
         break;
     }
 }
@@ -559,45 +604,232 @@ void
 SimdHash(
     HashAlgorithm Algorithm,
     const size_t Lengths[],
-    const uint8_t* Buffers[],
-    uint8_t* HashBuffers
+    const uint8_t* const Buffers[],
+    const uint8_t* HashBuffers
 )
 {
-    SimdHashContext ctx;
-    SimdHashInit(&ctx, Algorithm);
-    SimdHashUpdate(&ctx, Lengths, Buffers);
-    SimdHashFinalize(&ctx);
-    SimdHashGetHashes(&ctx, HashBuffers);
+    switch(Algorithm)
+    {
+    case HashAlgorithmMD4:
+    case HashAlgorithmMD5:
+    case HashAlgorithmSHA1:
+    case HashAlgorithmSHA256:
+    case HashAlgorithmNTLM:
+        {
+            SimdHashContext ctx;
+            SimdHashInit(&ctx, Algorithm);
+            SimdHashUpdate(&ctx, Lengths, Buffers);
+            SimdHashFinalize(&ctx);
+            SimdHashGetHashes(&ctx, HashBuffers);
+        }
+        break;
+    case HashAlgorithmSHA384:
+    case HashAlgorithmSHA512:
+        {
+            const size_t hashWidth = GetHashWidth(Algorithm);
+            for (size_t i = 0; i < SimdLanes(); i++)
+            {
+                const uint8_t* hash = &HashBuffers[i * hashWidth];
+                SimdHashSingle(Algorithm, Lengths[i], Buffers[i], hash);
+            }
+        }
+        break;
+    case HashAlgorithmUndefined:
+        break;
+    }
+}
+
+void
+NTLMSingle(
+    const uint8_t* const Buffer,
+    const size_t Length,
+    const uint8_t* HashBuffer
+)
+{
+    UErrorCode status = U_ZERO_ERROR;
+    int32_t newLength;
+    uint8_t* buffer;
+
+    u_strFromUTF8Lenient(NULL, 0, &newLength, (const char*)Buffer, Length, &status);
+    if (status != U_BUFFER_OVERFLOW_ERROR && status != U_STRING_NOT_TERMINATED_WARNING)
+    { 
+        fprintf(stderr, "Error: %s\n", u_errorName(status));
+        // Fallback to hash the provided input
+        MD4(Buffer, Length, (uint8_t*) Buffer);
+        return;
+    }
+
+    // Reset the status and allocate memory
+    status = U_ZERO_ERROR;
+    buffer = (uint8_t*)alloca((newLength + 1) * sizeof(UChar));
+    if (buffer == NULL) {
+        fprintf(stderr, "Memory allocation error\n");
+        // Fallback to hash the provided input
+        MD4(Buffer, Length, (uint8_t*) HashBuffer);
+        return;
+    }
+
+    // Convert UTF-8 to UTF-16
+    u_strFromUTF8Lenient((UChar*)buffer, newLength + 1, NULL, (const char*)Buffer, Length, &status);
+    if (U_FAILURE(status)) {
+        fprintf(stderr, "Conversion error: %s\n", u_errorName(status));
+        // Fallback to hash the provided input
+        MD4(Buffer, Length, (uint8_t*) HashBuffer);
+        return;
+    }
+
+    MD4(buffer, newLength, (uint8_t*) HashBuffer);
+}
+
+void
+SimdHashSingle(
+    HashAlgorithm Algorithm,
+    const size_t Length,
+    const uint8_t* const Buffer,
+    const uint8_t* HashBuffer
+)
+{
+    switch(Algorithm)
+    {
+    case HashAlgorithmMD4:
+        MD4(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmMD5:
+        MD5(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmSHA1:
+        SHA1(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmSHA256:
+        SHA256(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmSHA384:
+        SHA384(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmSHA512:
+        SHA512(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmNTLM:
+        NTLMSingle(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmUndefined:
+        break;
+    }
 }
 
 void
 SimdHashOptimized(
     HashAlgorithm Algorithm,
     const size_t Lengths[],
-    const uint8_t* Buffers[],
-    uint8_t* HashBuffers
+    const uint8_t* const Buffers[],
+    const uint8_t* HashBuffers
 )
 {
-    SimdHashContext ctx;
-    SimdHashInit(&ctx, Algorithm);
-    SimdHashUpdateOptimized(&ctx, Lengths, Buffers);
     switch(Algorithm)
     {
     case HashAlgorithmMD4:
-        SimdMd4FinalizeOptimized(&ctx);
-        break;
     case HashAlgorithmMD5:
-        SimdMd5FinalizeOptimized(&ctx);
-        break;
     case HashAlgorithmSHA1:
-        SimdSha1FinalizeOptimized(&ctx);
-        break;
     case HashAlgorithmSHA256:
-        SimdSha256FinalizeOptimized(&ctx);
+    case HashAlgorithmNTLM:
+        {
+            SimdHashContext ctx;
+            SimdHashInit(&ctx, Algorithm);
+            SimdHashUpdate(&ctx, Lengths, Buffers);
+            SimdHashFinalize(&ctx);
+            SimdHashGetHashes(&ctx, HashBuffers);
+        }
         break;
-    default:
-        SimdHashFinalize(&ctx);
+    case HashAlgorithmSHA384:
+    case HashAlgorithmSHA512:
+        {
+            const size_t hashWidth = GetHashWidth(Algorithm);
+            for (size_t i = 0; i < SimdLanes(); i++)
+            {
+                const uint8_t* hash = &HashBuffers[i * hashWidth];
+                SimdHashSingle(Algorithm, Lengths[i], Buffers[i], hash);
+            }
+        }
+        break;
+    case HashAlgorithmUndefined:
         break;
     }
-    SimdHashGetHashes(&ctx, HashBuffers);
+}
+
+void
+NTLMSingle(
+    const uint8_t* const Buffer,
+    const size_t Length,
+    const uint8_t* HashBuffer
+)
+{
+    UErrorCode status = U_ZERO_ERROR;
+    int32_t newLength;
+    uint8_t* buffer;
+
+    u_strFromUTF8Lenient(NULL, 0, &newLength, (const char*)Buffer, Length, &status);
+    if (status != U_BUFFER_OVERFLOW_ERROR && status != U_STRING_NOT_TERMINATED_WARNING)
+    { 
+        fprintf(stderr, "Error: %s\n", u_errorName(status));
+        // Fallback to hash the provided input
+        MD4(Buffer, Length, (uint8_t*) Buffer);
+        return;
+    }
+
+    // Reset the status and allocate memory
+    status = U_ZERO_ERROR;
+    buffer = (uint8_t*)alloca((newLength + 1) * sizeof(UChar));
+    if (buffer == NULL) {
+        fprintf(stderr, "Memory allocation error\n");
+        // Fallback to hash the provided input
+        MD4(Buffer, Length, (uint8_t*) HashBuffer);
+        return;
+    }
+
+    // Convert UTF-8 to UTF-16
+    u_strFromUTF8Lenient((UChar*)buffer, newLength + 1, NULL, (const char*)Buffer, Length, &status);
+    if (U_FAILURE(status)) {
+        fprintf(stderr, "Conversion error: %s\n", u_errorName(status));
+        // Fallback to hash the provided input
+        MD4(Buffer, Length, (uint8_t*) HashBuffer);
+        return;
+    }
+
+    MD4(buffer, newLength, (uint8_t*) HashBuffer);
+}
+
+void
+SimdHashSingle(
+    HashAlgorithm Algorithm,
+    const size_t Length,
+    const uint8_t* const Buffer,
+    const uint8_t* HashBuffer
+)
+{
+    switch(Algorithm)
+    {
+    case HashAlgorithmMD4:
+        MD4(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmMD5:
+        MD5(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmSHA1:
+        SHA1(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmSHA256:
+        SHA256(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmSHA384:
+        SHA384(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmSHA512:
+        SHA512(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmNTLM:
+        NTLMSingle(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmUndefined:
+        break;
+    }
 }
