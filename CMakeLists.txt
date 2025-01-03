@@ -34,7 +34,7 @@ target_compile_options(simdhash PRIVATE -Wno-deprecated-declarations)
 
 # Set AVX flags for X86
 message("Detected platform: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
-if (NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
+if (NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64" AND NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
     if (NOT AVX OR AVX STREQUAL "" OR AVX STREQUAL "256")
         target_compile_options(simdhash PUBLIC -mavx2)
     elseif(AVX STREQUAL "512")

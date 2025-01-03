@@ -15,7 +15,7 @@
 
 #if defined(__AVX2__) || defined(__AVX512F__)
 #include <immintrin.h>
-#elif defined(__arm64__)
+#elif defined(__arm64__) || defined(__aarch64__)
 #include <arm_neon.h>
 #endif
 
@@ -35,7 +35,7 @@ typedef enum _LOG2VAL
 #define MAX_LANES_32 	(SIMD_WIDTH_MAX/32)
 #define MAX_LANES		MAX_LANES_32
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 #define simd_t          __m512i
 #define SIMD_WIDTH      SIMD_WIDTH_512
 #define load_simd       _mm512_load_si512
@@ -56,7 +56,7 @@ typedef enum _LOG2VAL
 #define cmpeq_epi32     _mm512_cmpeq_epi32
 // Custom
 #define bswap_epi32     _mm512_bswap_epi32
-#elif defined __arm64__
+#elif defined(__arm64__) || defined(__aarch64__)
 #define simd_t          uint32x4_t
 #define SIMD_WIDTH      SIMD_WIDTH_128
 #define load_simd(x)    vld1q_u32((uint32_t*)(x))
@@ -72,7 +72,7 @@ typedef enum _LOG2VAL
 #define not_simd        vmvnq_u32
 #define andnot_simd     andnot_simd_custom
 #define cmpeq_simd      vceq_u32
-#else // AVX2
+#elif defined(__AVX2__)
 #define simd_t          __m256i
 #define SIMD_WIDTH      SIMD_WIDTH_256
 #define load_simd       _mm256_load_si256
@@ -93,9 +93,11 @@ typedef enum _LOG2VAL
 #define cmpeq_epi32     _mm256_cmpeq_epi32
 // Custom
 #define bswap_epi32     _mm256_bswap_epi32
+#else
+#error "Unknown SIMD platform"
 #endif
 
-#if defined(__arm64__)
+#if defined(__arm64__) || defined(__aarch64__)
 /*
  * ARM64 doesn't have shift by const value,
  * so we need to mimick the x86 version here
@@ -274,7 +276,7 @@ bswap_epi32(
         0x38393a3b3c3d3e3f
     );
     return _mm512_shuffle_epi8(Value, shuffleMask);
-#elif defined(__arm64__)
+#elif defined(__arm64__) || defined(__aarch64__)
     return vrev32q_u8(vreinterpretq_u8_u32(Value));
 #else // AVX2
     simd_t shuffleMask = _mm256_setr_epi32(
