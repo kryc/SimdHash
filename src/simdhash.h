@@ -96,7 +96,7 @@ typedef struct _SimdHashContext
     SHA512_CTX    ShaCtx[MAX_LANES];  // For SHA384 and SHA512
 } SimdHashContext;
 
-#define SimdHashAlgorithmCount 6
+#define SimdHashAlgorithmCount 7
 static const HashAlgorithm
 SimdHashAlgorithms[SimdHashAlgorithmCount] = {
     HashAlgorithmMD4,
@@ -104,7 +104,8 @@ SimdHashAlgorithms[SimdHashAlgorithmCount] = {
     HashAlgorithmSHA1,
     HashAlgorithmSHA256,
     HashAlgorithmSHA384,
-    HashAlgorithmSHA512
+    HashAlgorithmSHA512,
+    HashAlgorithmNTLM
 };
 
 #ifdef __cplusplus

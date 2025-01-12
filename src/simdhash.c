@@ -738,7 +738,7 @@ NTLMSingle(
         return;
     }
 
-    MD4(buffer, newLength, (uint8_t*) HashBuffer);
+    MD4(buffer, newLength * sizeof(UChar), (uint8_t*) HashBuffer);
 }
 
 void
