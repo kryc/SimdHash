@@ -51,7 +51,7 @@ if(APPLE)
 endif()
 
 # Link icuuc
-target_link_libraries(simdhash icuuc)
+target_link_libraries(simdhash icuuc crypto)
 
 # add the test
 add_custom_target(simdhash_tests)
