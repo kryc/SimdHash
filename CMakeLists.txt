@@ -10,9 +10,8 @@ endif()
 
 # specify clang
 SET(CMAKE_C_COMPILER clang)
-
+set(CMAKE_CXX_FLAGS "-Wall -Werror -fno-exceptions -Wunsafe-buffer-usage")
 set(CMAKE_C_FLAGS "-Wall -Werror -Wno-unused-function")
-
 set(CMAKE_C_FLAGS_RELEASE "-O3 -funroll-loops")
 set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0 -fno-omit-frame-pointer -fsanitize=address -DDEBUG")
 
