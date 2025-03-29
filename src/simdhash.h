@@ -49,6 +49,7 @@
 
 #define MAX_H_COUNT (SHA512_H_COUNT)
 #define MAX_HASH_SIZE (MAX_H_COUNT * 4)
+#define MAX_DIGEST_LENGTH MAX_HASH_SIZE
 #define MAX_BUFFER_SIZE (SHA256_BUFFER_SIZE)
 #define MAX_BUFFER_SIZE_DWORDS (MAX_BUFFER_SIZE / 4)
 #define MAX_OPTIMIZED_BUFFER_SIZE (SHA256_OPTIMIZED_BUFFER_SIZE)
@@ -139,6 +140,15 @@ DetectHashAlgorithmHex(
 const size_t
 GetHashWidth(
     const HashAlgorithm);
+
+inline static const size_t
+GetDigestLength(
+    const HashAlgorithm Algorithm
+)
+{
+    return GetHashWidth(Algorithm);
+}
+
 
 static inline void
 SimdHashSetLanes(
