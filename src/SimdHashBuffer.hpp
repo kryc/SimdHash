@@ -60,7 +60,7 @@ public:
     std::span<uint8_t> GetSpan(void) const { return m_Span; }
     const std::string_view GetStringView(const size_t Index) const {
         auto span = Get(Index);
-        return std::string_view((const char*)span.data(), span.size());
+        return std::string_view((const char*)span.data(), m_Lengths[Index]);
     }
     const std::string GetString(const size_t Index) const {
         return std::string(GetStringView(Index));
@@ -111,7 +111,7 @@ public:
     std::span<uint8_t> GetSpan(void) const { return m_Span; }
     const std::string_view GetStringView(const size_t Index) const {
         auto span = Get(Index);
-        return std::string_view((const char*)span.data(), span.size());
+        return std::string_view((const char*)span.data(), m_Lengths[Index]);
     }
     const std::string GetString(const size_t Index) const {
         return std::string(GetStringView(Index));
