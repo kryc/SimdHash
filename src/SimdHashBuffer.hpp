@@ -104,7 +104,11 @@ public:
         m_Lengths[Index] = copylen;
     }
     const std::span<const uint8_t> Get(const size_t Index) const {
-        return m_Span.subspan(Index * Width, Width);
+        return m_Span.subspan(Index * Width, m_Lengths[Index]);
+    }
+    std::span<char> GetCharWriteSpan(const size_t Index) const {
+        auto span = std::span<char>((char*)m_Buffer.data(), Count * Width);
+        return span.subspan(Index * Width, Width);
     }
     void SetLength(const size_t Index, const size_t Length) { m_Lengths[Index] = Length; };
     const size_t GetLength(const size_t Index) const { return m_Lengths[Index]; };
