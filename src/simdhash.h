@@ -233,6 +233,22 @@ SimdHashSingle(
     const uint8_t* HashBuffer);
 
 void
+SimdHashSingleExtended(
+    HashAlgorithm Algorithm,
+    const size_t Length,
+    const uint8_t* const Buffer,
+    const uint8_t* HashBuffer,
+    const size_t CountDwords);
+
+void
+SimdHashExtended(
+    HashAlgorithm Algorithm,
+    const size_t Lengths[],
+    const uint8_t* const Buffers[],
+    const uint8_t* HashBuffers,
+    const size_t CountDwords);
+
+void
 SimdHashOptimized(
     HashAlgorithm Algorithm,
     const size_t Lengths[],

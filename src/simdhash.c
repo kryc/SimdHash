@@ -565,7 +565,16 @@ SimdHashExtendEntropyAndGetHashes(
     size_t CountDwords
 )
 {
-    assert(CountDwords > Context->HSize);
+    assert(CountDwords >= Context->HSize);
+
+    // Check if we need to extend the entropy
+    if (CountDwords == Context->HSize)
+    {
+        // No need to extend the entropy
+        WriteSimdArrayToLinearBuffer(Context->H, Context->HSize, HashBuffers);
+        return;
+    }
+
     SimdValue buffer[CountDwords];
 
     for (size_t i = 0; i < Context->HSize; i++)
@@ -580,7 +589,7 @@ SimdHashExtendEntropyAndGetHashes(
         // w[i] := w[i-16] + s0 + w[i-7] + s1
         simd_t s0 = xor_simd(xor_simd(rotr_epi32(buffer[i - Context->HSize].usimd, 7), rotr_epi32(buffer[i - Context->HSize].usimd, 18)), srli_epi32(buffer[i - Context->HSize].usimd, 3));
         simd_t s1 = xor_simd(xor_simd(rotr_epi32(buffer[i - 2].usimd, 17), rotr_epi32(buffer[i - 2].usimd, 19)), srli_epi32(buffer[i - 2].usimd, 10));
-        buffer[i].usimd = add_epi32(s0, s1);
+        buffer[i].usimd = add_epi32(add_epi32(s0, s1), buffer[i - 3].usimd);
     }
 
     // Output to the hash buffers
@@ -655,6 +664,37 @@ SimdHash(
             }
         }
         break;
+    case HashAlgorithmUndefined:
+        break;
+    }
+}
+
+void
+SimdHashExtended(
+    HashAlgorithm Algorithm,
+    const size_t Lengths[],
+    const uint8_t* const Buffers[],
+    const uint8_t* HashBuffers,
+    const size_t CountDwords
+)
+{
+    switch(Algorithm)
+    {
+    case HashAlgorithmMD4:
+    case HashAlgorithmMD5:
+    case HashAlgorithmSHA1:
+    case HashAlgorithmSHA256:
+    case HashAlgorithmNTLM:
+        {
+            SimdHashContext ctx;
+            SimdHashInit(&ctx, Algorithm);
+            SimdHashUpdate(&ctx, Lengths, Buffers);
+            SimdHashFinalize(&ctx);
+            SimdHashExtendEntropyAndGetHashes(&ctx, (uint8_t*)HashBuffers, CountDwords);
+        }
+        break;
+    case HashAlgorithmSHA384:
+    case HashAlgorithmSHA512:
     case HashAlgorithmUndefined:
         break;
     }
@@ -774,5 +814,41 @@ SimdHashSingle(
         break;
     case HashAlgorithmUndefined:
         break;
+    }
+}
+
+// rotate right
+static inline uint32_t
+ROR32(
+    uint32_t value,
+    int count
+)
+{
+    return (value >> count) | (value << (32 - count));
+}
+
+void
+SimdHashSingleExtended(
+    HashAlgorithm Algorithm,
+    const size_t Length,
+    const uint8_t* const Buffer,
+    const uint8_t* HashBuffer,
+    const size_t CountDwords
+)
+{
+    // Do the normal hash first
+    SimdHashSingle(Algorithm, Length, Buffer, HashBuffer);
+    // Then extend the entropy
+    uint32_t* const hash = (uint32_t* const) HashBuffer;
+    const size_t hashSize = GetHashWidth(Algorithm);
+    const size_t hashDwords = hashSize / sizeof(uint32_t);
+    for (size_t i = hashDwords; i < CountDwords; i++)
+    {
+        // s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
+        // s1 := (w[i-2] rightrotate 17) xor (w[i-2] rightrotate 19) xor (w[i-2] rightshift 10)
+        // w[i] := w[i-16] + s0 + w[i-7] + s1
+        uint32_t s0 = ROR32(hash[i - hashDwords], 7) ^ ROR32(hash[i - hashDwords], 18) ^ (hash[i - hashDwords] >> 3);
+        uint32_t s1 = ROR32(hash[i - 2], 17) ^ ROR32(hash[i - 2], 19) ^ (hash[i - 2] >> 10);
+        hash[i] = hash[i - 3] + s0 + s1;
     }
 }
