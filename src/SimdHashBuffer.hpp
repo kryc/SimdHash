@@ -107,7 +107,9 @@ public:
         return m_Span.subspan(Index * Width, m_Lengths[Index]);
     }
     std::span<char> GetCharWriteSpan(const size_t Index) const {
+#pragma clang unsafe_buffer_usage begin
         auto span = std::span<char>((char*)m_Buffer.data(), Count * Width);
+#pragma clang unsafe_buffer_usage end
         return span.subspan(Index * Width, Width);
     }
     void SetLength(const size_t Index, const size_t Length) { m_Lengths[Index] = Length; };
