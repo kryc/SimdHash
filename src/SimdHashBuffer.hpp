@@ -21,6 +21,35 @@
 #ifndef SimdHashBuffer_hpp
 #define SimdHashBuffer_hpp
 
+#pragma clang unsafe_buffer_usage begin
+template <typename T>
+inline static
+std::span<T> MakeSpan(
+    T* Base,
+    std::size_t Size
+)
+{
+    return std::span<T>(Base, Size);
+}
+
+template <typename T, typename T2, std::size_t Extent = std::dynamic_extent>
+inline static
+std::span<T> SpanCast(
+    std::span<T2, Extent> Span
+)
+{
+    return std::span<T>(reinterpret_cast<T*>(Span.data()), Span.size_bytes() / sizeof(T));
+}
+
+template <typename T>
+std::string_view SpanToStringView(
+    std::span<T> Span
+)
+{
+    return std::string_view(reinterpret_cast<const char*>(Span.data()), Span.size());
+}
+#pragma clang unsafe_buffer_usage end
+
 class SimdHashBuffer
 {
 public:
@@ -46,28 +75,40 @@ public:
     uint8_t** Buffers(void) { return &m_BufferPointers[0]; };
     const uint8_t** ConstBuffers(void) const { return (const uint8_t**) &m_BufferPointers[0]; };
     const size_t* GetLengths(void) const { return &m_Lengths[0]; };
+    void SetLength(const size_t Index, const size_t Length) { m_Lengths[Index] = Length; };
+    const size_t GetLength(const size_t Index) const { return m_Lengths[Index]; };
+    std::span<uint8_t> GetSpan(void) const { return m_Span; }
+    void Clear(void) {
+        m_Buffer.assign(m_Buffer.size(), 0);
+        m_Lengths.assign(m_Lengths.size(), 0);  
+    }
     const void Set(const size_t Index, const std::string_view Value) {
         const size_t copylen = std::min<size_t>(Value.size(), m_Width);
         auto span = m_Span.subspan(Index * m_Width, m_Width);
         std::memcpy(span.data(), Value.data(), copylen);
         m_Lengths[Index] = copylen;
     }
+    // Get methods return read only spans pointing to
+    // the buffers of appropriate length.
     const std::span<const uint8_t> Get(const size_t Index) const {
-        return m_Span.subspan(Index * m_Width, m_Width);
+        return m_Span.subspan(Index * m_Width, GetLength(Index));
     }
-    void SetLength(const size_t Index, const size_t Length) { m_Lengths[Index] = Length; };
-    const size_t GetLength(const size_t Index) const { return m_Lengths[Index]; };
-    std::span<uint8_t> GetSpan(void) const { return m_Span; }
+    const std::span<const char> GetChars(const size_t Index) const {
+        return SpanCast<const char>(Get(Index));
+    }
     const std::string_view GetStringView(const size_t Index) const {
-        auto span = Get(Index);
-        return std::string_view((const char*)span.data(), m_Lengths[Index]);
+        return SpanToStringView(Get(Index));
     }
     const std::string GetString(const size_t Index) const {
         return std::string(GetStringView(Index));
     }
-    void Clear(void) {
-        m_Buffer.assign(m_Buffer.size(), 0);
-        m_Lengths.assign(m_Lengths.size(), 0);  
+    // GetBuffer methods return writable spans pointing to
+    // the full width of each buffer, ignoring the length
+    std::span<uint8_t> GetBuffer(const size_t Index) const {
+        return m_Span.subspan(Index * m_Width, m_Width);
+    }
+    std::span<char> GetBufferChar(const size_t Index) const {
+        return SpanCast<char>(GetBuffer(Index));
     }
 private:
     const size_t m_Width;
@@ -89,40 +130,46 @@ public:
             m_BufferPointers[i] = &m_Buffer[i * Width];
         }
     }
-    const size_t GetWidth(void) const { return Width; };
-    const size_t GetCount(void) const { return Count; };
-    uint8_t* Buffer(void) const { return &m_Buffer[0]; };
-    uint8_t* Buffer(const size_t Index) const { return m_BufferPointers[Index]; };
-    uint8_t* operator[](const size_t Index) const { return m_BufferPointers[Index]; };
-    uint8_t** Buffers(void) const { return &m_BufferPointers[0]; };
-    const uint8_t** ConstBuffers(void) const { return (const uint8_t**) &m_BufferPointers[0]; };
-    const size_t* GetLengths(void) const { return &m_Lengths[0]; };
+    const size_t GetWidth(void) const { return Width; }
+    const size_t GetCount(void) const { return Count; }
+    uint8_t* Buffer(void) const { return &m_Buffer[0]; }
+    uint8_t* Buffer(const size_t Index) const { return m_BufferPointers[Index]; }
+    uint8_t* operator[](const size_t Index) const { return m_BufferPointers[Index]; }
+    uint8_t** Buffers(void) const { return &m_BufferPointers[0]; }
+    const uint8_t** ConstBuffers(void) const { return (const uint8_t**) &m_BufferPointers[0]; }
+    const size_t* GetLengths(void) const { return &m_Lengths[0]; }
     const void Set(const size_t Index, const std::string_view Value) {
         const size_t copylen = std::min<size_t>(Value.size(), Width);
         auto span = m_Span.subspan(Index * Width, Width);
         std::memcpy(span.data(), Value.data(), copylen);
         m_Lengths[Index] = copylen;
     }
-    const std::span<const uint8_t> Get(const size_t Index) const {
-        return m_Span.subspan(Index * Width, m_Lengths[Index]);
-    }
-    std::span<char> GetCharWriteSpan(const size_t Index) const {
-#pragma clang unsafe_buffer_usage begin
-        auto span = std::span<char>((char*)m_Buffer.data(), Count * Width);
-#pragma clang unsafe_buffer_usage end
-        return span.subspan(Index * Width, Width);
-    }
-    void SetLength(const size_t Index, const size_t Length) { m_Lengths[Index] = Length; };
-    const size_t GetLength(const size_t Index) const { return m_Lengths[Index]; };
+    void SetLength(const size_t Index, const size_t Length) { m_Lengths[Index] = Length; }
+    const size_t GetLength(const size_t Index) const { return m_Lengths[Index]; }
     std::span<uint8_t> GetSpan(void) const { return m_Span; }
+    void Clear(void) { m_Buffer.fill(0); m_Lengths.fill(0); }
+    // Get methods return read only spans pointing to
+    // the buffers of appropriate length.
+    const std::span<const uint8_t> Get(const size_t Index) const {
+        return m_Span.subspan(Index * Width, GetLength(Index));
+    }
+    const std::span<const char> GetChars(const size_t Index) const {
+        return SpanCast<const char>(Get(Index));
+    }
     const std::string_view GetStringView(const size_t Index) const {
-        auto span = Get(Index);
-        return std::string_view((const char*)span.data(), m_Lengths[Index]);
+        return SpanToStringView(Get(Index));
     }
     const std::string GetString(const size_t Index) const {
         return std::string(GetStringView(Index));
     }
-    void Clear(void) { m_Buffer.fill(0); m_Lengths.fill(0); }
+    // GetBuffer methods return writable spans pointing to
+    // the full width of each buffer, ignoring the length
+    std::span<uint8_t> GetBuffer(const size_t Index) const {
+        return m_Span.subspan(Index * Width, Width);
+    }
+    std::span<char> GetBufferChar(const size_t Index) const {
+        return SpanCast<char>(GetBuffer(Index));
+    }
 private:
     std::array<uint8_t, Count * Width> m_Buffer;
     std::span<uint8_t, Count * Width> m_Span;
