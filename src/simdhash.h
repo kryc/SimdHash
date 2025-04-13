@@ -179,6 +179,10 @@ const size_t
 GetOptimizedLength(
 	const HashAlgorithm Algorithm);
 
+const bool
+SupportsOptimization(
+    const HashAlgorithm Algorithm);
+
 //
 // Generic init/update/finalize
 //
@@ -197,7 +201,7 @@ void
 SimdHashUpdateOptimized(
     SimdHashContext* Context,
     const size_t Lengths[],
-    const uint8_t* Buffers[]);
+    const uint8_t* const Buffers[]);
 
 void
 SimdHashUpdateAll(
@@ -209,7 +213,7 @@ void
 SimdHashUpdateAllOptimized(
     SimdHashContext* Context,
     const size_t Length,
-    const uint8_t* Buffers[]);
+    const uint8_t* const Buffers[]);
 
 void
 SimdHashFinalize(

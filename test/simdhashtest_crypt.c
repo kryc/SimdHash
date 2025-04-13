@@ -30,8 +30,8 @@ main(
     size_t lengths[MAX_LANES];
     uint8_t buffers[MAX_LANES][MAXLEN];
     const uint8_t* bufferptrs[MAX_LANES];
-    uint8_t hashes[MAX_LANES * SHA1_SIZE];
-    uint8_t compare[SHA1_SIZE];
+    uint8_t hashes[MAX_LANES * MAX_HASH_SIZE];
+    uint8_t compare[MAX_HASH_SIZE];
     size_t lanes = SimdLanes();
     int failed = 0;
 
@@ -46,43 +46,87 @@ main(
 
     while (!failed)
     {
-        for (size_t i = 0; i < lanes; i++)
+        for (size_t a = 0; a < SimdHashAlgorithmCount && !failed; a++)
         {
-            size_t length = ((size_t)rand()) % MAXLEN;
-            lengths[i] = length;
-            for (size_t j = 0; j < length; j++)
+            HashAlgorithm algorithm = SimdHashAlgorithms[a];
+            if (algorithm == HashAlgorithmNTLM)
             {
-                buffers[i][j] = (uint8_t)(rand() & 0xff);
+                continue;
             }
-        }
+            
+            fprintf(stderr, "Testing %s\n", HashAlgorithmToString(algorithm));
 
-        SimdHashOptimized(
-            HashAlgorithmSHA1,
-            lengths,
-            bufferptrs,
-            hashes
-        );
-
-        for (size_t i = 0; i < lanes; i++)
-        {
-            const uint8_t* hash = &hashes[i * SHA1_SIZE];
-            SHA1(bufferptrs[i], lengths[i], compare);
-            if (memcmp(hash, compare, SHA1_SIZE) != 0)
+            for (size_t i = 0; i < lanes; i++)
             {
-                fprintf(stderr, "[!] (length %3zu) ", lengths[i]);
-                print_hex(stderr, hash, 8);
-                fprintf(stderr, " != ");
-                print_hex(stderr, compare, 8);
-                fprintf(stderr, "\n");
-                failed = 1;
+                size_t length = ((size_t)rand()) % MAXLEN;
+                lengths[i] = length;
+                for (size_t j = 0; j < length; j++)
+                {
+                    buffers[i][j] = (uint8_t)(rand() & 0xff);
+                }
             }
-            else
+
+            SimdHash(
+                algorithm,
+                lengths,
+                bufferptrs,
+                hashes
+            );
+
+            for (size_t i = 0; i < lanes; i++)
             {
-                fprintf(stderr, "[+] (length %3zu) ", lengths[i]);
-                print_hex(stderr, hash, 8);
-                fprintf(stderr, " == ");
-                print_hex(stderr, compare, 8);
-                fprintf(stderr, "\n");
+                const uint8_t* hash = &hashes[i * GetHashWidth(algorithm)];
+                SimdHashSingle(algorithm, lengths[i], bufferptrs[i], compare);
+                if (memcmp(hash, compare, GetHashWidth(algorithm)) != 0)
+                {
+                    fprintf(stderr, "B[!] (length %3zu) ", lengths[i]);
+                    print_hex(stderr, hash, 8);
+                    fprintf(stderr, " != ");
+                    print_hex(stderr, compare, 8);
+                    fprintf(stderr, "\n");
+                    failed = 1;
+                }
+                else
+                {
+                    fprintf(stderr, "B[+] (length %3zu) ", lengths[i]);
+                    print_hex(stderr, hash, 8);
+                    fprintf(stderr, " == ");
+                    print_hex(stderr, compare, 8);
+                    fprintf(stderr, "\n");
+                }
+            }
+
+            if (SupportsOptimization(algorithm))
+            {
+                SimdHashOptimized(
+                    algorithm,
+                    lengths,
+                    bufferptrs,
+                    hashes
+                );
+
+                for (size_t i = 0; i < lanes; i++)
+                {
+                    const uint8_t* hash = &hashes[i * GetHashWidth(algorithm)];
+                    SimdHashSingle(algorithm, lengths[i], bufferptrs[i], compare);
+                    if (memcmp(hash, compare, GetHashWidth(algorithm)) != 0)
+                    {
+                        fprintf(stderr, "O[!] (length %3zu) ", lengths[i]);
+                        print_hex(stderr, hash, 8);
+                        fprintf(stderr, " != ");
+                        print_hex(stderr, compare, 8);
+                        fprintf(stderr, "\n");
+                        failed = 1;
+                    }
+                    else
+                    {
+                        fprintf(stderr, "O[+] (length %3zu) ", lengths[i]);
+                        print_hex(stderr, hash, 8);
+                        fprintf(stderr, " == ");
+                        print_hex(stderr, compare, 8);
+                        fprintf(stderr, "\n");
+                    }
+                }
             }
         }
     }  

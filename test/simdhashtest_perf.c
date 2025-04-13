@@ -43,6 +43,8 @@ timer_end(
     return diffInNanos;
 }
 
+#define LENGTH 48
+
 static void
 PerformanceTests(
     const HashAlgorithm Algorithm,
@@ -54,21 +56,33 @@ PerformanceTests(
 	per second but does not measure correctness.
 --*/
 {
-	SimdHashContext context;
-	uint8_t* buffers[SimdLanes()];
+	size_t lengths[MAX_LANES];
+    uint8_t buffers[MAX_LANES][LENGTH];
+    const uint8_t* bufferptrs[MAX_LANES];
+    uint8_t hashes[MAX_LANES * MAX_HASH_SIZE];
+
 	struct timespec begin;
 	long elapsed;
 	size_t hashesPerSec, fastest, slowest, average;
-    static const uint8_t input[128] = {0};
     const char* algorithmString;
 
 	//
 	// Initialize the buffers
 	//
+    for (size_t i = 0; i < MAX_LANES; i++)
+    {
+        bufferptrs[i] = &buffers[i][0];
+    }
+
 	for (size_t i = 0; i < SimdLanes(); i++)
 	{
-		buffers[i] = (uint8_t*)input;
+		memset(buffers[i], 0, LENGTH);
 	}
+    
+    for (size_t i = 0; i < SimdLanes(); i++)
+    {
+        lengths[i] = 48;
+    }
 
 	average = 0;
 	fastest = 0;
@@ -79,9 +93,24 @@ PerformanceTests(
     for (size_t i = 0; i < Iterations; i++)
     {
         begin = timer_start();
-        SimdHashInit(&context, Algorithm);
-        SimdHashUpdateAll(&context, 48 /*Semi-random length*/, (const uint8_t**)buffers);
-        SimdHashFinalize(&context);
+        if (SupportsOptimization(Algorithm))
+        {
+            SimdHashOptimized(
+                Algorithm,
+                lengths,
+                bufferptrs,
+                hashes
+            );
+        }
+        else
+        {
+            SimdHash(
+                Algorithm,
+                lengths,
+                bufferptrs,
+                hashes
+            );
+        }
         elapsed = timer_end(begin);
 
         hashesPerSec = 1e9 / elapsed;

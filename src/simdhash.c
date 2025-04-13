@@ -141,6 +141,25 @@ GetOptimizedLength(
     }
 }
 
+const bool
+SupportsOptimization(
+    const HashAlgorithm Algorithm)
+{
+    switch (Algorithm)
+    {
+    case HashAlgorithmMD4:
+    case HashAlgorithmMD5:
+    case HashAlgorithmSHA1:
+    case HashAlgorithmSHA256:
+        return true;
+    case HashAlgorithmSHA384:
+    case HashAlgorithmSHA512:
+    case HashAlgorithmNTLM:
+    case HashAlgorithmUndefined:
+        return false;
+    }
+}
+
 const HashAlgorithm
 DetectHashAlgorithm(
     const size_t HashLength
@@ -325,7 +344,7 @@ void
 SimdHashUpdateOptimized(
     SimdHashContext* Context,
     const size_t Lengths[],
-    const uint8_t* Buffers[]
+    const uint8_t* const Buffers[]
 )
 {
     assert(Context->Algorithm != HashAlgorithmNTLM);
@@ -464,7 +483,7 @@ void
 SimdHashUpdateAllOptimized(
     SimdHashContext* Context,
     const size_t Length,
-    const uint8_t* Buffers[]
+    const uint8_t* const Buffers[]
 )
 {
     size_t lengths[MAX_LANES];
@@ -718,7 +737,7 @@ SimdHashOptimized(
         {
             SimdHashContext ctx;
             SimdHashInit(&ctx, Algorithm);
-            SimdHashUpdate(&ctx, Lengths, Buffers);
+            SimdHashUpdateOptimized(&ctx, Lengths, Buffers);
             SimdHashFinalize(&ctx);
             SimdHashGetHashes(&ctx, HashBuffers);
         }
