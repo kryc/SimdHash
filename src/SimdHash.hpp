@@ -25,7 +25,8 @@ SimdHashAlgorithms{
     HashAlgorithmSHA1,
     HashAlgorithmSHA256,
     HashAlgorithmSHA384,
-    HashAlgorithmSHA512
+    HashAlgorithmSHA512,
+    HashAlgorithmNTLM
 };
 
 }
