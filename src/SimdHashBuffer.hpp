@@ -85,7 +85,7 @@ public:
     const void Set(const size_t Index, const std::string_view Value) {
         const size_t copylen = std::min<size_t>(Value.size(), m_Width);
         auto span = m_Span.subspan(Index * m_Width, m_Width);
-        std::memcpy(span.data(), Value.data(), copylen);
+        std::copy_n(Value.data(), copylen, span.data());
         m_Lengths[Index] = copylen;
     }
     // Get methods return read only spans pointing to
@@ -141,7 +141,7 @@ public:
     const void Set(const size_t Index, const std::string_view Value) {
         const size_t copylen = std::min<size_t>(Value.size(), Width);
         auto span = m_Span.subspan(Index * Width, Width);
-        std::memcpy(span.data(), Value.data(), copylen);
+        std::copy_n(Value.data(), copylen, span.data());
         m_Lengths[Index] = copylen;
     }
     void SetLength(const size_t Index, const size_t Length) { m_Lengths[Index] = Length; }
