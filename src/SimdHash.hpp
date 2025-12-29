@@ -18,7 +18,7 @@
 namespace simdhash
 {
 
-std::array<HashAlgorithm, SimdHashAlgorithmCount>
+inline std::array<HashAlgorithm, SimdHashAlgorithmCount>
 SimdHashAlgorithms{
     HashAlgorithmMD4,
     HashAlgorithmMD5,
