@@ -12,11 +12,32 @@
 #define SimdHash_hpp
 
 #include <array>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string_view>
+#include <iostream>
 
 #include "simdhash.h"
 
 namespace simdhash
 {
+
+namespace
+{
+    static inline void
+    CheckImpl(
+        const bool Condition,
+        const char* Message
+    )
+    {
+        if (!Condition)
+        {
+            std::cerr << "Check failed: " << Message << std::endl;
+            std::abort();
+        }
+    }
+}
 
 inline std::array<HashAlgorithm, SimdHashAlgorithmCount>
 SimdHashAlgorithms{
@@ -28,6 +49,19 @@ SimdHashAlgorithms{
     HashAlgorithmSHA512,
     HashAlgorithmNTLM
 };
+
+template<typename T>
+static inline void
+SimdHashSingle(
+    const HashAlgorithm Algorithm,
+    const T Input,
+    std::span<uint8_t> Output
+)
+{
+    const size_t requiredSize = GetDigestLength(Algorithm);
+    CheckImpl(Output.size() >= requiredSize, "Output buffer too small for hash algorithm");
+    SimdHashSingle(Algorithm, Input.size(), (const uint8_t*)Input.data(), Output.data());
+}
 
 }
 
