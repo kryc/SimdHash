@@ -225,10 +225,16 @@ TEST(SimdOps, BswapEpi32) {
 // ============================================================
 
 TEST(SimdOps, CmpeqEpi32) {
+#if defined(__AVX512F__)
+    // AVX-512 cmpeq returns __mmask16
+    EXPECT_EQ(cmpeq_epi32(set1_epi32(42), set1_epi32(42)), (__mmask16)0xFFFF);
+    EXPECT_EQ(cmpeq_epi32(set1_epi32(42), set1_epi32(43)), (__mmask16)0);
+#else
     // Equal: all bits set
     ExpectAllLanes32(cmpeq_epi32(set1_epi32(42), set1_epi32(42)), 0xFFFFFFFF);
     // Not equal: all bits clear
     ExpectAllLanes32(cmpeq_epi32(set1_epi32(42), set1_epi32(43)), 0);
+#endif
 }
 
 // ============================================================

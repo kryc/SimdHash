@@ -56,6 +56,11 @@
 #define MAX_BUFFER_SIZE_DWORDS (MAX_BUFFER_SIZE / 4)
 #define MAX_OPTIMIZED_BUFFER_SIZE (SHA256_OPTIMIZED_BUFFER_SIZE)
 
+#define FNV32_SIZE (4)
+#define FNV32_H_COUNT (1)
+#define FNV64_SIZE (8)
+#define FNV64_H_COUNT (2)
+
 typedef enum _HashAlgorithm
 {
     HashAlgorithmUndefined = 0,
@@ -66,7 +71,11 @@ typedef enum _HashAlgorithm
     HashAlgorithmSHA384,
     HashAlgorithmSHA512,
     HashAlgorithmNTLM,
-    HashAlgorithmMax = HashAlgorithmNTLM
+    HashAlgorithmFNV1_32,
+    HashAlgorithmFNV1a_32,
+    HashAlgorithmFNV1_64,
+    HashAlgorithmFNV1a_64,
+    HashAlgorithmMax = HashAlgorithmFNV1a_64
 } HashAlgorithm;
 
 #define VALUE_ALIGN (SIMD_WIDTH/8)
@@ -113,7 +122,7 @@ SimdHashCopyContext(
     memcpy(Destination, Source, offsetof(SimdHashContext, ShaCtx));
 }
 
-#define SimdHashAlgorithmCount 7
+#define SimdHashAlgorithmCount 11
 static const HashAlgorithm
 SimdHashAlgorithms[SimdHashAlgorithmCount] = {
     HashAlgorithmMD4,
@@ -122,7 +131,11 @@ SimdHashAlgorithms[SimdHashAlgorithmCount] = {
     HashAlgorithmSHA256,
     HashAlgorithmSHA384,
     HashAlgorithmSHA512,
-    HashAlgorithmNTLM
+    HashAlgorithmNTLM,
+    HashAlgorithmFNV1_32,
+    HashAlgorithmFNV1a_32,
+    HashAlgorithmFNV1_64,
+    HashAlgorithmFNV1a_64
 };
 
 #ifdef __cplusplus
@@ -364,6 +377,85 @@ void SimdSha512Update(
 
 void SimdSha512Finalize(
     SimdHashContext* Context);
+
+//
+// FNV-1 32-bit
+//
+void SimdFnv1_32Init(
+    SimdHashContext* Context);
+
+void SimdFnv1_32Update(
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* const Buffers[]);
+
+void SimdFnv1_32Finalize(
+    SimdHashContext* Context);
+
+//
+// FNV-1a 32-bit
+//
+void SimdFnv1a_32Init(
+    SimdHashContext* Context);
+
+void SimdFnv1a_32Update(
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* const Buffers[]);
+
+void SimdFnv1a_32Finalize(
+    SimdHashContext* Context);
+
+//
+// FNV-1 64-bit
+//
+void SimdFnv1_64Init(
+    SimdHashContext* Context);
+
+void SimdFnv1_64Update(
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* const Buffers[]);
+
+void SimdFnv1_64Finalize(
+    SimdHashContext* Context);
+
+//
+// FNV-1a 64-bit
+//
+void SimdFnv1a_64Init(
+    SimdHashContext* Context);
+
+void SimdFnv1a_64Update(
+    SimdHashContext* Context,
+    const size_t Lengths[],
+    const uint8_t* const Buffers[]);
+
+void SimdFnv1a_64Finalize(
+    SimdHashContext* Context);
+
+//
+// FNV scalar implementations
+//
+void Fnv1_32Single(
+    const uint8_t* Buffer,
+    const size_t Length,
+    uint8_t* HashBuffer);
+
+void Fnv1a_32Single(
+    const uint8_t* Buffer,
+    const size_t Length,
+    uint8_t* HashBuffer);
+
+void Fnv1_64Single(
+    const uint8_t* Buffer,
+    const size_t Length,
+    uint8_t* HashBuffer);
+
+void Fnv1a_64Single(
+    const uint8_t* Buffer,
+    const size_t Length,
+    uint8_t* HashBuffer);
 
 //
 // SimdHash Utility

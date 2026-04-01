@@ -52,7 +52,7 @@ typedef enum _LOG2VAL
 #define or_simd         _mm512_or_si512
 #define and_simd        _mm512_and_si512
 #define andnot_simd     _mm512_andnot_si512
-#define cmpeq_epi32     _mm512_cmpeq_epi32
+#define cmpeq_epi32     _mm512_cmpeq_epi32_mask
 // Custom
 #define bswap_epi32     _mm512_bswap_epi32
 #elif defined(__arm64__) || defined(__aarch64__)
@@ -226,7 +226,8 @@ mul_epu32(
     const simd_t Value2
 )
 {
-    simd_t res_lo = _mm512_mul_epu32(Value1, Value2);
+    simd_t lo_mask = srli_epi64(set1_epi32(-1), 32);
+    simd_t res_lo = and_simd(_mm512_mul_epu32(Value1, Value2), lo_mask);
     simd_t res_hi = _mm512_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
     return or_simd(slli_epi64(res_hi, 32), res_lo);
 }
@@ -238,7 +239,8 @@ mul_epu32(
     const simd_t Value2
 )
 {
-    simd_t res_lo = _mm256_mul_epu32(Value1, Value2);
+    simd_t lo_mask = srli_epi64(set1_epi32(-1), 32);
+    simd_t res_lo = and_simd(_mm256_mul_epu32(Value1, Value2), lo_mask);
     simd_t res_hi = _mm256_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
     return or_simd(slli_epi64(res_hi, 32), res_lo);
 }
@@ -250,7 +252,8 @@ mul_epu32(
     const simd_t Value2
 )
 {
-    simd_t res_lo = _mm_mul_epu32(Value1, Value2);
+    simd_t lo_mask = srli_epi64(set1_epi32(-1), 32);
+    simd_t res_lo = and_simd(_mm_mul_epu32(Value1, Value2), lo_mask);
     simd_t res_hi = _mm_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
     return or_simd(slli_epi64(res_hi, 32), res_lo);
 }
@@ -333,14 +336,14 @@ bswap_epi32(
 
 #if defined(__AVX512F__)
     simd_t shuffleMask = _mm512_setr_epi64(
-        0x0001020304050607,
-        0x08090a0b0c0d0e0f,
-        0x1011121314151617,
-        0x18191a1b1c1d1e1f,
-        0x2021222324252627,
-        0x28292a2b2c2d2e2f,
-        0x3031323334353637,
-        0x38393a3b3c3d3e3f
+        0x0405060700010203,
+        0x0c0d0e0f08090a0b,
+        0x0405060700010203,
+        0x0c0d0e0f08090a0b,
+        0x0405060700010203,
+        0x0c0d0e0f08090a0b,
+        0x0405060700010203,
+        0x0c0d0e0f08090a0b
     );
     return _mm512_shuffle_epi8(Value, shuffleMask);
 #elif defined(__arm64__) || defined(__aarch64__)

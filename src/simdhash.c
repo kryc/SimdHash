@@ -67,6 +67,26 @@ ParseHashAlgorithm(
     {
         return HashAlgorithmNTLM;
     }
+    else if (strcmp(AlgorithmString, "fnv1-32") == 0 ||
+        strcmp(AlgorithmString, "FNV1-32") == 0)
+    {
+        return HashAlgorithmFNV1_32;
+    }
+    else if (strcmp(AlgorithmString, "fnv1a-32") == 0 ||
+        strcmp(AlgorithmString, "FNV1a-32") == 0)
+    {
+        return HashAlgorithmFNV1a_32;
+    }
+    else if (strcmp(AlgorithmString, "fnv1-64") == 0 ||
+        strcmp(AlgorithmString, "FNV1-64") == 0)
+    {
+        return HashAlgorithmFNV1_64;
+    }
+    else if (strcmp(AlgorithmString, "fnv1a-64") == 0 ||
+        strcmp(AlgorithmString, "FNV1a-64") == 0)
+    {
+        return HashAlgorithmFNV1a_64;
+    }
     return HashAlgorithmUndefined;
 }
 
@@ -91,6 +111,14 @@ HashAlgorithmToString(
         return "SHA512";
     case HashAlgorithmNTLM:
         return "NTLM";
+    case HashAlgorithmFNV1_32:
+        return "FNV1_32";
+    case HashAlgorithmFNV1a_32:
+        return "FNV1a_32";
+    case HashAlgorithmFNV1_64:
+        return "FNV1_64";
+    case HashAlgorithmFNV1a_64:
+        return "FNV1a_64";
     default:
         return "Unknown";
     }
@@ -116,6 +144,12 @@ GetHashWidth(
         return SHA384_SIZE;
     case HashAlgorithmSHA512:
         return SHA512_SIZE;
+    case HashAlgorithmFNV1_32:
+    case HashAlgorithmFNV1a_32:
+        return FNV32_SIZE;
+    case HashAlgorithmFNV1_64:
+    case HashAlgorithmFNV1a_64:
+        return FNV64_SIZE;
     default:
         return (size_t)-1;
     }
@@ -157,6 +191,10 @@ SupportsOptimization(
     case HashAlgorithmSHA512:
     case HashAlgorithmNTLM:
     case HashAlgorithmUndefined:
+    case HashAlgorithmFNV1_32:
+    case HashAlgorithmFNV1a_32:
+    case HashAlgorithmFNV1_64:
+    case HashAlgorithmFNV1a_64:
         return false;
     }
 }
@@ -213,6 +251,18 @@ void SimdHashInit(
     case HashAlgorithmNTLM:
         SimdMd4Init(Context);
         Context->Algorithm = HashAlgorithmNTLM;
+        break;
+    case HashAlgorithmFNV1_32:
+        SimdFnv1_32Init(Context);
+        break;
+    case HashAlgorithmFNV1a_32:
+        SimdFnv1a_32Init(Context);
+        break;
+    case HashAlgorithmFNV1_64:
+        SimdFnv1_64Init(Context);
+        break;
+    case HashAlgorithmFNV1a_64:
+        SimdFnv1a_64Init(Context);
         break;
     default:
         assert(false);
@@ -529,6 +579,18 @@ SimdHashUpdate(
         break;
     case HashAlgorithmUndefined:
         break;
+    case HashAlgorithmFNV1_32:
+        SimdFnv1_32Update(Context, Lengths, Buffers);
+        break;
+    case HashAlgorithmFNV1a_32:
+        SimdFnv1a_32Update(Context, Lengths, Buffers);
+        break;
+    case HashAlgorithmFNV1_64:
+        SimdFnv1_64Update(Context, Lengths, Buffers);
+        break;
+    case HashAlgorithmFNV1a_64:
+        SimdFnv1a_64Update(Context, Lengths, Buffers);
+        break;
     }
 }
 
@@ -711,6 +773,18 @@ SimdHashFinalize(
     case HashAlgorithmSHA512:
         SimdSha512Finalize(Context);
         break;
+    case HashAlgorithmFNV1_32:
+        SimdFnv1_32Finalize(Context);
+        break;
+    case HashAlgorithmFNV1a_32:
+        SimdFnv1a_32Finalize(Context);
+        break;
+    case HashAlgorithmFNV1_64:
+        SimdFnv1_64Finalize(Context);
+        break;
+    case HashAlgorithmFNV1a_64:
+        SimdFnv1a_64Finalize(Context);
+        break;
     case HashAlgorithmUndefined:
         break;
     default:
@@ -734,6 +808,10 @@ SimdHash(
     case HashAlgorithmSHA1:
     case HashAlgorithmSHA256:
     case HashAlgorithmNTLM:
+    case HashAlgorithmFNV1_32:
+    case HashAlgorithmFNV1a_32:
+    case HashAlgorithmFNV1_64:
+    case HashAlgorithmFNV1a_64:
         {
             SimdHashContext ctx;
             SimdHashInit(&ctx, Algorithm);
@@ -785,6 +863,10 @@ SimdHashExtended(
     case HashAlgorithmSHA384:
     case HashAlgorithmSHA512:
     case HashAlgorithmUndefined:
+    case HashAlgorithmFNV1_32:
+    case HashAlgorithmFNV1a_32:
+    case HashAlgorithmFNV1_64:
+    case HashAlgorithmFNV1a_64:
         break;
     }
 }
@@ -824,6 +906,18 @@ SimdHashOptimized(
         }
         break;
     case HashAlgorithmUndefined:
+        break;
+    case HashAlgorithmFNV1_32:
+    case HashAlgorithmFNV1a_32:
+    case HashAlgorithmFNV1_64:
+    case HashAlgorithmFNV1a_64:
+        {
+            SimdHashContext ctx;
+            SimdHashInit(&ctx, Algorithm);
+            SimdHashUpdate(&ctx, Lengths, Buffers);
+            SimdHashFinalize(&ctx);
+            SimdHashGetHashes(&ctx, HashBuffers);
+        }
         break;
     }
 }
@@ -900,6 +994,18 @@ SimdHashSingle(
         break;
     case HashAlgorithmNTLM:
         NTLMSingle(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmFNV1_32:
+        Fnv1_32Single(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmFNV1a_32:
+        Fnv1a_32Single(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmFNV1_64:
+        Fnv1_64Single(Buffer, Length, (uint8_t*) HashBuffer);
+        break;
+    case HashAlgorithmFNV1a_64:
+        Fnv1a_64Single(Buffer, Length, (uint8_t*) HashBuffer);
         break;
     case HashAlgorithmUndefined:
         break;
