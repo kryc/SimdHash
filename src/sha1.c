@@ -49,7 +49,7 @@ SimdSha1Transform(
     const bool Finalize
 )
 {
-    simd_t f, k;
+    simd_t f;
     //
     // Expand the message schedule
     //
@@ -80,44 +80,65 @@ SimdSha1Transform(
     //
     // Sha1 compression function
     //
-    for (size_t i = 0; i < 80; i++)
+
+    // Round 1 (i = 0..19): f = Choice(b,c,d)
     {
-        if (i < 20)
+        simd_t k = set1_epi32(Sha1RoundConstants[0]);
+        for (size_t i = 0; i < 20; i++)
         {
-            // f = (b and c) or ((not b) and d)
             f = SimdBitwiseChoiceWithControl(c, d, b);
-            k = set1_epi32(Sha1RoundConstants[0]);
+            simd_t temp = add_epi32(add_epi32(rotl_epi32(a, 5), f), add_epi32(add_epi32(e, k), messageSchedule[i]));
+            e = d;
+            d = c;
+            c = rotl_epi32(b, 30);
+            b = a;
+            a = temp;
         }
-        else if (i < 40)
+    }
+
+    // Round 2 (i = 20..39): f = b xor c xor d
+    {
+        simd_t k = set1_epi32(Sha1RoundConstants[1]);
+        for (size_t i = 20; i < 40; i++)
         {
-            // f = b xor c xor d
             f = xor_simd(b, xor_simd(c, d));
-            k = set1_epi32(Sha1RoundConstants[1]);
+            simd_t temp = add_epi32(add_epi32(rotl_epi32(a, 5), f), add_epi32(add_epi32(e, k), messageSchedule[i]));
+            e = d;
+            d = c;
+            c = rotl_epi32(b, 30);
+            b = a;
+            a = temp;
         }
-        else if (i < 60)
+    }
+
+    // Round 3 (i = 40..59): f = Majority(b,c,d)
+    {
+        simd_t k = set1_epi32(Sha1RoundConstants[2]);
+        for (size_t i = 40; i < 60; i++)
         {
-            // f = (b and c) or (b and d) or (c and d)
             f = SimdBitwiseMajority(b, c, d);
-            k = set1_epi32(Sha1RoundConstants[2]);
+            simd_t temp = add_epi32(add_epi32(rotl_epi32(a, 5), f), add_epi32(add_epi32(e, k), messageSchedule[i]));
+            e = d;
+            d = c;
+            c = rotl_epi32(b, 30);
+            b = a;
+            a = temp;
         }
-        else //if (i < 80)
+    }
+
+    // Round 4 (i = 60..79): f = b xor c xor d
+    {
+        simd_t k = set1_epi32(Sha1RoundConstants[3]);
+        for (size_t i = 60; i < 80; i++)
         {
-            // f = b xor c xor d
             f = xor_simd(b, xor_simd(c, d));
-            k = set1_epi32(Sha1RoundConstants[3]);
+            simd_t temp = add_epi32(add_epi32(rotl_epi32(a, 5), f), add_epi32(add_epi32(e, k), messageSchedule[i]));
+            e = d;
+            d = c;
+            c = rotl_epi32(b, 30);
+            b = a;
+            a = temp;
         }
-        
-        simd_t w = messageSchedule[i];
-        simd_t temp = rotl_epi32(a, 5);
-        temp = add_epi32(temp, f);
-        temp = add_epi32(temp, e);
-        temp = add_epi32(temp, k);
-        temp = add_epi32(temp, w);
-        e = d;
-        d = c;
-        c = rotl_epi32(b, 30);
-        b = a;
-        a = temp;
     }
     
     //
