@@ -17,6 +17,7 @@
 #include "simdhash.h"
 #include "simdcommon.h"
 #include "hashcommon.h"
+#include "library.h"
 
 const size_t
 SimdLanes(
@@ -348,15 +349,84 @@ SimdHashUpdateOptimized(
 )
 {
     assert(Context->Algorithm != HashAlgorithmNTLM);
-    for (size_t lane = 0; lane < Context->Lanes; lane++)
+    const size_t lanes = Context->Lanes;
+
+    // Check if all lanes have the same length
+    const size_t len0 = Lengths[0];
+    bool uniform = true;
+    for (size_t i = 1; i < lanes; i++)
     {
-        assert(Lengths[lane] <= GetOptimizedLength(Context->Algorithm));
-        (void) SimdHashUpdateLaneBuffer(
-            Context,
-            lane,
-            Lengths[lane],
-            Buffers[lane]
-        );
+        if (Lengths[i] != len0)
+        {
+            uniform = false;
+            break;
+        }
+    }
+
+    if (uniform)
+    {
+        // SIMD fast path: gather one dword from each lane, single SIMD store
+        assert(len0 <= GetOptimizedLength(Context->Algorithm));
+        const size_t fullDwords = len0 / 4;
+        const size_t tailBytes = len0 & 3;
+
+        for (size_t dw = 0; dw < fullDwords; dw++)
+        {
+            const size_t byteOff = dw * 4;
+            SimdValue v __attribute__((__aligned__(VALUE_ALIGN)));
+            for (size_t lane = 0; lane < lanes; lane++)
+            {
+                v.epi32_u32[lane] = *(const uint32_t*)(Buffers[lane] + byteOff);
+            }
+            store_simd(&Context->Buffer[dw].usimd, v.usimd);
+        }
+
+        if (tailBytes)
+        {
+            const size_t tailStart = fullDwords * 4;
+            for (size_t lane = 0; lane < lanes; lane++)
+            {
+                for (size_t b = 0; b < tailBytes; b++)
+                {
+                    SimdHashWriteBuffer8(Context, tailStart + b, lane, Buffers[lane][tailStart + b]);
+                }
+            }
+        }
+
+        for (size_t lane = 0; lane < lanes; lane++)
+        {
+            Context->Offset[lane] += len0;
+            Context->BitLength[lane] += len0 * 8;
+        }
+    }
+    else
+    {
+        // Per-lane fallback: direct dword writes without alignment ladder
+        for (size_t lane = 0; lane < lanes; lane++)
+        {
+            assert(Lengths[lane] <= GetOptimizedLength(Context->Algorithm));
+            const size_t len = Lengths[lane];
+            const uint8_t* buf = Buffers[lane];
+            const size_t fullDwords = len / 4;
+            const size_t tailBytes = len & 3;
+
+            for (size_t dw = 0; dw < fullDwords; dw++)
+            {
+                Context->Buffer[dw].epi32_u32[lane] = *(const uint32_t*)(buf + dw * 4);
+            }
+
+            if (tailBytes)
+            {
+                const size_t tailStart = fullDwords * 4;
+                for (size_t b = 0; b < tailBytes; b++)
+                {
+                    SimdHashWriteBuffer8(Context, tailStart + b, lane, buf[tailStart + b]);
+                }
+            }
+
+            Context->Offset[lane] += len;
+            Context->BitLength[lane] += len * 8;
+        }
     }
 }
 
