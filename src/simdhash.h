@@ -97,21 +97,27 @@ typedef union _SimdValue
 typedef struct _SimdHashContext
 {
     SimdValue H[MAX_H_COUNT];
-    SimdValue Buffer[MAX_BUFFER_SIZE_DWORDS];
+    union
+    {
+        struct
+        {
+            SimdValue Buffer[MAX_BUFFER_SIZE_DWORDS];
+            uint64_t  Offset[MAX_LANES];
+            uint64_t  BitLength[MAX_LANES];
+            size_t    BufferSize;
+        };
+        SHA512_CTX    ShaCtx[MAX_LANES];  // For SHA384 and SHA512
+    };
     size_t    HSize;
     size_t    HashSize;
-    size_t    BufferSize;
-    uint64_t  Offset[MAX_LANES];
-    uint64_t  BitLength[MAX_LANES];
     size_t    Lanes;
     HashAlgorithm Algorithm;
-    SHA512_CTX    ShaCtx[MAX_LANES];  // For SHA384 and SHA512
 } SimdHashContext;
 
 /*
- * Copy only the SIMD-relevant fields of a SimdHashContext,
- * skipping the large ShaCtx array which is only used by
- * the OpenSSL-based SHA384/SHA512 paths.
+ * Copy context for the SIMD path (everything except the ShaCtx union member).
+ * The union means Buffer/Offset/BitLength/BufferSize overlap with ShaCtx,
+ * so we copy the full struct which is now smaller without the extra ShaCtx.
  */
 static inline void
 SimdHashCopyContext(
@@ -119,7 +125,7 @@ SimdHashCopyContext(
     const SimdHashContext* Source
 )
 {
-    memcpy(Destination, Source, offsetof(SimdHashContext, ShaCtx));
+    *Destination = *Source;
 }
 
 #define SimdHashAlgorithmCount 11

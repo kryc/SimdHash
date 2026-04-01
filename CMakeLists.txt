@@ -16,6 +16,8 @@ set(CMAKE_CXX_FLAGS "-Wall -Werror -fno-exceptions -Wunsafe-buffer-usage")
 set(CMAKE_C_FLAGS "-Wall -Werror -Wno-unused-function")
 set(CMAKE_C_FLAGS_RELEASE "-O3 -funroll-loops")
 set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0 -fno-omit-frame-pointer -fsanitize=address -DDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb -O0 -fno-omit-frame-pointer -fsanitize=address -DDEBUG")
+set(CMAKE_EXE_LINKER_FLAGS_DEBUG "-fsanitize=address")
 
 # Handle MacOS Homebrew
 if(APPLE)

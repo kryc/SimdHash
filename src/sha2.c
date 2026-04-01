@@ -354,6 +354,7 @@ void SimdSha384Init(
 {
     Context->Algorithm = HashAlgorithmSHA384;
     Context->HSize = SHA384_H_COUNT;
+    Context->Lanes = SimdLanes();
     for (size_t lane = 0; lane < Context->Lanes; lane++)
     {
         SHA384_Init(&Context->ShaCtx[lane]);
@@ -396,6 +397,7 @@ void SimdSha512Init(
 {
     Context->Algorithm = HashAlgorithmSHA512;
     Context->HSize = SHA512_H_COUNT;
+    Context->Lanes = SimdLanes();
     for (size_t lane = 0; lane < Context->Lanes; lane++)
     {
         SHA512_Init(&Context->ShaCtx[lane]);
