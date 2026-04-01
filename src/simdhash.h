@@ -129,6 +129,28 @@ SimdHashCopyContext(
 }
 
 #define SimdHashAlgorithmCount 11
+#define SimdHashCryptoAlgorithmCount 7
+#define SimdHashOtherAlgorithmCount (SimdHashAlgorithmCount - SimdHashCryptoAlgorithmCount)
+
+static const HashAlgorithm
+SimdHashCryptoAlgorithms[SimdHashCryptoAlgorithmCount] = {
+    HashAlgorithmMD4,
+    HashAlgorithmMD5,
+    HashAlgorithmSHA1,
+    HashAlgorithmSHA256,
+    HashAlgorithmSHA384,
+    HashAlgorithmSHA512,
+    HashAlgorithmNTLM
+};
+
+static const HashAlgorithm
+SimdHashOtherAlgorithms[SimdHashOtherAlgorithmCount] = {
+    HashAlgorithmFNV1_32,
+    HashAlgorithmFNV1a_32,
+    HashAlgorithmFNV1_64,
+    HashAlgorithmFNV1a_64
+};
+
 static const HashAlgorithm
 SimdHashAlgorithms[SimdHashAlgorithmCount] = {
     HashAlgorithmMD4,

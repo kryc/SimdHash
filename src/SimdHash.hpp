@@ -39,6 +39,25 @@ namespace
     }
 }
 
+inline std::array<HashAlgorithm, SimdHashCryptoAlgorithmCount>
+SimdHashCryptoAlgorithms{
+    HashAlgorithmMD4,
+    HashAlgorithmMD5,
+    HashAlgorithmSHA1,
+    HashAlgorithmSHA256,
+    HashAlgorithmSHA384,
+    HashAlgorithmSHA512,
+    HashAlgorithmNTLM
+};
+
+inline std::array<HashAlgorithm, SimdHashOtherAlgorithmCount>
+SimdHashOtherAlgorithms{
+    HashAlgorithmFNV1_32,
+    HashAlgorithmFNV1a_32,
+    HashAlgorithmFNV1_64,
+    HashAlgorithmFNV1a_64
+};
+
 inline std::array<HashAlgorithm, SimdHashAlgorithmCount>
 SimdHashAlgorithms{
     HashAlgorithmMD4,
@@ -47,7 +66,11 @@ SimdHashAlgorithms{
     HashAlgorithmSHA256,
     HashAlgorithmSHA384,
     HashAlgorithmSHA512,
-    HashAlgorithmNTLM
+    HashAlgorithmNTLM,
+    HashAlgorithmFNV1_32,
+    HashAlgorithmFNV1a_32,
+    HashAlgorithmFNV1_64,
+    HashAlgorithmFNV1a_64
 };
 
 template<typename T>
