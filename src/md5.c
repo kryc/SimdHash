@@ -12,8 +12,6 @@
 #include <assert.h>
 #include <string.h>		// memset
 
-#include <signal.h>
-
 #include "simdhash.h"
 #include "simdcommon.h"
 #include "hashcommon.h"
@@ -71,7 +69,7 @@ void
 SimdMd5Transform(
     SimdHashContext* Context)
 {
-    simd_t f, g;
+    simd_t f;
     
     simd_t aO, bO, cO, dO;
     simd_t a = aO = load_simd(&Context->H[0].usimd);
@@ -82,53 +80,54 @@ SimdMd5Transform(
     //
     // Md5 compression function
     //
-    for (size_t i = 0; i < 64; i++)
+
+    // Round 1 (i = 0..15): F = Choice(b,c,d), g = i
+    for (size_t i = 0; i < 16; i++)
     {
-        if (i < 16)
-        {
-            // F := (B and C) or ((not B) and D)
-            f = SimdBitwiseChoiceWithControl(c, d, b);
-            // g := i
-            g = set1_epi32(i);
-        }
-        else if (i < 32)
-        {
-            // F := (D and B) or ((not D) and C)
-            f = SimdBitwiseChoiceWithControl(b, c, d);
-            // g := (5xi + 1) mod 16
-            g = shift_mod2_epi32(add_epi32(mul_epu32(set1_epi32(i), set1_epi32(5)), set1_epi32(1)), LOG2_16);
-        }
-        else if (i < 48)
-        {
-            // F := B xor C xor D
-            f = xor_simd(b, xor_simd(c, d));
-            // g := (3×i + 5) mod 16
-            g = shift_mod2_epi32(add_epi32(mul_epu32(set1_epi32(i), set1_epi32(3)), set1_epi32(5)), LOG2_16);
-        }
-        else //if (i < 64)
-        {
-            // F := C xor (B or (not D))
-            f = xor_simd(c, or_simd(b, not_simd(d)));
-            // g := (7×i) mod 16
-            g = shift_mod2_epi32(mul_epu32(set1_epi32(i), set1_epi32(7)), LOG2_16);
-        }
-        
-        SimdValue G, M;
-        store_simd(&G.usimd, g);
+        f = SimdBitwiseChoiceWithControl(c, d, b);
+        simd_t m = load_simd(&Context->Buffer[i].usimd);
+        simd_t k = set1_epi32(Md5RoundConstants[i]);
+        f = add_epi32(f, add_epi32(a, add_epi32(k, m)));
+        a = d;
+        d = c;
+        c = b;
+        b = add_epi32(b, rotl_epi32(f, Md5ShiftAmounts[i]));
+    }
 
-        for (size_t j = 0; j < Context->Lanes; j++)
-        {
-            uint32_t index = G.epi32_u32[j];
-            assert(index < 16);
-            if (index >= 16)
-            {
-                printf("%u\n", index);
-            }
-            M.epi32_u32[j] = Context->Buffer[index].epi32_u32[j];
-        }
+    // Round 2 (i = 16..31): F = Choice(d,b,c), g = (5*i + 1) % 16
+    for (size_t i = 16; i < 32; i++)
+    {
+        f = SimdBitwiseChoiceWithControl(b, c, d);
+        uint32_t g = (5 * i + 1) & 15;
+        simd_t m = load_simd(&Context->Buffer[g].usimd);
+        simd_t k = set1_epi32(Md5RoundConstants[i]);
+        f = add_epi32(f, add_epi32(a, add_epi32(k, m)));
+        a = d;
+        d = c;
+        c = b;
+        b = add_epi32(b, rotl_epi32(f, Md5ShiftAmounts[i]));
+    }
 
-        simd_t m = load_simd(&M.usimd);
-        // raise(SIGTRAP);
+    // Round 3 (i = 32..47): F = B xor C xor D, g = (3*i + 5) % 16
+    for (size_t i = 32; i < 48; i++)
+    {
+        f = xor_simd(b, xor_simd(c, d));
+        uint32_t g = (3 * i + 5) & 15;
+        simd_t m = load_simd(&Context->Buffer[g].usimd);
+        simd_t k = set1_epi32(Md5RoundConstants[i]);
+        f = add_epi32(f, add_epi32(a, add_epi32(k, m)));
+        a = d;
+        d = c;
+        c = b;
+        b = add_epi32(b, rotl_epi32(f, Md5ShiftAmounts[i]));
+    }
+
+    // Round 4 (i = 48..63): F = C xor (B or (not D)), g = (7*i) % 16
+    for (size_t i = 48; i < 64; i++)
+    {
+        f = xor_simd(c, or_simd(b, not_simd(d)));
+        uint32_t g = (7 * i) & 15;
+        simd_t m = load_simd(&Context->Buffer[g].usimd);
         simd_t k = set1_epi32(Md5RoundConstants[i]);
         f = add_epi32(f, add_epi32(a, add_epi32(k, m)));
         a = d;
