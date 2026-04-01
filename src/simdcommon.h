@@ -13,7 +13,7 @@
 #include <math.h>
 #include <stdint.h>
 
-#if defined(__AVX2__) || defined(__AVX512F__)
+#if defined(__AVX2__) || defined(__AVX512F__) || defined(__SSE4_2__) || defined(__SSSE3__) || defined(__SSE2__)
 #include <immintrin.h>
 #elif defined(__arm64__) || defined(__aarch64__)
 #include <arm_neon.h>
@@ -93,6 +93,62 @@ typedef enum _LOG2VAL
 #define cmpeq_epi32     _mm256_cmpeq_epi32
 // Custom
 #define bswap_epi32     _mm256_bswap_epi32
+#elif defined(__SSE4_2__)
+#define simd_t          __m128i
+#define SIMD_WIDTH      SIMD_WIDTH_128
+#define load_simd       _mm_load_si128
+#define store_simd      _mm_store_si128
+#define set1_epi32      _mm_set1_epi32
+#define set1_epi64      _mm_set1_epi64x
+#define shuffle_epi8    _mm_shuffle_epi8
+#define add_epi32       _mm_add_epi32
+#define sub_epi32       _mm_sub_epi32
+#define srli_epi32      _mm_srli_epi32
+#define srli_epi64      _mm_srli_epi64
+#define slli_epi32      _mm_slli_epi32
+#define slli_epi64      _mm_slli_epi64
+#define xor_simd        _mm_xor_si128
+#define or_simd         _mm_or_si128
+#define and_simd        _mm_and_si128
+#define andnot_simd     _mm_andnot_si128
+#define cmpeq_epi32     _mm_cmpeq_epi32
+#elif defined(__SSSE3__)
+#define simd_t          __m128i
+#define SIMD_WIDTH      SIMD_WIDTH_128
+#define load_simd       _mm_load_si128
+#define store_simd      _mm_store_si128
+#define set1_epi32      _mm_set1_epi32
+#define set1_epi64      _mm_set1_epi64x
+#define shuffle_epi8    _mm_shuffle_epi8
+#define add_epi32       _mm_add_epi32
+#define sub_epi32       _mm_sub_epi32
+#define srli_epi32      _mm_srli_epi32
+#define srli_epi64      _mm_srli_epi64
+#define slli_epi32      _mm_slli_epi32
+#define slli_epi64      _mm_slli_epi64
+#define xor_simd        _mm_xor_si128
+#define or_simd         _mm_or_si128
+#define and_simd        _mm_and_si128
+#define andnot_simd     _mm_andnot_si128
+#define cmpeq_epi32     _mm_cmpeq_epi32
+#elif defined(__SSE2__)
+#define simd_t          __m128i
+#define SIMD_WIDTH      SIMD_WIDTH_128
+#define load_simd       _mm_load_si128
+#define store_simd      _mm_store_si128
+#define set1_epi32      _mm_set1_epi32
+#define set1_epi64      _mm_set1_epi64x
+#define add_epi32       _mm_add_epi32
+#define sub_epi32       _mm_sub_epi32
+#define srli_epi32      _mm_srli_epi32
+#define srli_epi64      _mm_srli_epi64
+#define slli_epi32      _mm_slli_epi32
+#define slli_epi64      _mm_slli_epi64
+#define xor_simd        _mm_xor_si128
+#define or_simd         _mm_or_si128
+#define and_simd        _mm_and_si128
+#define andnot_simd     _mm_andnot_si128
+#define cmpeq_epi32     _mm_cmpeq_epi32
 #else
 #error "Unknown SIMD platform"
 #endif
@@ -175,7 +231,7 @@ mul_epu32(
     simd_t res_hi = _mm512_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
     return or_simd(slli_epi64(res_hi, 32), res_lo);
 }
-#else // AVX2
+#elif defined(__AVX2__)
 static inline
 simd_t
 mul_epu32(
@@ -185,6 +241,18 @@ mul_epu32(
 {
     simd_t res_lo = _mm256_mul_epu32(Value1, Value2);
     simd_t res_hi = _mm256_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
+    return or_simd(slli_epi64(res_hi, 32), res_lo);
+}
+#else // SSE2/SSSE3/SSE4.2
+static inline
+simd_t
+mul_epu32(
+    const simd_t Value1,
+    const simd_t Value2
+)
+{
+    simd_t res_lo = _mm_mul_epu32(Value1, Value2);
+    simd_t res_hi = _mm_mul_epu32(srli_epi64(Value1, 32), srli_epi64(Value2, 32));
     return or_simd(slli_epi64(res_hi, 32), res_lo);
 }
 #endif
@@ -278,7 +346,7 @@ bswap_epi32(
     return _mm512_shuffle_epi8(Value, shuffleMask);
 #elif defined(__arm64__) || defined(__aarch64__)
     return vrev32q_u8(vreinterpretq_u8_u32(Value));
-#else // AVX2
+#elif defined(__AVX2__)
     simd_t shuffleMask = _mm256_setr_epi32(
         0x00010203,	0x04050607,
         0x08090a0b,	0x0c0d0e0f,
@@ -286,6 +354,19 @@ bswap_epi32(
         0x18191a1b,	0x1c1d1e1f
     );
     return _mm256_shuffle_epi8(Value, shuffleMask);
+#elif defined(__SSSE3__)
+    simd_t shuffleMask = _mm_setr_epi8(
+        3, 2, 1, 0, 7, 6, 5, 4,
+        11, 10, 9, 8, 15, 14, 13, 12
+    );
+    return _mm_shuffle_epi8(Value, shuffleMask);
+#else // SSE2
+    simd_t mask = _mm_set1_epi32(0x00FF00FF);
+    simd_t swapped = or_simd(
+        _mm_slli_epi16(and_simd(Value, mask), 8),
+        _mm_srli_epi16(andnot_simd(mask, Value), 8)
+    );
+    return or_simd(srli_epi32(swapped, 16), slli_epi32(swapped, 16));
 #endif
 }
 

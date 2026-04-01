@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 
 # set the project name
-project(simdhash VERSION 0.1)
+project(simdhash VERSION 0.1 LANGUAGES C CXX)
 
 # Set build type default Release
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
@@ -9,7 +9,9 @@ if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
 endif()
 
 # specify clang
-SET(CMAKE_C_COMPILER clang)
+SET(CMAKE_C_COMPILER /usr/bin/clang)
+SET(CMAKE_CXX_COMPILER /usr/bin/clang++)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "-Wall -Werror -fno-exceptions -Wunsafe-buffer-usage")
 set(CMAKE_C_FLAGS "-Wall -Werror -Wno-unused-function")
 set(CMAKE_C_FLAGS_RELEASE "-O3 -funroll-loops")
@@ -31,13 +33,31 @@ add_library(simdhash ${LIBSOURCES})
 # Allow deprecated algorithms (MD4)
 target_compile_options(simdhash PRIVATE -Wno-deprecated-declarations)
 
-# Set AVX flags for X86
+# Backward compat: map old AVX variable to new SIMD variable
+if (NOT SIMD OR SIMD STREQUAL "")
+    if (AVX STREQUAL "512")
+        set(SIMD "avx512")
+    elseif(AVX STREQUAL "256")
+        set(SIMD "avx256")
+    endif()
+endif()
+
+# Set SIMD flags for X86
 message("Detected platform: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 if (NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64" AND NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
-    if (NOT AVX OR AVX STREQUAL "" OR AVX STREQUAL "256")
-        target_compile_options(simdhash PUBLIC -mavx2)
-    elseif(AVX STREQUAL "512")
+    if (SIMD STREQUAL "avx512")
         target_compile_options(simdhash PUBLIC -mavx512bw)
+    elseif(SIMD STREQUAL "avx256")
+        target_compile_options(simdhash PUBLIC -mavx2)
+    elseif(SIMD STREQUAL "sse42")
+        target_compile_options(simdhash PUBLIC -msse4.2)
+    elseif(SIMD STREQUAL "ssse3")
+        target_compile_options(simdhash PUBLIC -mssse3)
+    elseif(SIMD STREQUAL "sse2")
+        target_compile_options(simdhash PUBLIC -msse2)
+    else()
+        # Default: auto-detect from host CPU
+        target_compile_options(simdhash PUBLIC -march=native)
     endif()
 endif()
 
@@ -64,4 +84,30 @@ foreach(TEST ${TESTS})
                                     ./src/)
     target_link_libraries(${TESTNAME} crypto simdhash)
     add_dependencies(simdhash_tests ${TESTNAME})
+endforeach()
+
+# Google Test
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG v1.15.2
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+# Suppress project warnings for third-party gtest code
+set(SAVED_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-w")
+FetchContent_MakeAvailable(googletest)
+set(CMAKE_CXX_FLAGS "${SAVED_CXX_FLAGS}")
+
+enable_testing()
+
+file(GLOB GTESTS "./test/*_test.cpp")
+foreach(GTEST ${GTESTS})
+    get_filename_component(GTESTNAME ${GTEST} NAME_WE)
+    add_executable(${GTESTNAME} ${GTEST})
+    target_include_directories(${GTESTNAME} PUBLIC ./src/)
+    target_link_libraries(${GTESTNAME} gtest_main simdhash crypto)
+    target_compile_options(${GTESTNAME} PRIVATE -Wno-unsafe-buffer-usage)
+    add_test(NAME ${GTESTNAME} COMMAND ${GTESTNAME})
 endforeach()
