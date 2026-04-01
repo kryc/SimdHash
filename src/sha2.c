@@ -86,7 +86,7 @@ SimdCalculateS0(
     return xor_simd(ret, ar22);
 }
 
-// inline
+inline
 simd_t
 SimdCalculateExtendS0(
     const simd_t W
@@ -99,7 +99,7 @@ SimdCalculateExtendS0(
     return xor_simd(ret, wr3);
 }
 
-// inline
+inline
 simd_t
 SimdCalculateExtendS1(
     const simd_t W
