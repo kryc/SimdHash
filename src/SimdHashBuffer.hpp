@@ -123,7 +123,7 @@ template <size_t Width, size_t Count=MAX_LANES>
 class SimdHashBufferFixed
 {
 public:
-    SimdHashBufferFixed(void) : m_Span(m_Buffer)
+    SimdHashBufferFixed(void) : m_Buffer{}, m_Span(m_Buffer), m_Lengths{}
     {
         for (size_t i = 0; i < Count; i++)
         {
