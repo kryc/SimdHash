@@ -252,6 +252,77 @@ INSTANTIATE_TEST_SUITE_P(
 );
 
 // ============================================================
+// Mixed-length test crossing block boundary (covers context copy
+// in SimdHashUpdateInternal when lanes diverge mid-block)
+// ============================================================
+
+class MixedLengthBlockBoundaryTest : public ::testing::TestWithParam<HashAlgorithm> {};
+
+TEST_P(MixedLengthBlockBoundaryTest, LanesStraddleBlockBoundary) {
+    HashAlgorithm algo = GetParam();
+    if (algo == HashAlgorithmSHA384 || algo == HashAlgorithmSHA512)
+        GTEST_SKIP() << "SHA384/SHA512 use OpenSSL per-lane, no SIMD context copy";
+
+    size_t lanes = SimdLanes();
+    size_t digestLen = GetHashWidth(algo);
+
+    // Inputs of varying lengths: some < 55 (single block), some > 55 (two blocks)
+    // This forces some lanes to need a Transform while others don't
+    const std::string inputs[] = {
+        std::string(10, 'A'),   // 10 bytes — single block
+        std::string(40, 'B'),   // 40 bytes — single block
+        std::string(56, 'C'),   // 56 bytes — crosses into second block
+        std::string(70, 'D'),   // 70 bytes — well into second block
+        std::string(3, 'E'),    // 3 bytes — single block
+        std::string(63, 'F'),   // 63 bytes — near end of first block
+        std::string(100, 'G'),  // 100 bytes — two blocks
+        std::string(55, 'H'),   // 55 bytes — exactly at boundary
+        std::string(120, 'I'),  // 120 bytes — nearly fills two blocks
+        std::string(1, 'J'),    // 1 byte
+        std::string(64, 'K'),   // 64 bytes — exactly one block
+        std::string(128, 'L'),  // 128 bytes — exactly two blocks
+        std::string(200, 'M'),  // 200 bytes — three+ blocks
+        std::string(54, 'N'),   // 54 bytes — just under boundary
+        std::string(57, 'O'),   // 57 bytes — just over boundary
+        std::string(80, 'P'),   // 80 bytes
+    };
+    const size_t numInputs = sizeof(inputs) / sizeof(inputs[0]);
+
+    // Compute reference hashes with SimdHashSingle
+    std::vector<std::vector<uint8_t>> expected(lanes);
+    const uint8_t* buffers[MAX_LANES];
+    size_t lengths[MAX_LANES];
+
+    for (size_t i = 0; i < lanes; i++) {
+        const auto& input = inputs[i % numInputs];
+        buffers[i] = (const uint8_t*)input.data();
+        lengths[i] = input.size();
+        expected[i].resize(digestLen);
+        SimdHashSingle(algo, lengths[i], buffers[i], expected[i].data());
+    }
+
+    // Now compute via SIMD path
+    uint8_t hashes[MAX_LANES * MAX_HASH_SIZE];
+    SimdHash(algo, lengths, buffers, hashes);
+
+    for (size_t i = 0; i < lanes; i++) {
+        EXPECT_EQ(0, memcmp(&hashes[i * digestLen], expected[i].data(), digestLen))
+            << "Lane " << i << " (length=" << lengths[i] << ")"
+            << "\nExpected: " << ToHex(expected[i].data(), digestLen)
+            << "\n  Actual: " << ToHex(&hashes[i * digestLen], digestLen);
+    }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    MixedLengthBlockBoundary, MixedLengthBlockBoundaryTest,
+    ::testing::Values(
+        HashAlgorithmMD4, HashAlgorithmMD5, HashAlgorithmSHA1,
+        HashAlgorithmSHA256, HashAlgorithmNTLM
+    ),
+    AlgoName
+);
+
+// ============================================================
 // Multi-update test: split input across two Update calls
 // ============================================================
 

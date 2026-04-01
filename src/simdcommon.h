@@ -10,7 +10,6 @@
 #define simdcommon_h
 
 #include <assert.h>
-#include <math.h>
 #include <stdint.h>
 
 #if defined(__AVX2__) || defined(__AVX512F__) || defined(__SSE4_2__) || defined(__SSSE3__) || defined(__SSE2__)
@@ -322,7 +321,7 @@ mod2_epi32(
  * MUST be a on the log2 scale
  */
 {
-    int count = log2(Mod2);
+    int count = __builtin_ctz(Mod2);
     return shift_mod2_epi32(Value1, count);
 }
 

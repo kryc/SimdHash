@@ -282,7 +282,7 @@ SimdHashUpdateInternal(
 {
     size_t remainder[MAX_LANES];
     size_t haveRemainder = 0;
-    SimdHashContext contextcopy;
+    SimdHashContext contextcopy __attribute__((__aligned__(VALUE_ALIGN)));
 
     // Set the remainder values
     for (size_t lane = 0; lane < Context->Lanes; lane++)
@@ -324,7 +324,7 @@ SimdHashUpdateInternal(
             else
             {
                 // Take a copy of the original context
-                contextcopy = *Context;
+                SimdHashCopyContext(&contextcopy, Context);
                 // Perform a transform across all lanes
                 SimdHashTransform(&contextcopy);
                 // Copy the new states for remainder lanes

@@ -215,7 +215,8 @@ SimdSha1AppendSize(
         else
         {
             // Otherwise we need to trnasform and copy
-            SimdHashContext contextcopy = *Context;
+            SimdHashContext contextcopy __attribute__((__aligned__(VALUE_ALIGN)));
+            SimdHashCopyContext(&contextcopy, Context);
             SimdSha1Transform(&contextcopy, false);
 
             for (size_t lane = 0, lanemask = 1; lane < Context->Lanes; lane++, lanemask <<= 1)

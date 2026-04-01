@@ -10,8 +10,10 @@
 #define simdhash_h
 
 #include <stdio.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <openssl/sha.h>
 
@@ -96,6 +98,20 @@ typedef struct _SimdHashContext
     HashAlgorithm Algorithm;
     SHA512_CTX    ShaCtx[MAX_LANES];  // For SHA384 and SHA512
 } SimdHashContext;
+
+/*
+ * Copy only the SIMD-relevant fields of a SimdHashContext,
+ * skipping the large ShaCtx array which is only used by
+ * the OpenSSL-based SHA384/SHA512 paths.
+ */
+static inline void
+SimdHashCopyContext(
+    SimdHashContext* Destination,
+    const SimdHashContext* Source
+)
+{
+    memcpy(Destination, Source, offsetof(SimdHashContext, ShaCtx));
+}
 
 #define SimdHashAlgorithmCount 7
 static const HashAlgorithm
