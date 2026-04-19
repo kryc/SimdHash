@@ -71,6 +71,7 @@ typedef enum _LOG2VAL
 #define not_simd        vmvnq_u32
 #define andnot_simd     andnot_simd_custom
 #define cmpeq_simd      vceq_u32
+#define cmpeq_epi32     vceqq_u32
 #elif defined(__AVX2__)
 #define simd_t          __m256i
 #define SIMD_WIDTH      SIMD_WIDTH_256
